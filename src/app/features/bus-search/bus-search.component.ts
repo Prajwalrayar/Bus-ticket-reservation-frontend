@@ -208,10 +208,10 @@ export class BusSearchComponent implements OnInit {
     this.tripService.getRouteStops(trip.source, trip.destination).subscribe({
       next: (response) => {
         const stops = response.data || [];
-        // Boarding can be 'BOARDING' or 'BOTH'
-        const boarding = stops.filter(s => s.stopType === 'BOARDING' || s.stopType === 'BOTH').sort((a, b) => a.stopSequence - b.stopSequence);
-        // Dropping can be 'DROPPING' or 'BOTH'
-        const dropping = stops.filter(s => s.stopType === 'DROPPING' || s.stopType === 'BOTH').sort((a, b) => a.stopSequence - b.stopSequence);
+        // Boarding can be 'BOARDING' or 'INTERMEDIATE'
+        const boarding = stops.filter(s => s.stopType === 'BOARDING' || s.stopType === 'INTERMEDIATE').sort((a, b) => a.stopSequence - b.stopSequence);
+        // Dropping can be 'DROPPING' or 'INTERMEDIATE'
+        const dropping = stops.filter(s => s.stopType === 'DROPPING' || s.stopType === 'INTERMEDIATE').sort((a, b) => a.stopSequence - b.stopSequence);
 
         this.expandedTrips.set(trip.tripId, { loading: false, boarding, dropping, error: '' });
       },

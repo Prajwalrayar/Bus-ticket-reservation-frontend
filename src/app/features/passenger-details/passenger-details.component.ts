@@ -140,8 +140,8 @@ export class PassengerDetailsComponent implements OnInit {
     this.tripService.getRouteStops(from, to).subscribe({
       next: (response) => {
         const stops = response.data || [];
-        this.boardingPoints.set(stops.filter(s => s.stopType === 'BOARDING' || s.stopType === 'BOTH'));
-        this.droppingPoints.set(stops.filter(s => s.stopType === 'DROPPING' || s.stopType === 'BOTH'));
+        this.boardingPoints.set(stops.filter(s => s.stopType === 'BOARDING' || s.stopType === 'INTERMEDIATE'));
+        this.droppingPoints.set(stops.filter(s => s.stopType === 'DROPPING' || s.stopType === 'INTERMEDIATE'));
         this.loading.set(false);
       },
       error: (err) => {

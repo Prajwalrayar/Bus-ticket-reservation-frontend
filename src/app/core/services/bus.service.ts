@@ -60,8 +60,10 @@ export class BusService {
     tripId: string
   ): Observable<Bus> {
 
-    return this.http.get<Bus>(
+    return this.http.get<any>(
       `${this.apiUrl}/trips/${tripId}`
+    ).pipe(
+      map(res => res.data)
     );
 
   }
@@ -75,13 +77,10 @@ export class BusService {
     tripId: string
   ): Observable<Seat[]> {
 
-    return this.http.get<Seat[]>(
-      `${this.apiUrl}/tripSeats`,
-      {
-        params: {
-          tripId
-        }
-      }
+    return this.http.get<any>(
+      `${this.apiUrl}/trips/${tripId}/seats`
+    ).pipe(
+      map(res => res.data)
     );
 
   }

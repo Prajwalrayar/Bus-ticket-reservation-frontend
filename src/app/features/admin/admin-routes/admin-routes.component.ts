@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { RouteService } from '../../../core/services/route.service';
 import { RouteDTO, RouteCreateRequest } from '../../../core/models/route';
+import { RouteStopDTO, RouteStopCreateRequest, StopType } from '../../../core/models/trip';
 
 @Component({
   selector: 'app-admin-routes',
@@ -25,6 +26,21 @@ export class AdminRoutesComponent implements OnInit {
 
   originalRouteSource: string = '';
   originalRouteDestination: string = '';
+
+  // Stops management
+  showStopsModal: boolean = false;
+  selectedRouteForStops: RouteDTO | null = null;
+  routeStops: RouteStopDTO[] = [];
+  loadingStops: boolean = false;
+  
+  newStop: RouteStopCreateRequest = {
+    stopName: '',
+    stopSequence: 1,
+    stopType: 'BOARDING',
+    distanceFromSourceKm: 0
+  };
+  stopSubmitSuccess: string = '';
+  stopSubmitError: string = '';
 
   constructor(
     private routeService: RouteService,
@@ -130,5 +146,84 @@ export class AdminRoutesComponent implements OnInit {
         error: (err: any) => console.error('Error deactivating route', err)
       });
     }
+  }
+
+  // Stops management methods
+  openStopsModal(route: RouteDTO): void {
+    this.selectedRouteForStops = route;
+    this.showStopsModal = true;
+    this.stopSubmitSuccess = '';
+    this.stopSubmitError = '';
+    this.resetNewStop();
+    this.loadStopsForRoute(route.source, route.destination);
+  }
+
+  closeStopsModal(): void {
+    this.showStopsModal = false;
+    this.selectedRouteForStops = null;
+  }
+
+  resetNewStop(): void {
+    this.newStop = {
+      stopName: '',
+      stopSequence: (this.routeStops.length + 1),
+      stopType: 'BOARDING',
+      distanceFromSourceKm: 0
+    };
+  }
+
+  loadStopsForRoute(source: string, destination: string): void {
+    this.loadingStops = true;
+    this.routeService.getRouteStops(source, destination).subscribe({
+      next: (stops) => {
+        this.routeStops = stops;
+        this.loadingStops = false;
+        this.resetNewStop();
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Failed to fetch stops', err);
+        this.loadingStops = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  saveStop(): void {
+    if (!this.selectedRouteForStops) return;
+    this.stopSubmitError = '';
+    this.stopSubmitSuccess = '';
+    
+    this.routeService.addRouteStop(this.selectedRouteForStops.source, this.selectedRouteForStops.destination, this.newStop).subscribe({
+      next: (res) => {
+        this.stopSubmitSuccess = 'Stop added successfully!';
+        this.loadStopsForRoute(this.selectedRouteForStops!.source, this.selectedRouteForStops!.destination);
+        setTimeout(() => {
+          this.stopSubmitSuccess = '';
+          this.cdr.markForCheck();
+        }, 3000);
+      },
+      error: (err) => {
+        console.error('Failed to add stop', err);
+        this.stopSubmitError = err.error?.message || 'Failed to add stop.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  isSequenceValid(): boolean {
+    if (this.newStop.stopSequence == null || this.newStop.stopSequence < 1) return false;
+    // ensure sequence is unique for this route per StopType
+    return !this.routeStops.some(s => 
+      s.stopSequence === this.newStop.stopSequence && 
+      (s.stopType === this.newStop.stopType || s.stopType === 'INTERMEDIATE' || this.newStop.stopType === 'INTERMEDIATE')
+    );
+  }
+
+  isDistanceValid(): boolean {
+    if (this.newStop.distanceFromSourceKm == null || this.newStop.distanceFromSourceKm < 0) return false;
+    if (!this.selectedRouteForStops) return false;
+    // distance must be <= total route distance
+    return this.newStop.distanceFromSourceKm <= this.selectedRouteForStops.distance;
   }
 }

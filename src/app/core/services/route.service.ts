@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { RouteDTO, RouteCreateRequest } from '../models/route';
+import { RouteStopDTO, RouteStopCreateRequest } from '../models/trip';
 import { ApiResponse } from '../models/api-response';
 
 @Injectable({
@@ -41,5 +42,17 @@ export class RouteService {
     return this.http.patch<ApiResponse<void>>(`${this.apiUrl}/deactivate`, {}, {
       params: new HttpParams().set('source', source).set('destination', destination)
     }).pipe(map(() => void 0));
+  }
+
+  getRouteStops(source: string, destination: string): Observable<RouteStopDTO[]> {
+    return this.http.get<ApiResponse<RouteStopDTO[]>>(`${this.apiUrl}/${source}/${destination}/stops`).pipe(
+      map(res => res.data)
+    );
+  }
+
+  addRouteStop(source: string, destination: string, request: RouteStopCreateRequest): Observable<RouteStopDTO> {
+    return this.http.post<ApiResponse<RouteStopDTO>>(`${this.apiUrl}/${source}/${destination}/stops`, request).pipe(
+      map(res => res.data)
+    );
   }
 }

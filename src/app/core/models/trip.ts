@@ -28,7 +28,7 @@ export interface TripDTO {
   availableSeats: number;
 }
 
-export type StopType = 'BOARDING' | 'DROPPING' | 'BOTH';
+export type StopType = 'BOARDING' | 'DROPPING' | 'INTERMEDIATE';
 
 export interface RouteStopDTO {
   routeStopId: string;
@@ -38,6 +38,13 @@ export interface RouteStopDTO {
   distanceFromSourceKm: number;
   source: string;
   destination: string;
+}
+
+export interface RouteStopCreateRequest {
+  stopName: string;
+  stopSequence: number;
+  stopType: StopType;
+  distanceFromSourceKm: number;
 }
 
 export interface TripCreateRequest {
