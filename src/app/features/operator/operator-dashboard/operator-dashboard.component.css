@@ -1,0 +1,47 @@
+.operator-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.operator-sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  transition: all 0.3s;
+  background-color: #0d6efd;
+}
+
+.operator-main {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+.list-group-item {
+  background-color: transparent;
+}
+
+.list-group-item.active-nav {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  color: #fff !important;
+  border-left: 4px solid #fff !important;
+}
+
+.list-group-item:hover:not(.active-nav) {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.kpi-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kpi-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 .5rem 1rem rgba(0,0,0,.05) !important;
+}
+
+.table th {
+  font-weight: 600;
+  color: #6c757d;
+  font-size: 0.85rem;
+}

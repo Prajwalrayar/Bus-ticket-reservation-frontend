@@ -1,0 +1,235 @@
+/* ==========================================================
+   SEAT SELECTION
+========================================================== */
+
+.seat-selection-page {
+
+  min-height: 100vh;
+
+  background-color: var(--rb-bg);
+
+}
+
+
+.bus-summary {
+
+  padding: 18px;
+
+  background-color: #fff5f5;
+
+  border: 1px solid #f5c2c2;
+
+  border-radius: 10px;
+
+}
+
+
+/* ==========================================================
+   SEAT LEGEND
+========================================================== */
+
+.seat-legend {
+
+  display: flex;
+
+  gap: 25px;
+
+  flex-wrap: wrap;
+
+  color: var(--rb-text-muted);
+
+  font-size: 14px;
+
+}
+
+
+.seat-legend > div {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+}
+
+
+.legend-seat {
+
+  width: 20px;
+
+  height: 20px;
+
+  border-radius: 5px;
+
+  border: 1px solid var(--rb-border);
+
+}
+
+
+.legend-seat.available {
+
+  background-color: #ffffff;
+
+}
+
+
+.legend-seat.selected {
+
+  background-color: var(--rb-primary);
+
+  border-color: var(--rb-primary);
+
+}
+
+
+.legend-seat.occupied {
+
+  background-color: #d1d5db;
+
+  border-color: #d1d5db;
+
+}
+
+
+/* ==========================================================
+   BUS SHELL & INTERIOR
+========================================================== */
+
+.bus-interior-shell {
+  max-width: 450px;
+  background-color: #fcfcfc;
+  border: 2px solid #e5e7eb;
+  border-radius: 40px 40px 15px 15px; /* Curved front of the bus */
+  box-shadow: inset 0 0 15px rgba(0,0,0,0.02);
+  overflow: hidden;
+}
+
+.driver-cabin {
+  background-color: #f3f4f6;
+}
+
+.decks-container {
+  min-height: 200px;
+}
+
+.deck-title {
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.aisle {
+  min-width: 40px;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 10px,
+    #f3f4f6 10px,
+    #f3f4f6 20px
+  );
+  opacity: 0.5;
+  border-radius: 4px;
+}
+
+/* ==========================================================
+   SEAT BUTTONS (SEATER & SLEEPER)
+========================================================== */
+
+.seat-btn {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px 12px 6px 6px; /* Chair shape */
+  border: 1.5px solid var(--rb-border);
+  background-color: #ffffff;
+  color: var(--rb-text);
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.2s ease;
+  padding: 0;
+  line-height: 1.2;
+}
+
+.seat-btn.is-sleeper {
+  width: 90px;
+  height: 55px;
+  border-radius: 6px; /* Berth shape */
+}
+
+.seat-number {
+  font-size: 14px;
+  z-index: 2;
+}
+
+.seat-sub {
+  font-size: 11px;
+  z-index: 2;
+  margin-top: -2px;
+}
+
+/* ==========================================================
+   STATUS STYLES
+========================================================== */
+
+.seat-btn.available:hover {
+  border-color: var(--rb-primary);
+  color: var(--rb-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.seat-btn.selected {
+  background-color: var(--rb-primary);
+  color: #ffffff;
+  border-color: var(--rb-primary);
+  box-shadow: 0 4px 8px rgba(219,39,119,0.25);
+}
+
+.seat-btn.occupied,
+.seat-btn.locked {
+  background-color: #e5e7eb;
+  color: #9ca3af;
+  border-color: #d1d5db;
+  cursor: not-allowed;
+}
+
+/* ==========================================================
+   SELECTED SEATS LIST
+========================================================== */
+
+.selected-seat-list {
+  min-height: 35px;
+}
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 576px) {
+  .bus-interior-shell {
+    border-radius: 20px 20px 10px 10px;
+  }
+  
+  .seat-btn {
+    width: 42px;
+    height: 42px;
+    font-size: 12px;
+  }
+  
+  .seat-btn.is-sleeper {
+    width: 75px;
+    height: 45px;
+  }
+  
+  .aisle {
+    min-width: 25px;
+  }
+  
+  .seat-legend {
+    gap: 12px;
+  }
+}

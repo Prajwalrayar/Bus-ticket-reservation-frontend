@@ -1,0 +1,15 @@
+.bg-rb-primary-light {
+  background-color: #fff0f1;
+}
+
+.list-group-item:hover {
+  background-color: #f8f9fa;
+}
+
+.bg-rb-primary-light:hover {
+  background-color: #ffe5e7;
+}
+
+.transition-all {
+  transition: all 0.2s ease-in-out;
+}

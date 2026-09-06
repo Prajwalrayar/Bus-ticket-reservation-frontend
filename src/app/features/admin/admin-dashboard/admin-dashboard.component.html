@@ -1,0 +1,144 @@
+<div class="p-4">
+  @if (loading) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-rb-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+      <p class="mt-3 text-secondary fw-semibold">Loading Admin Dashboard...</p>
+    </div>
+  } @else if (error) {
+    <div class="alert alert-danger py-4 px-4 text-center">
+      <i class="bi bi-exclamation-triangle-fill fs-2 d-block mb-3"></i>
+      <h5 class="fw-bold">{{ error }}</h5>
+      <button class="btn btn-outline-danger mt-3 px-4" (click)="fetchDashboardData()">Retry</button>
+    </div>
+  } @else if (dashboardData) {
+    <h5 class="fw-bold mb-3 text-secondary"><i class="bi bi-people-fill me-2"></i>User Metrics</h5>
+    <div class="row g-4 mb-4">
+      <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm kpi-card border-bottom border-primary border-3 h-100">
+          <div class="card-body">
+            <div class="text-secondary mb-1">Total Users</div>
+            <h3 class="fw-bold mb-0 text-primary">{{ dashboardData.totalUsers }}</h3>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm kpi-card border-bottom border-success border-3 h-100">
+          <div class="card-body">
+            <div class="text-secondary mb-1">Active Users</div>
+            <h3 class="fw-bold mb-0 text-success">{{ dashboardData.activeUsers }}</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h5 class="fw-bold mb-3 text-secondary"><i class="bi bi-bus-front-fill me-2"></i>Fleet Metrics</h5>
+    <div class="row g-4 mb-4">
+      <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm kpi-card border-bottom border-warning border-3 h-100">
+          <div class="card-body">
+            <div class="text-secondary mb-1">Total Buses</div>
+            <h3 class="fw-bold mb-0 text-warning">{{ dashboardData.totalBuses }}</h3>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm kpi-card border-bottom border-info border-3 h-100">
+          <div class="card-body">
+            <div class="text-secondary mb-1">Total Bookings</div>
+            <h3 class="fw-bold mb-0 text-info">{{ dashboardData.totalBookings }}</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h5 class="fw-bold mb-3 text-secondary"><i class="bi bi-ticket-detailed-fill me-2"></i>Booking Metrics</h5>
+    <div class="row g-4 mb-4">
+      <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm kpi-card border-bottom border-danger border-3 h-100">
+          <div class="card-body">
+            <div class="text-secondary mb-1">Confirmed Bookings</div>
+            <h3 class="fw-bold mb-0 text-danger">{{ dashboardData.confirmedBookings }}</h3>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm kpi-card border-bottom border-secondary border-3 h-100">
+          <div class="card-body">
+            <div class="text-secondary mb-1">Cancelled Bookings</div>
+            <h3 class="fw-bold mb-0 text-secondary">{{ dashboardData.cancelledBookings }}</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- AI Analytics Section -->
+  <h5 class="fw-bold mb-3 mt-5 text-secondary"><i class="bi bi-stars me-2"></i>AI Analytics Engine</h5>
+  
+  @if (aiAnalyticsLoading) {
+    <div class="text-center py-4">
+      <div class="spinner-border spinner-border-sm text-rb-primary me-2"></div>
+      <span class="text-secondary">Generating latest AI analytics...</span>
+    </div>
+  } @else if (aiAnalyticsError) {
+    <div class="alert alert-warning">
+      <i class="bi bi-exclamation-triangle me-2"></i>{{ aiAnalyticsError }}
+    </div>
+  } @else if (aiSentimentData) {
+    <div class="row g-4 mb-4">
+      <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body text-center p-4">
+            <h6 class="text-muted text-uppercase mb-3">Overall AI Sentiment Score</h6>
+            <div class="display-4 fw-bold mb-2" [ngClass]="{
+              'text-success': aiSentimentData.averageScore > 0,
+              'text-danger': aiSentimentData.averageScore < 0,
+              'text-warning': aiSentimentData.averageScore === 0
+            }">
+              {{ aiSentimentData.averageScore > 0 ? '+' : '' }}{{ aiSentimentData.averageScore | number:'1.1-2' }}
+            </div>
+            <p class="text-muted small">Based on real-time NLP analysis of customer reviews.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-8">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body p-4">
+            <h6 class="text-muted text-uppercase mb-4">AI Sentiment Classification</h6>
+            
+            <div class="mb-3">
+              <div class="d-flex justify-content-between mb-1">
+                <span class="fw-semibold text-success"><i class="bi bi-emoji-smile me-2"></i>Positive</span>
+                <span class="fw-bold">{{ aiSentimentData.positiveCount }}</span>
+              </div>
+              <div class="progress" style="height: 8px;">
+                <div class="progress-bar bg-success" [style.width]="(aiSentimentData.positiveCount / aiSentimentData.totalAnalyzed) * 100 + '%'"></div>
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <div class="d-flex justify-content-between mb-1">
+                <span class="fw-semibold text-secondary"><i class="bi bi-emoji-neutral me-2"></i>Neutral</span>
+                <span class="fw-bold">{{ aiSentimentData.neutralCount }}</span>
+              </div>
+              <div class="progress" style="height: 8px;">
+                <div class="progress-bar bg-secondary" [style.width]="(aiSentimentData.neutralCount / aiSentimentData.totalAnalyzed) * 100 + '%'"></div>
+              </div>
+            </div>
+            
+            <div>
+              <div class="d-flex justify-content-between mb-1">
+                <span class="fw-semibold text-danger"><i class="bi bi-emoji-frown me-2"></i>Negative</span>
+                <span class="fw-bold">{{ aiSentimentData.negativeCount }}</span>
+              </div>
+              <div class="progress" style="height: 8px;">
+                <div class="progress-bar bg-danger" [style.width]="(aiSentimentData.negativeCount / aiSentimentData.totalAnalyzed) * 100 + '%'"></div>
+              </div>
+            </div>
+            
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

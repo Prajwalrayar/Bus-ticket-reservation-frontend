@@ -1,0 +1,223 @@
+<div class="admin-layout">
+  <!-- Sidebar -->
+  <aside class="admin-sidebar" [class.collapsed]="isSidebarCollapsed">
+    <div class="admin-sidebar-logo d-flex justify-content-between align-items-center">
+      <a routerLink="/" class="text-decoration-none text-rb-primary">
+        <i class="bi bi-bus-front me-2"></i>
+        <span class="logo-text" *ngIf="!isSidebarCollapsed">BusTicket</span>
+      </a>
+      <button class="btn btn-link text-white d-md-none p-0" (click)="toggleSidebar()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div class="admin-sidebar-user" *ngIf="!isSidebarCollapsed">
+      <div class="user-avatar-lg">{{ userName.charAt(0).toUpperCase() }}</div>
+      <div class="user-info">
+        <div class="user-name">{{ userName }}</div>
+        <div class="user-role">{{ panelTitle }}</div>
+      </div>
+    </div>
+
+    <nav class="admin-nav mt-3">
+      <a *ngFor="let item of currentNavItems" 
+         [routerLink]="item.route" 
+         routerLinkActive="active" 
+         [routerLinkActiveOptions]="{exact: item.route === '/admin' || item.route === '/operator'}"
+         class="admin-nav-link"
+         [title]="item.label">
+        <i class="bi" [ngClass]="item.icon"></i>
+        <span class="nav-label" *ngIf="!isSidebarCollapsed">{{ item.label }}</span>
+      </a>
+    </nav>
+    
+    <div class="admin-nav mt-auto pb-4">
+      <!-- Login as Passenger -->
+      <a href="javascript:void(0)" 
+         class="admin-nav-link text-info"
+         (click)="openPassengerLoginModal()"
+         title="Login as Passenger">
+        <i class="bi bi-person-walking"></i>
+        <span class="nav-label" *ngIf="!isSidebarCollapsed">Login as Passenger</span>
+      </a>
+      <!-- Logout -->
+      <a href="javascript:void(0)" class="admin-nav-link text-danger" (click)="logout()" title="Logout">
+        <i class="bi bi-box-arrow-right"></i>
+        <span class="nav-label" *ngIf="!isSidebarCollapsed">Logout</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="admin-content" [class.expanded]="isSidebarCollapsed">
+    <header class="admin-header">
+      <div class="d-flex align-items-center">
+        <button class="btn btn-link text-dark p-0 me-3 d-none d-md-block" (click)="toggleSidebar()">
+          <i class="bi bi-list fs-4"></i>
+        </button>
+        <button class="btn btn-link text-dark p-0 me-3 d-md-none" (click)="toggleSidebar()">
+          <i class="bi bi-list fs-4"></i>
+        </button>
+        <h4 class="mb-0">{{ panelTitle }}</h4>
+      </div>
+      
+      <!-- header-actions removed -->
+    </header>
+
+    <div class="admin-content-inner position-relative">
+      @if (isTemporaryPassword) {
+        <div class="password-overlay">
+          <div class="card shadow-lg border-0" style="max-width: 500px; width: 100%; z-index: 1050;">
+            <div class="card-body p-5">
+              <div class="text-center mb-4">
+                <i class="bi bi-shield-lock-fill text-warning fs-1"></i>
+                <h3 class="fw-bold mt-2">Action Required</h3>
+                <p class="text-muted mb-0">For security reasons, you must change your temporary password before accessing the dashboard.</p>
+              </div>
+
+              @if (passwordError) {
+                <div class="alert alert-danger">{{ passwordError }}</div>
+              }
+
+              <form [formGroup]="passwordForm" (ngSubmit)="changeTemporaryPassword()">
+                <div class="mb-3">
+                  <label class="form-label text-muted small fw-semibold">Temporary Password</label>
+                  <input type="password" class="form-control" formControlName="currentPassword" [class.is-invalid]="pwf['currentPassword'].invalid && (pwf['currentPassword'].dirty || pwf['currentPassword'].touched)">
+                  @if (pwf['currentPassword'].invalid && (pwf['currentPassword'].dirty || pwf['currentPassword'].touched)) {
+                    <div class="invalid-feedback">Current password is required.</div>
+                  }
+                </div>
+                <div class="mb-3">
+                  <label class="form-label text-muted small fw-semibold">New Password</label>
+                  <input type="password" class="form-control" formControlName="newPassword" [class.is-invalid]="pwf['newPassword'].invalid && (pwf['newPassword'].dirty || pwf['newPassword'].touched)">
+                  @if (pwf['newPassword'].invalid && (pwf['newPassword'].dirty || pwf['newPassword'].touched)) {
+                    <div class="invalid-feedback">
+                      @if (pwf['newPassword'].errors?.['required']) { <span>New password is required.</span> }
+                      @if (pwf['newPassword'].errors?.['minlength']) { <span>Minimum 8 characters.</span> }
+                    </div>
+                  }
+                </div>
+                <div class="mb-4">
+                  <label class="form-label text-muted small fw-semibold">Confirm Password</label>
+                  <input type="password" class="form-control" formControlName="confirmPassword" [class.is-invalid]="(pwf['confirmPassword'].invalid || passwordForm.errors?.['mismatch']) && (pwf['confirmPassword'].dirty || pwf['confirmPassword'].touched)">
+                  @if ((pwf['confirmPassword'].invalid || passwordForm.errors?.['mismatch']) && (pwf['confirmPassword'].dirty || pwf['confirmPassword'].touched)) {
+                    <div class="invalid-feedback">
+                      @if (pwf['confirmPassword'].errors?.['required']) { <span>Confirm your new password.</span> }
+                      @if (passwordForm.errors?.['mismatch']) { <span>Passwords do not match.</span> }
+                    </div>
+                  }
+                </div>
+                <button type="submit" class="btn btn-warning w-100 fw-bold" [disabled]="passwordForm.invalid || passwordLoading">
+                  @if (passwordLoading) {
+                    <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                  }
+                  Update Password
+                </button>
+                <div class="text-center mt-3">
+                  <a href="javascript:void(0)" class="text-secondary small" (click)="logout()">Or Logout</a>
+                </div>
+              </form>
+            </div>
+          </div>
+          <div class="overlay-backdrop"></div>
+        </div>
+      }
+
+      <router-outlet></router-outlet>
+    </div>
+    
+    <footer class="admin-footer">
+      <p class="mb-0 text-muted small">&copy; {{ currentYear }} Bus Ticket Booking System</p>
+    </footer>
+  </main>
+</div>
+
+<!-- Login as Passenger Modal -->
+@if (showPassengerLoginModal) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-header border-0 pb-0">
+          <div class="d-flex align-items-center gap-2">
+            <div class="bg-primary bg-opacity-10 rounded-circle p-2">
+              <i class="bi bi-person-walking text-primary fs-5"></i>
+            </div>
+            <div>
+              <h5 class="modal-title fw-bold mb-0">Login as Passenger</h5>
+              <p class="text-muted small mb-0">Enter your Passenger account credentials</p>
+            </div>
+          </div>
+          <button type="button" class="btn-close" (click)="closePassengerLoginModal()"></button>
+        </div>
+        <div class="modal-body pt-3">
+          @if (passengerLoginError) {
+            <div class="alert alert-danger d-flex align-items-center gap-2 py-2">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              <span>{{ passengerLoginError }}</span>
+            </div>
+          }
+          <div class="alert alert-info d-flex align-items-start gap-2 py-2">
+            <i class="bi bi-info-circle-fill mt-1 flex-shrink-0"></i>
+            <small>Your current staff session will be replaced by the Passenger session. You can log back in as staff from the main login page.</small>
+          </div>
+          <form [formGroup]="loginAsPassengerForm" (ngSubmit)="loginAsPassenger()">
+            <div class="mb-3">
+              <label for="passengerEmail" class="form-label fw-semibold small text-muted">Passenger Email</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light border-end-0">
+                  <i class="bi bi-envelope text-muted"></i>
+                </span>
+                <input 
+                  id="passengerEmail"
+                  type="email" 
+                  class="form-control border-start-0 ps-0"
+                  formControlName="email"
+                  placeholder="passenger@example.com"
+                  [class.is-invalid]="plf['email'].invalid && (plf['email'].dirty || plf['email'].touched)">
+                @if (plf['email'].invalid && (plf['email'].dirty || plf['email'].touched)) {
+                  <div class="invalid-feedback">
+                    @if (plf['email'].errors?.['required']) { Please enter your passenger email. }
+                    @if (plf['email'].errors?.['email']) { Please enter a valid email address. }
+                  </div>
+                }
+              </div>
+            </div>
+            <div class="mb-4">
+              <label for="passengerPassword" class="form-label fw-semibold small text-muted">Passenger Password</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light border-end-0">
+                  <i class="bi bi-lock text-muted"></i>
+                </span>
+                <input 
+                  id="passengerPassword"
+                  type="password" 
+                  class="form-control border-start-0 ps-0"
+                  formControlName="password"
+                  placeholder="Enter password"
+                  [class.is-invalid]="plf['password'].invalid && (plf['password'].dirty || plf['password'].touched)">
+                @if (plf['password'].invalid && (plf['password'].dirty || plf['password'].touched)) {
+                  <div class="invalid-feedback">Password is required.</div>
+                }
+              </div>
+            </div>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-outline-secondary flex-fill" (click)="closePassengerLoginModal()">
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                class="btn btn-primary flex-fill fw-semibold"
+                [disabled]="loginAsPassengerForm.invalid || passengerLoginLoading">
+                @if (passengerLoginLoading) {
+                  <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                }
+                <i class="bi bi-person-walking me-1" *ngIf="!passengerLoginLoading"></i>
+                Enter Passenger Mode
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+}

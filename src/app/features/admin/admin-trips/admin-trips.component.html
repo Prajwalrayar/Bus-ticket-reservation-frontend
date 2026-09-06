@@ -1,0 +1,72 @@
+<div class="p-4 bg-white rounded shadow-sm">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0 fw-bold">Trip Management</h4>
+    <button class="btn btn-outline-primary btn-sm" (click)="fetchAllTrips()">
+      <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+    </button>
+  </div>
+
+  @if (loading) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="mt-2 text-secondary">Loading trips...</p>
+    </div>
+  } @else if (error) {
+    <div class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+    </div>
+  } @else if (trips.length === 0) {
+    <div class="alert alert-info text-center py-4">
+      <i class="bi bi-info-circle fs-3 d-block mb-2"></i>
+      No trips found.
+    </div>
+  } @else {
+    <div class="table-responsive">
+      <table class="table table-hover align-middle border">
+        <thead class="table-light">
+          <tr>
+            <th>Trip Details</th>
+            <th>Bus / Operator</th>
+            <th>Route</th>
+            <th>Departure</th>
+            <th>Arrival</th>
+            <th>Seats (Avail/Total)</th>
+            <th>Base Fare</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (trip of trips; track trip.busRegistrationNumber + trip.source + trip.destination + trip.travelDate) {
+            <tr>
+              <td>
+                <!-- We don't have tripId, composite key is used -->
+                <span class="text-muted small">Scheduled</span>
+              </td>
+              <td>
+                <div class="fw-bold">{{ trip.busRegistrationNumber }}</div>
+              </td>
+              <td>
+                <div class="text-primary fw-medium">{{ trip.source }} <i class="bi bi-arrow-right mx-1 text-muted"></i> {{ trip.destination }}</div>
+              </td>
+              <td>
+                <div class="fw-bold">{{ trip.travelDate | date:'mediumDate' }}</div>
+                <div class="text-muted small">{{ trip.departureTime }}</div>
+              </td>
+              <td>
+                <!-- Assuming travel date is same, showing time -->
+                <div class="text-muted small">{{ trip.arrivalTime }}</div>
+              </td>
+              <td>
+                <span class="badge" [ngClass]="trip.availableSeats && trip.availableSeats < 10 ? 'bg-danger' : 'bg-success'">
+                  {{ trip.availableSeats || '?' }} / {{ trip.totalSeats || '?' }}
+                </span>
+              </td>
+              <td class="fw-bold text-success">
+                {{ trip.baseFare | currency:'INR' }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

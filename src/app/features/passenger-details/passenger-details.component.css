@@ -1,0 +1,182 @@
+.passenger-page {
+  min-height: 100vh;
+  background-color: var(--rb-bg);
+}
+
+
+/* ==========================================================
+   PASSENGER CARD
+========================================================== */
+
+.passenger-card {
+  padding: 24px;
+  border: 1px solid var(--rb-border);
+  border-radius: 12px;
+  background-color: var(--rb-surface);
+}
+
+
+.passenger-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--rb-border);
+}
+
+
+/* ==========================================================
+   SEAT BADGE
+========================================================== */
+
+.seat-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  background-color: #fff1f1;
+  color: var(--rb-primary);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+
+/* ==========================================================
+   FORM
+========================================================== */
+
+.form-label {
+  font-weight: 600;
+  color: var(--rb-text);
+  margin-bottom: 8px;
+}
+
+
+.form-control {
+  min-height: 48px;
+  border-color: var(--rb-border);
+  border-radius: var(--radius-sm);
+}
+
+
+.form-control:focus {
+  border-color: var(--rb-primary);
+  box-shadow: 0 0 0 0.2rem rgba(216, 78, 85, 0.12);
+}
+
+
+/* ==========================================================
+   GENDER
+========================================================== */
+
+.gender-option {
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  width: 100%;
+
+  min-height: 48px;
+
+  padding: 12px 20px;
+
+  border: 1px solid #bdbdbd;
+
+  border-radius: 30px;
+
+  cursor: pointer;
+
+  font-size: 16px;
+
+  font-weight: 500;
+
+  transition: all 0.2s ease;
+
+}
+
+
+.gender-option input {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--rb-primary);
+}
+
+
+.gender-option.selected {
+  border-color: var(--rb-primary);
+}
+
+
+.gender-option:hover {
+  border-color: var(--rb-primary);
+}
+
+
+/* ==========================================================
+   SUMMARY
+========================================================== */
+
+.summary-card {
+
+  position: sticky;
+
+  top: 20px;
+
+}
+
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--rb-border);
+}
+
+
+.summary-item strong {
+
+  text-align: right;
+
+}
+
+
+.selected-seats {
+
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 8px;
+
+  margin-top: 20px;
+
+}
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 768px) {
+
+  .passenger-card {
+
+    padding: 18px;
+
+  }
+
+  .summary-card {
+
+    position: static;
+
+  }
+
+}

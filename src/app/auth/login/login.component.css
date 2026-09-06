@@ -1,0 +1,48 @@
+:host {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  background: url('/bg.jpg') no-repeat center center;
+  background-size: cover;
+  background-attachment: fixed;
+  padding: 40px 0;
+}
+
+.login-wrapper {
+  max-width: 100%;
+}
+
+/* ==========================================================
+  CONTINUE BROWSING BUSES
+========================================================== */
+
+  .browse-link {
+    display: inline-block;
+
+    color: var(--primary-color);
+    text-decoration: none;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    padding: 10px 18px;
+
+    border: 1px dashed var(--primary-color);
+    border-radius: var(--button-radius);
+
+    background-color: #fff5f5;
+
+    transition: all 0.2s ease;
+  }
+
+  .browse-link:hover {
+    color: #ffffff;
+
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+
+    transform: translateY(-1px);
+  }

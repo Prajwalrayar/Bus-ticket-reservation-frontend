@@ -1,0 +1,233 @@
+<!-- HERO SECTION -->
+<section class="rb-hero">
+  <div class="container text-center">
+    <h1 class="rb-hero-title animate-fade-up">India's No. 1 Online Bus Ticket Booking Site</h1>
+    <p class="rb-hero-subtitle animate-fade-up" style="animation-delay: 0.1s">Book buses with ease and travel safely across the country</p>
+  </div>
+</section>
+
+<!-- SEARCH CARD -->
+<section class="container mb-5">
+  <div class="rb-search-card animate-fade-up" style="animation-delay: 0.2s">
+    
+    <!-- AI Offers Section -->
+    <div *ngIf="offers.length > 0" class="alert alert-success mb-3 d-flex align-items-center">
+      <i class="bi bi-stars me-2 fs-4"></i>
+      <div>
+        <strong>Personalized AI Offer:</strong> Use code <b>{{ offers[0].offerCode }}</b> for {{ offers[0].discountPercentage }}% off!
+        <div class="small">{{ offers[0].reasoning }}</div>
+      </div>
+    </div>
+
+    <!-- Mode Toggle -->
+    <div class="d-flex justify-content-end mb-3">
+      <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" id="smartSearchToggle" 
+               [checked]="isSmartSearch" (change)="toggleSearchMode()">
+        <label class="form-check-label fw-bold text-danger" for="smartSearchToggle">
+          <i class="bi bi-robot"></i> Try AI Smart Search
+        </label>
+      </div>
+    </div>
+
+    <div *ngIf="!isSmartSearch" class="row g-3 align-items-end">
+      
+      <!-- Source -->
+      <div class="col-lg-3 col-md-6 position-relative">
+        <label class="form-label">From</label>
+        <div class="input-group">
+          <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-geo-alt"></i></span>
+          <input type="text" class="form-control border-start-0 ps-0" placeholder="Source City" value="Bangalore">
+        </div>
+      </div>
+
+      <!-- Swap button -->
+      <div class="col-auto d-none d-lg-block pb-1 px-1">
+        <button class="btn-swap"><i class="bi bi-arrow-left-right"></i></button>
+      </div>
+
+      <!-- Destination -->
+      <div class="col-lg-3 col-md-6">
+        <label class="form-label">To</label>
+        <div class="input-group">
+          <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-geo"></i></span>
+          <input type="text" class="form-control border-start-0 ps-0" placeholder="Destination City" value="Chennai">
+        </div>
+      </div>
+
+      <!-- Date -->
+      <div class="col-lg-3 col-md-6">
+        <label class="form-label">Date of Journey</label>
+        <div class="input-group">
+          <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-calendar3"></i></span>
+          <input type="date" class="form-control border-start-0 ps-0">
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <div class="col-lg-2 col-md-6 text-end">
+        <button class="btn btn-rb-primary w-100">Search Buses</button>
+      </div>
+
+    </div>
+
+    <!-- AI Smart Search Input -->
+    <div *ngIf="isSmartSearch" class="row g-3 align-items-end">
+      <div class="col-lg-10 col-md-8">
+        <label class="form-label text-danger fw-bold">Natural Language Search</label>
+        <div class="input-group input-group-lg shadow-sm">
+          <span class="input-group-text bg-white border-end-0 text-danger"><i class="bi bi-magic"></i></span>
+          <input type="text" class="form-control border-start-0" 
+                 [(ngModel)]="smartQuery" (keyup.enter)="performSmartSearch()"
+                 placeholder="e.g. Find AC sleeper buses from Bangalore to Chennai tomorrow below ₹1000">
+        </div>
+      </div>
+      <div class="col-lg-2 col-md-4 text-end">
+        <button class="btn btn-danger btn-lg w-100" (click)="performSmartSearch()" [disabled]="isLoading">
+          <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          {{ isLoading ? 'Searching...' : 'AI Search' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MOCK SEARCH RESULTS (Will be separated later) -->
+<div class="container pb-5 animate-fade-up" style="animation-delay: 0.3s">
+  <div class="row">
+    <!-- FILTERS -->
+    <div class="col-lg-3 d-none d-lg-block">
+      <div class="filter-sidebar">
+        <div class="filter-title">Filters</div>
+        
+        <div class="filter-section-title">Bus Type</div>
+        <div class="form-check filter-check mb-2">
+          <input class="form-check-input" type="checkbox" id="ac" checked>
+          <label class="form-check-label" for="ac">AC</label>
+        </div>
+        <div class="form-check filter-check mb-2">
+          <input class="form-check-input" type="checkbox" id="nonac">
+          <label class="form-check-label" for="nonac">Non AC</label>
+        </div>
+        <div class="form-check filter-check mb-2">
+          <input class="form-check-input" type="checkbox" id="sleeper" checked>
+          <label class="form-check-label" for="sleeper">Sleeper</label>
+        </div>
+        
+        <div class="filter-section-title">Departure Time</div>
+        <div class="form-check filter-check mb-2">
+          <input class="form-check-input" type="checkbox" id="morning">
+          <label class="form-check-label" for="morning">Before 6 AM</label>
+        </div>
+        <div class="form-check filter-check mb-2">
+          <input class="form-check-input" type="checkbox" id="day">
+          <label class="form-check-label" for="day">6 AM to 6 PM</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- BUS LIST -->
+    <div class="col-lg-9">
+      
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold m-0">2 Buses found</h5>
+        <div class="text-muted small">Sorted by: <strong class="text-dark">Relevance</strong></div>
+      </div>
+
+      <!-- Bus Card 1 -->
+      <div class="bus-card">
+        <div class="bus-card-header">
+          <div class="bus-operator-name">KSRTC Airavat</div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="bus-rating"><i class="bi bi-star-fill me-1"></i>4.2</span>
+            <span class="text-muted small">| 1.2k ratings</span>
+          </div>
+        </div>
+        <div class="bus-card-body">
+          <div class="row align-items-center">
+            
+            <div class="col-md-7 mb-3 mb-md-0">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="bus-time">22:30</div>
+                  <div class="text-muted small">Bangalore</div>
+                </div>
+                <div class="flex-grow-1 px-3">
+                  <div class="bus-duration">06h 15m</div>
+                  <div class="bus-duration-line">
+                    <div class="duration-bar"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="bus-time">04:45</div>
+                  <div class="text-muted small text-end">Chennai</div>
+                </div>
+              </div>
+              
+              <div class="mt-3">
+                <span class="bus-type-badge me-2">Volvo AC Sleeper</span>
+                <span class="amenity-chip"><i class="bi bi-wifi"></i> WiFi</span>
+                <span class="amenity-chip"><i class="bi bi-usb-drive"></i> Charging</span>
+              </div>
+            </div>
+
+            <div class="col-md-5 text-md-end border-start-md border-0 ps-md-4">
+              <div class="bus-fare-label">Starting from</div>
+              <div class="bus-fare">₹ 1,150</div>
+              <div class="seats-left mb-2">12 Seats available</div>
+              <button class="btn btn-view-seats w-100" routerLink="/seat-layout/1">View Seats</button>
+            </div>
+            
+          </div>
+        </div>
+      </div>
+
+      <!-- Bus Card 2 -->
+      <div class="bus-card">
+        <div class="bus-card-header">
+          <div class="bus-operator-name">SRS Travels</div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="bus-rating"><i class="bi bi-star-fill me-1"></i>3.9</span>
+            <span class="text-muted small">| 850 ratings</span>
+          </div>
+        </div>
+        <div class="bus-card-body">
+          <div class="row align-items-center">
+            
+            <div class="col-md-7 mb-3 mb-md-0">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="bus-time">23:15</div>
+                  <div class="text-muted small">Bangalore</div>
+                </div>
+                <div class="flex-grow-1 px-3">
+                  <div class="bus-duration">07h 00m</div>
+                  <div class="bus-duration-line">
+                    <div class="duration-bar"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="bus-time">06:15</div>
+                  <div class="text-muted small text-end">Chennai</div>
+                </div>
+              </div>
+              
+              <div class="mt-3">
+                <span class="bus-type-badge me-2">Non-AC Seater</span>
+              </div>
+            </div>
+
+            <div class="col-md-5 text-md-end border-start-md border-0 ps-md-4">
+              <div class="bus-fare-label">Starting from</div>
+              <div class="bus-fare">₹ 750</div>
+              <div class="seats-left mb-2">32 Seats available</div>
+              <button class="btn btn-view-seats w-100" routerLink="/seat-layout/2">View Seats</button>
+            </div>
+            
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

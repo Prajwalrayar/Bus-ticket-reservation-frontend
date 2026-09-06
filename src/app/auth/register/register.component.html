@@ -1,0 +1,146 @@
+<div class="register-wrapper">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-12 col-sm-10 col-md-7 col-lg-5">
+        <div class="card auth-card border-0">
+          <div class="card-body p-4 p-md-5">
+
+            <!-- TITLE -->
+            <div class="text-center mb-4">
+              <h3 class="fw-bold">Create Account</h3>
+              <p class="text-secondary mb-0">Register to book your bus journey</p>
+            </div>
+
+            <!-- ERROR -->
+            @if (errorMessage()) {
+            <div class="alert alert-danger">
+              {{ errorMessage() }}
+            </div>
+            }
+
+            <!-- SUCCESS -->
+            @if (successMessage()) {
+            <div class="alert alert-success">
+              {{ successMessage() }}
+            </div>
+            }
+
+            <form [formGroup]="registerForm" (ngSubmit)="register()">
+
+              <!-- NAME -->
+              <div class="mb-3">
+                <label for="fullName" class="form-label fw-semibold">Full Name</label>
+                <input type="text" id="fullName" class="form-control" placeholder="Enter your full name"
+                  formControlName="fullName"
+                  [ngClass]="{ 'is-invalid': f['fullName'].invalid && (f['fullName'].dirty || f['fullName'].touched) }">
+                @if (f['fullName'].invalid && (f['fullName'].dirty || f['fullName'].touched)) {
+                <div class="invalid-feedback">
+                  @if (f['fullName'].errors?.['required']) { <span>Name is required.</span> }
+                  @if (f['fullName'].errors?.['minlength']) { <span>Name must contain at least 3 characters.</span> }
+                  @if (f['fullName'].errors?.['maxlength']) { <span>Name cannot exceed 50 characters.</span> }
+                  @if (f['fullName'].errors?.['pattern']) { <span>Name can contain only letters and spaces.</span> }
+                  @if (f['fullName'].errors?.['invalidName']) { <span>Please enter a valid name.</span> }
+                </div>
+                }
+              </div>
+
+              <!-- EMAIL -->
+              <div class="mb-3">
+                <label for="email" class="form-label fw-semibold">Email</label>
+                <input type="email" id="email" class="form-control" placeholder="Enter your email"
+                  formControlName="email"
+                  [ngClass]="{ 'is-invalid': f['email'].invalid && (f['email'].dirty || f['email'].touched) }">
+                @if (f['email'].invalid && (f['email'].dirty || f['email'].touched)) {
+                <div class="invalid-feedback">
+                  @if (f['email'].errors?.['required']) { <span>Email is required.</span> }
+                  @if (f['email'].errors?.['invalidEmail']) { <span>Please enter a valid email address.</span> }
+                </div>
+                }
+              </div>
+
+              <!-- PHONE -->
+              <div class="mb-3">
+                <label for="mobileNumber" class="form-label fw-semibold">Mobile Number</label>
+                <input type="tel" id="mobileNumber" class="form-control" placeholder="10-digit mobile number"
+                  formControlName="mobileNumber"
+                  [ngClass]="{ 'is-invalid': f['mobileNumber'].invalid && (f['mobileNumber'].dirty || f['mobileNumber'].touched) }">
+                @if (f['mobileNumber'].invalid && (f['mobileNumber'].dirty || f['mobileNumber'].touched)) {
+                <div class="invalid-feedback">
+                  @if (f['mobileNumber'].errors?.['required']) { <span>Phone number is required.</span> }
+                  @if (f['mobileNumber'].errors?.['invalidPhone']) { <span>Enter a valid Indian mobile number.</span> }
+                </div>
+                }
+              </div>
+
+              <!-- ADDRESS -->
+              <div class="mb-3">
+                <label for="address" class="form-label fw-semibold">Address <span
+                    class="text-muted fw-normal">(Optional)</span></label>
+                <input type="text" id="address" class="form-control" placeholder="Enter your address"
+                  formControlName="address">
+              </div>
+
+              <!-- PASSWORD -->
+              <div class="mb-3">
+                <label for="password" class="form-label fw-semibold">Password</label>
+                <input type="password" id="password" class="form-control" placeholder="Enter your password"
+                  formControlName="password"
+                  [ngClass]="{ 'is-invalid': f['password'].invalid && (f['password'].dirty || f['password'].touched) }">
+                @if (f['password'].invalid && (f['password'].dirty || f['password'].touched)) {
+                <div class="invalid-feedback">
+                  @if (f['password'].errors?.['required']) { <span>Password is required.</span> }
+                  @if (f['password'].errors?.['length']) { <span>Password must be 8 to 20 characters.</span> }
+                  @if (f['password'].errors?.['missingUppercase']) { <span>Password must contain at least 1 uppercase letter.</span> }
+                  @if (f['password'].errors?.['missingLowercase']) { <span>Password must contain at least 1 lowercase letter.</span> }
+                  @if (f['password'].errors?.['missingDigit']) { <span>Password must contain at least 1 digit.</span> }
+                  @if (f['password'].errors?.['missingSpecial']) { <span>Password must contain at least 1 special character.</span> }
+                </div>
+                }
+              </div>
+
+              <!-- CONFIRM PASSWORD -->
+              <div class="mb-4">
+                <label for="confirmPassword" class="form-label fw-semibold">Confirm Password</label>
+                <input type="password" id="confirmPassword" class="form-control" placeholder="Confirm your password"
+                  formControlName="confirmPassword"
+                  [ngClass]="{ 'is-invalid': f['confirmPassword'].invalid && (f['confirmPassword'].dirty || f['confirmPassword'].touched) }">
+                @if (f['confirmPassword'].invalid && (f['confirmPassword'].dirty || f['confirmPassword'].touched)) {
+                <div class="invalid-feedback">
+                  @if (f['confirmPassword'].errors?.['required']) { <span>Confirm Password is required</span> }
+                  @if (f['confirmPassword'].errors?.['passwordMismatch']) { <span>Passwords do not match</span> }
+                </div>
+                }
+              </div>
+
+              <!-- REGISTER BUTTON -->
+              <button type="submit" class="btn btn-rb-primary w-100 py-2"
+                [disabled]="loading() || registerForm.invalid">
+                @if (loading()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                Registering...
+                } @else {
+                Create Account
+                }
+              </button>
+
+            </form>
+
+            <!-- LOGIN -->
+            <div class="text-center mt-4">
+              <span class="text-secondary">Already have an account?</span>
+              <a routerLink="/login" class="text-rb-primary text-decoration-none fw-semibold ms-1">Login</a>
+            </div>
+
+            <!-- BROWSE -->
+            <div class="text-center mt-3">
+              <a routerLink="/" class="browse-link text-muted text-decoration-none small">
+                <i class="bi bi-arrow-left me-1"></i>Back to home
+              </a>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

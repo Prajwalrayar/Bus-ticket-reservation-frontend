@@ -1,0 +1,287 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Prajwal",
+      "email": "prajwal@gmail.com",
+      "phone": "9876543210",
+      "password": "123456",
+      "role": "PASSENGER"
+    },
+    {
+      "id": 2,
+      "name": "Bus Operator",
+      "email": "operator@gmail.com",
+      "phone": "9876543211",
+      "password": "123456",
+      "role": "BUS_OPERATOR"
+    },
+    {
+      "id": 3,
+      "name": "Ram",
+      "email": "ram@gmail.com",
+      "phone": "123456789",
+      "password": "123456",
+      "role": "PASSENGER"
+    }
+  ],
+
+  "trips": [
+    {
+      "tripId": "TRIP001",
+      "travelDate": "2026-09-02",
+      "departureTime": "21:30",
+      "arrivalTime": "06:00",
+      "baseFare": 850,
+      "isCancelled": false,
+      "cancellationReason": "",
+      "source": "Bangalore",
+      "destination": "Chennai",
+      "busRegistrationNumber": "KA 22 F 7689",
+      "busType": "AC Sleeper",
+      "amenities": [
+        "WiFi",
+        "Charging Point",
+        "Blanket"
+      ],
+      "operatorName": "VRL Travels",
+      "totalSeats": 40,
+      "availableSeats": 12
+    },
+    {
+      "tripId": "TRIP002",
+      "travelDate": "2026-09-02",
+      "departureTime": "22:00",
+      "arrivalTime": "07:00",
+      "baseFare": 650,
+      "isCancelled": false,
+      "cancellationReason": "",
+      "source": "Bangalore",
+      "destination": "Belagavi",
+      "busRegistrationNumber": "KA 01 AB 4521",
+      "busType": "AC Seater",
+      "amenities": [
+        "WiFi",
+        "Charging Point"
+      ],
+      "operatorName": "SRS Travels",
+      "totalSeats": 45,
+      "availableSeats": 25
+    },
+    {
+      "tripId": "TRIP003",
+      "travelDate": "2026-09-02",
+      "departureTime": "20:45",
+      "arrivalTime": "05:30",
+      "baseFare": 950,
+      "isCancelled": false,
+      "cancellationReason": "",
+      "source": "Bangalore",
+      "destination": "Mumbai",
+      "busRegistrationNumber": "TN 38 X 9021",
+      "busType": "AC Sleeper",
+      "amenities": [
+        "WiFi",
+        "Charging Point",
+        "Blanket",
+        "Water Bottle"
+      ],
+      "operatorName": "Orange Tours",
+      "totalSeats": 36,
+      "availableSeats": 8
+    },
+    {
+      "tripId": "TRIP004",
+      "travelDate": "2026-09-02",
+      "departureTime": "23:15",
+      "arrivalTime": "08:30",
+      "baseFare": 550,
+      "isCancelled": false,
+      "cancellationReason": "",
+      "source": "Bangalore",
+      "destination": "Chennai",
+      "busRegistrationNumber": "KA 05 CD 7788",
+      "busType": "Non AC Seater",
+      "amenities": [
+        "Charging Point"
+      ],
+      "operatorName": "Kallada Travels",
+      "totalSeats": 50,
+      "availableSeats": 32
+    },
+    {
+      "tripId": "TRIP005",
+      "travelDate": "2026-09-02",
+      "departureTime": "21:00",
+      "arrivalTime": "07:00",
+      "baseFare": 900,
+      "isCancelled": false,
+      "cancellationReason": "",
+      "source": "Hyderabad",
+      "destination": "Bangalore",
+      "busRegistrationNumber": "TS 09 EF 1234",
+      "busType": "AC Sleeper",
+      "amenities": [
+        "WiFi",
+        "Charging Point",
+        "Blanket"
+      ],
+      "operatorName": "Orange Tours",
+      "totalSeats": 36,
+      "availableSeats": 15
+    }
+  ],
+
+  "tripSeats": [
+    {
+      "tripSeatId": 1,
+      "tripId": "TRIP001",
+      "seatNumber": "A1",
+      "seatStatus": "AVAILABLE"
+    },
+    {
+      "tripSeatId": 2,
+      "tripId": "TRIP001",
+      "seatNumber": "A2",
+      "seatStatus": "BOOKED"
+    },
+    {
+      "tripSeatId": 3,
+      "tripId": "TRIP001",
+      "seatNumber": "A3",
+      "seatStatus": "AVAILABLE"
+    },
+    {
+      "tripSeatId": 4,
+      "tripId": "TRIP001",
+      "seatNumber": "A4",
+      "seatStatus": "AVAILABLE"
+    },
+    {
+      "tripSeatId": 5,
+      "tripId": "TRIP001",
+      "seatNumber": "B1",
+      "seatStatus": "BOOKED"
+    },
+    {
+      "tripSeatId": 6,
+      "tripId": "TRIP001",
+      "seatNumber": "B2",
+      "seatStatus": "AVAILABLE"
+    },
+    {
+      "tripSeatId": 7,
+      "tripId": "TRIP001",
+      "seatNumber": "B3",
+      "seatStatus": "AVAILABLE"
+    },
+    {
+      "tripSeatId": 8,
+      "tripId": "TRIP001",
+      "seatNumber": "B4",
+      "seatStatus": "AVAILABLE"
+    },
+
+    {
+      "tripSeatId": 9,
+      "tripId": "TRIP002",
+      "seatNumber": "A1",
+      "seatStatus": "AVAILABLE"
+    },
+    {
+      "tripSeatId": 10,
+      "tripId": "TRIP002",
+      "seatNumber": "A2",
+      "seatStatus": "AVAILABLE"
+    },
+    {
+      "tripSeatId": 11,
+      "tripId": "TRIP002",
+      "seatNumber": "A3",
+      "seatStatus": "BOOKED"
+    },
+    {
+      "tripSeatId": 12,
+      "tripId": "TRIP002",
+      "seatNumber": "A4",
+      "seatStatus": "AVAILABLE"
+    },
+
+    {
+      "tripSeatId": 13,
+      "tripId": "TRIP003",
+      "seatNumber": "A1",
+      "seatStatus": "AVAILABLE"
+    },
+    {
+      "tripSeatId": 14,
+      "tripId": "TRIP003",
+      "seatNumber": "A2",
+      "seatStatus": "AVAILABLE"
+    },
+    {
+      "tripSeatId": 15,
+      "tripId": "TRIP003",
+      "seatNumber": "A3",
+      "seatStatus": "BOOKED"
+    },
+    {
+      "tripSeatId": 16,
+      "tripId": "TRIP003",
+      "seatNumber": "A4",
+      "seatStatus": "AVAILABLE"
+    },
+
+    {
+      "tripSeatId": 17,
+      "tripId": "TRIP004",
+      "seatNumber": "A1",
+      "seatStatus": "AVAILABLE"
+    },
+    {
+      "tripSeatId": 18,
+      "tripId": "TRIP004",
+      "seatNumber": "A2",
+      "seatStatus": "AVAILABLE"
+    },
+    {
+      "tripSeatId": 19,
+      "tripId": "TRIP004",
+      "seatNumber": "A3",
+      "seatStatus": "AVAILABLE"
+    },
+    {
+      "tripSeatId": 20,
+      "tripId": "TRIP004",
+      "seatNumber": "A4",
+      "seatStatus": "BOOKED"
+    },
+
+    {
+      "tripSeatId": 21,
+      "tripId": "TRIP005",
+      "seatNumber": "A1",
+      "seatStatus": "AVAILABLE"
+    },
+    {
+      "tripSeatId": 22,
+      "tripId": "TRIP005",
+      "seatNumber": "A2",
+      "seatStatus": "AVAILABLE"
+    },
+    {
+      "tripSeatId": 23,
+      "tripId": "TRIP005",
+      "seatNumber": "A3",
+      "seatStatus": "BOOKED"
+    },
+    {
+      "tripSeatId": 24,
+      "tripId": "TRIP005",
+      "seatNumber": "A4",
+      "seatStatus": "AVAILABLE"
+    }
+  ],
+
+  "bookings": []
+}

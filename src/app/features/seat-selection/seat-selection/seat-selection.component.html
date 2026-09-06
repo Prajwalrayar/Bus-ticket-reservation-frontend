@@ -1,0 +1,384 @@
+<div class="seat-selection-page">
+
+    <div class="container py-4">
+
+
+        <!-- BACK -->
+
+        <button type="button" class="btn btn-outline-secondary mb-4" (click)="goBack()">
+
+            <i class="bi bi-arrow-left me-2"></i>
+
+            Back to buses
+
+        </button>
+
+
+        <!-- LOADING -->
+
+        @if (loading()) {
+
+        <div class="text-center py-5">
+
+            <div class="spinner-border text-rb-primary mb-3">
+            </div>
+
+            <div class="text-secondary">
+
+                Loading bus details...
+
+            </div>
+
+        </div>
+
+        }
+
+
+        <!-- ERROR -->
+
+        @if (!loading() && errorMessage()) {
+
+        <div class="alert alert-danger">
+
+            {{ errorMessage() }}
+
+        </div>
+
+        }
+
+
+        <!-- CONTENT -->
+
+        @if (!loading() && !errorMessage() && bus()) {
+
+        <div class="row g-4">
+
+
+            <!-- SEAT AREA -->
+
+            <div class="col-lg-8">
+
+                <div class="card border-0 shadow-sm">
+
+                    <div class="card-body p-4">
+
+
+                        <h3 class="fw-bold mb-1">
+
+                            Select Your Seats
+
+                        </h3>
+
+                        <p class="text-secondary mb-4">
+
+                            Choose your preferred seats
+
+                        </p>
+
+
+                        <!-- BUS DETAILS -->
+
+                        <div class="bus-summary mb-4">
+
+                            <h5 class="fw-bold mb-1">
+
+                                {{ bus()!.operatorName }}
+
+                            </h5>
+
+                            <div class="text-secondary">
+
+                                {{ bus()!.source }}
+
+                                <span class="text-rb-primary mx-2">
+                                    →
+                                </span>
+
+                                {{ bus()!.destination }}
+
+                            </div>
+
+                            <div class="text-secondary small mt-1">
+
+                                {{ bus()!.departureTime }}
+
+                                →
+
+                                {{ bus()!.arrivalTime }}
+
+                                <span class="mx-2">•</span>
+
+                                {{ bus()!.busType }}
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- LEGEND -->
+
+                        <div class="seat-legend mb-4">
+
+                            <div>
+
+                                <span class="legend-seat available">
+                                </span>
+
+                                Available
+
+                            </div>
+
+
+                            <div>
+
+                                <span class="legend-seat selected">
+                                </span>
+
+                                Selected
+
+                            </div>
+
+
+                            <div>
+
+                                <span class="legend-seat occupied">
+                                </span>
+
+                                Occupied
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- BUS INTERIOR SHELL -->
+                        <div class="bus-interior-shell mx-auto">
+                            
+                            <!-- DRIVER CABIN -->
+                            <div class="driver-cabin mb-4 text-end px-4 py-3 border-bottom">
+                                <div class="driver-steering d-inline-block text-secondary">
+                                    <i class="bi bi-vinyl fs-3"></i>
+                                    <div class="small fw-semibold mt-1">DRIVER</div>
+                                </div>
+                            </div>
+
+                            <!-- DECKS -->
+                            <div class="decks-container px-3 pb-4">
+                                @if (noSeatsFound()) {
+                                    <div class="text-center py-5 text-secondary">
+                                        <i class="bi bi-exclamation-circle fs-2 mb-3 d-block"></i>
+                                        <p class="fw-semibold">No seats available for this trip yet.</p>
+                                        <p class="small">The operator may not have configured seats for this journey. Please try a different trip.</p>
+                                    </div>
+                                }
+                                @if (lowerDeckLayout(); as lower) {
+                                    <div class="deck mb-5">
+                                        <h5 class="deck-title text-center mb-4 text-secondary">{{ lower.deckName }}</h5>
+                                        
+                                        @for (row of lower.rows; track row.rowId) {
+                                            <div class="bus-row d-flex justify-content-between align-items-center mb-3">
+                                                <!-- LEFT SEATS -->
+                                                <div class="seats-left d-flex gap-2">
+                                                    @for (seat of row.leftSeats; track seat.tripSeatId) {
+                                                        <ng-container *ngTemplateOutlet="seatBtn; context: { $implicit: seat }"></ng-container>
+                                                    }
+                                                </div>
+                                                
+                                                <!-- AISLE -->
+                                                <div class="aisle text-center flex-grow-1">
+                                                    <!-- Visual gap -->
+                                                </div>
+
+                                                <!-- RIGHT SEATS -->
+                                                <div class="seats-right d-flex gap-2">
+                                                    @for (seat of row.rightSeats; track seat.tripSeatId) {
+                                                        <ng-container *ngTemplateOutlet="seatBtn; context: { $implicit: seat }"></ng-container>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+
+                                @if (upperDeckLayout(); as upper) {
+                                    <div class="deck mt-5 pt-3 border-top">
+                                        <h5 class="deck-title text-center mb-4 text-secondary">{{ upper.deckName }}</h5>
+                                        
+                                        @for (row of upper.rows; track row.rowId) {
+                                            <div class="bus-row d-flex justify-content-between align-items-center mb-3">
+                                                <!-- LEFT SEATS -->
+                                                <div class="seats-left d-flex gap-2">
+                                                    @for (seat of row.leftSeats; track seat.tripSeatId) {
+                                                        <ng-container *ngTemplateOutlet="seatBtn; context: { $implicit: seat }"></ng-container>
+                                                    }
+                                                </div>
+                                                
+                                                <!-- AISLE -->
+                                                <div class="aisle text-center flex-grow-1"></div>
+
+                                                <!-- RIGHT SEATS -->
+                                                <div class="seats-right d-flex gap-2">
+                                                    @for (seat of row.rightSeats; track seat.tripSeatId) {
+                                                        <ng-container *ngTemplateOutlet="seatBtn; context: { $implicit: seat }"></ng-container>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- REUSABLE SEAT BUTTON TEMPLATE -->
+                        <ng-template #seatBtn let-seat>
+                            <button type="button" 
+                                class="seat-btn shadow-sm"
+                                [class.is-sleeper]="bus()!.busType.toUpperCase().includes('SLEEPER') || seat.seatPosition.toString().includes('UPPER')"
+                                [class.available]="seat.seatStatus === 'AVAILABLE' && !isSelected(seat)"
+                                [class.occupied]="seat.seatStatus === 'TEMPORARILY_LOCKED' || seat.seatStatus === 'BOOKED'"
+                                [class.locked]="seat.seatStatus === 'TEMPORARILY_LOCKED'"
+                                [class.selected]="isSelected(seat)"
+                                [disabled]="seat.seatStatus === 'BOOKED' || seat.seatStatus === 'TEMPORARILY_LOCKED'"
+                                (click)="selectSeat(seat)"
+                                [attr.aria-label]="'Seat ' + seat.seatNumber + ', ' + seat.seatStatus">
+                                <span class="seat-number fw-bold">{{ seat.seatNumber }}</span>
+                                @if (seat.seatStatus === 'TEMPORARILY_LOCKED') {
+                                    <span class="seat-sub small"><i class="bi bi-lock-fill"></i></span>
+                                }
+                                @if (seat.seatStatus === 'BOOKED') {
+                                    <span class="seat-sub small"><i class="bi bi-person-fill"></i></span>
+                                }
+                                @if (isSelected(seat)) {
+                                    <span class="seat-sub small"><i class="bi bi-check-lg"></i></span>
+                                }
+                            </button>
+                        </ng-template>
+
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- BOOKING SUMMARY -->
+
+            <div class="col-lg-4">
+
+                <div class="card border-0 shadow-sm">
+
+                    <div class="card-body p-4">
+
+
+                        <h4 class="fw-bold mb-4">
+
+                            Booking Summary
+
+                        </h4>
+
+
+                        <div class="d-flex justify-content-between mb-3">
+
+                            <span class="text-secondary">
+                                Bus
+                            </span>
+
+                            <span class="fw-semibold">
+
+                                {{ bus()!.operatorName }}
+
+                            </span>
+
+                        </div>
+
+
+                        <div class="d-flex justify-content-between mb-3">
+
+                            <span class="text-secondary">
+                                Selected Seats
+                            </span>
+
+                            <span class="fw-semibold">
+
+                                {{ selectedSeats().length }}
+
+                            </span>
+
+                        </div>
+
+
+                        <!-- SELECTED SEATS -->
+
+                        <div class="selected-seat-list mb-4">
+
+                            @if (selectedSeats().length === 0) {
+
+                            <div class="text-secondary small">
+
+                                No seats selected
+
+                            </div>
+
+                            }
+
+
+                            @for (
+                            seat of selectedSeats();
+                            track seat.tripSeatId
+                            ) {
+
+                            <span class="badge text-bg-light me-2 mb-2">
+
+                                {{ seat.seatNumber }}
+
+                            </span>
+
+                            }
+
+                        </div>
+
+
+                        <hr>
+
+
+                        <div class="d-flex justify-content-between mb-4">
+
+                            <span class="fw-semibold">
+
+                                Total
+
+                            </span>
+
+                            <span class="fw-bold fs-5 text-rb-primary">
+
+                                ₹{{ getTotalAmount() }}
+
+                            </span>
+
+                        </div>
+
+
+                        <button type="button" class="btn btn-rb-primary w-100" 
+                        [disabled]="selectedSeats().length === 0"
+                            (click)="continueBooking()">
+
+                            Continue
+
+                        </button>
+
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+        }
+
+    </div>
+
+</div>

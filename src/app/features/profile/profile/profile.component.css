@@ -1,0 +1,50 @@
+.profile-page {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.avatar-circle {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-nav .list-group-item {
+  border: none;
+  border-bottom: 1px solid #f1f3f5;
+  color: #495057;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.profile-nav .list-group-item:last-child {
+  border-bottom: none;
+}
+
+.profile-nav .list-group-item.active {
+  background-color: transparent;
+  color: #dc3545;
+  border-left: 4px solid #dc3545;
+}
+
+.profile-nav .list-group-item:hover:not(.active) {
+  background-color: #f8f9fa;
+  color: #dc3545;
+}
+
+.booking-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.booking-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.form-control {
+  border-radius: 8px;
+  min-height: 45px;
+}

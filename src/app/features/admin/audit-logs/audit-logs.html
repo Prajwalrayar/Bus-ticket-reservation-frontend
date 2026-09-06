@@ -1,0 +1,159 @@
+<div class="container py-4">
+  <div class="row mb-4">
+    <div class="col">
+      <h2 class="mb-0 fw-bold">Audit Logs</h2>
+      <p class="text-muted">Search and review system activity</p>
+    </div>
+  </div>
+
+  <div class="row mb-4">
+    <div class="col-md-12">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+          <ul class="nav nav-tabs card-header-tabs">
+            <li class="nav-item">
+              <a class="nav-link cursor-pointer text-dark" [class.active]="activeTab === 'all'" (click)="setTab('all')">
+                <i class="bi bi-list-task me-1"></i> All Logs
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link cursor-pointer text-dark" [class.active]="activeTab === 'action'" (click)="setTab('action')">
+                <i class="bi bi-lightning-charge me-1"></i> Search by Action
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link cursor-pointer text-dark" [class.active]="activeTab === 'entity'" (click)="setTab('entity')">
+                <i class="bi bi-box me-1"></i> Search by Entity
+              </a>
+            </li>
+          </ul>
+        </div>
+        <div class="card-body p-4">
+          
+          <!-- Search by Action -->
+          @if (activeTab === 'action') {
+            <form (ngSubmit)="searchByAction()" class="row g-3 align-items-end">
+              <div class="col-md-6">
+                <label class="form-label text-muted small fw-semibold">Action Name <span class="text-rb-primary">*</span></label>
+                <input type="text" class="form-control" name="searchAction" [(ngModel)]="searchAction" 
+                       placeholder="e.g. CREATE_BOOKING, CANCEL_BOOKING" required #actName="ngModel" [class.is-invalid]="actName.invalid && (actName.dirty || actName.touched)">
+                @if (actName.invalid && (actName.dirty || actName.touched)) {
+                  <div class="invalid-feedback">Action Name is required.</div>
+                }
+              </div>
+              <div class="col-md-2">
+                <button type="submit" class="btn btn-rb-primary w-100" [disabled]="!searchAction.trim() || isLoading">
+                  <i class="bi bi-search me-1"></i> Search
+                </button>
+              </div>
+            </form>
+          }
+
+          <!-- Search by Entity -->
+          @if (activeTab === 'entity') {
+            <form (ngSubmit)="searchByEntity()" class="row g-3 align-items-end">
+              <div class="col-md-4">
+                <label class="form-label text-muted small fw-semibold">Entity Name <span class="text-rb-primary">*</span></label>
+                <input type="text" class="form-control" name="searchEntityName" [(ngModel)]="searchEntityName" 
+                       placeholder="e.g. Booking, User, Bus" required #entName="ngModel" [class.is-invalid]="entName.invalid && (entName.dirty || entName.touched)">
+                @if (entName.invalid && (entName.dirty || entName.touched)) {
+                  <div class="invalid-feedback">Entity Name is required.</div>
+                }
+              </div>
+              <div class="col-md-4">
+                <label class="form-label text-muted small fw-semibold">Entity Reference <span class="text-rb-primary">*</span></label>
+                <input type="text" class="form-control" name="searchEntityReference" [(ngModel)]="searchEntityReference" 
+                       placeholder="e.g. BKG-12345" required #entRef="ngModel" [class.is-invalid]="entRef.invalid && (entRef.dirty || entRef.touched)">
+                @if (entRef.invalid && (entRef.dirty || entRef.touched)) {
+                  <div class="invalid-feedback">Entity Reference is required.</div>
+                }
+              </div>
+              <div class="col-md-2">
+                <button type="submit" class="btn btn-rb-primary w-100" [disabled]="!searchEntityName.trim() || !searchEntityReference.trim() || isLoading">
+                  <i class="bi bi-search me-1"></i> Search
+                </button>
+              </div>
+            </form>
+          }
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Section -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+          
+          @if (errorMessage) {
+            <div class="alert alert-danger">{{ errorMessage }}</div>
+          }
+
+          @if (isLoading) {
+            <div class="text-center py-5">
+              <div class="spinner-border text-rb-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <p class="text-muted mt-3 mb-0">Searching audit logs...</p>
+            </div>
+          } @else if (!hasSearched) {
+            <div class="text-center py-5 text-muted">
+              <i class="bi bi-search fs-1 d-block mb-3 text-secondary opacity-50"></i>
+              <p class="mb-0">Perform a search to view audit logs.</p>
+            </div>
+          } @else if (auditLogs.length === 0) {
+            <div class="text-center py-5 text-muted">
+              <i class="bi bi-inbox fs-1 d-block mb-3 text-secondary opacity-50"></i>
+              <p class="mb-0">No audit logs found matching your criteria.</p>
+            </div>
+          } @else {
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Date/Time</th>
+                    <th>Action</th>
+                    <th>Entity</th>
+                    <th>Reference</th>
+                    <th>Description</th>
+                    <th>Performed By</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (log of auditLogs; track log.auditLogId) {
+                    <tr>
+                      <td class="text-nowrap text-muted small">
+                        {{ log.createdAt | date:'medium' }}
+                      </td>
+                      <td>
+                        <span class="badge bg-secondary rounded-pill px-2 py-1 fw-normal">
+                          {{ log.action }}
+                        </span>
+                      </td>
+                      <td>{{ log.entityName }}</td>
+                      <td class="font-monospace small">{{ log.entityReference }}</td>
+                      <td>{{ log.description }}</td>
+                      <td>
+                        @if (log.performedByUserName) {
+                          <span class="d-flex align-items-center">
+                            <i class="bi bi-person-circle me-2 text-muted"></i>
+                            {{ log.performedByUserName }}
+                          </span>
+                        } @else {
+                          <span class="text-muted fst-italic">System</span>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

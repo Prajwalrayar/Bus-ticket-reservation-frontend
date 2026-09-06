@@ -1,0 +1,154 @@
+:host {
+  display: block;
+}
+
+/* ── User Avatar ─────────────────────────────────── */
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0;
+}
+
+.user-menu-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 24px;
+  padding: 4px 12px 4px 4px;
+  color: #fff !important;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.user-menu-btn:hover,
+.user-menu-btn:focus {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #fff !important;
+}
+
+.user-menu-btn::after {
+  color: rgba(255, 255, 255, 0.7);
+  margin-left: 2px;
+}
+
+.user-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Notification Bell ───────────────────────────── */
+.btn-nav-icon {
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-size: 1.15rem;
+  padding: 6px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.btn-nav-icon:hover {
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ── User Dropdown ───────────────────────────────── */
+.user-dropdown {
+  min-width: 220px;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  padding: 8px 0;
+  margin-top: 8px !important;
+}
+
+.user-dropdown .dropdown-header {
+  padding: 12px 16px;
+}
+
+.user-dropdown-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
+
+.user-dropdown-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.role-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: #f5d0d2;
+  color: #b83b42;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.user-dropdown .dropdown-item {
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 8px 16px;
+  transition: all 0.15s ease;
+}
+
+.user-dropdown .dropdown-item:hover {
+  background: #fff5f5;
+}
+
+.user-dropdown .dropdown-item i {
+  width: 18px;
+  text-align: center;
+  color: #757575;
+}
+
+.user-dropdown .dropdown-item:hover i {
+  color: #d84e55;
+}
+
+.user-dropdown .dropdown-item.text-danger:hover {
+  background: #fef2f2;
+}
+
+.user-dropdown .dropdown-item.text-danger i {
+  color: #dc3545;
+}
+
+.user-dropdown .dropdown-divider {
+  margin: 4px 0;
+  border-color: #f0f0f0;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.appearance-toggle:hover {
+  background: #fff5f5;
+}
+
+.appearance-toggle:hover i {
+  color: #d84e55;
+}

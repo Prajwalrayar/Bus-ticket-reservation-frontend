@@ -1,0 +1,306 @@
+<div class="passenger-page">
+
+  <div class="container py-4">
+
+
+    <!-- ======================================================
+         BACK BUTTON
+    ======================================================= -->
+
+    <button
+      type="button"
+      class="btn btn-outline-secondary mb-4"
+      (click)="goBack()">
+      ← Back to seats
+
+    </button>
+
+
+    <div class="row g-4">
+
+
+      <!-- ====================================================
+           PASSENGER DETAILS
+      ===================================================== -->
+
+      <div class="col-lg-8">
+
+        <div class="card border-0 shadow-sm">
+
+          <div class="card-body p-4 p-md-5">
+
+
+            <!-- HEADER -->
+
+            <div class="mb-4">
+
+              <h2 class="fw-bold mb-2">
+                Passenger Details
+              </h2>
+
+              <p class="text-secondary mb-0">
+                Enter details for each passenger
+              </p>
+
+            </div>
+            <!-- BOARDING & DROPPING -->
+            <form #bookingForm="ngForm">
+            <div class="row g-3 mb-5">
+              <div class="col-md-6">
+                <label class="form-label fw-bold"><i class="bi bi-geo-alt text-primary me-2"></i>Boarding Point <span class="text-rb-primary">*</span></label>
+                <select class="form-select" [ngModel]="selectedBoardingPoint()" (ngModelChange)="selectedBoardingPoint.set($event)" name="boardingPoint" required #bp="ngModel" [class.is-invalid]="bp.invalid && (bp.dirty || bp.touched)">
+                  <option value="">Select Boarding Point</option>
+                  @for (stop of boardingPoints(); track stop.routeStopId) {
+                    <option [value]="stop.routeStopId">{{ stop.stopName }} ({{ stop.stopSequence }})</option>
+                  }
+                </select>
+                @if (bp.invalid && (bp.dirty || bp.touched)) {
+                  <div class="invalid-feedback">Please select a boarding point.</div>
+                }
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold"><i class="bi bi-geo-alt-fill text-rb-primary me-2"></i>Dropping Point <span class="text-rb-primary">*</span></label>
+                <select class="form-select" [ngModel]="selectedDroppingPoint()" (ngModelChange)="selectedDroppingPoint.set($event)" name="droppingPoint" required #dp="ngModel" [class.is-invalid]="dp.invalid && (dp.dirty || dp.touched)">
+                  <option value="">Select Dropping Point</option>
+                  @for (stop of droppingPoints(); track stop.routeStopId) {
+                    <option [value]="stop.routeStopId">{{ stop.stopName }} ({{ stop.stopSequence }})</option>
+                  }
+                </select>
+                @if (dp.invalid && (dp.dirty || dp.touched)) {
+                  <div class="invalid-feedback">Please select a dropping point.</div>
+                }
+              </div>
+            </div>
+
+            <!-- ERROR -->
+            @if (errorMessage()) {
+              <div class="alert alert-danger">{{ errorMessage() }}</div>
+            }
+
+            <!-- PASSENGERS -->
+            @for (passenger of passengers(); track passenger.seatNumber; let i = $index) {
+              <div class="passenger-card mb-4 border rounded p-4">
+                <div class="passenger-header d-flex justify-content-between mb-4 border-bottom pb-3">
+                  <div>
+                    <h5 class="fw-bold mb-1">Passenger {{ i + 1 }} {{ passenger.isPrimary ? '(Primary)' : '' }}</h5>
+                    <span class="text-secondary">Seat {{ passenger.seatNumber }}</span>
+                  </div>
+                  <span class="seat-badge bg-rb-primary text-white rounded px-3 py-1">{{ passenger.seatNumber }}</span>
+                </div>
+
+                @if (mySavedPassengers().length > 0) {
+                  <div class="mb-4 p-3 bg-light rounded border border-secondary border-opacity-25">
+                    <label class="form-label fw-semibold text-primary mb-2"><i class="bi bi-person-lines-fill me-2"></i>Select Saved Passenger (Optional)</label>
+                    <select class="form-select" (change)="applySavedPassenger(i, $event)">
+                      <option value="">-- Choose a profile to auto-fill --</option>
+                      @for (saved of mySavedPassengers(); track saved.savedPassengerId) {
+                        <option [value]="saved.savedPassengerId">{{ saved.passengerName }} ({{ saved.age }}y, {{ saved.gender }})</option>
+                      }
+                    </select>
+                  </div>
+                }
+
+                <div class="mb-3">
+                  <label [for]="'name' + i" class="form-label">Full Name <span class="text-rb-primary">*</span></label>
+                  <input type="text" [id]="'name' + i" class="form-control" placeholder="Enter passenger name" [ngModel]="passenger.passengerName" (ngModelChange)="updatePassenger(i, 'passengerName', $event)" [name]="'passengerName' + i" required #pName="ngModel" [class.is-invalid]="pName.invalid && (pName.dirty || pName.touched)">
+                  @if (pName.invalid && (pName.dirty || pName.touched)) {
+                    <div class="invalid-feedback">Name is required.</div>
+                  }
+                </div>
+
+                <div class="mb-3">
+                  <label [for]="'age' + i" class="form-label">Age <span class="text-rb-primary">*</span></label>
+                  <input type="number" [id]="'age' + i" class="form-control" placeholder="Enter age" min="1" max="120" [ngModel]="passenger.age ?? ''" (ngModelChange)="updatePassenger(i, 'age', $event ? +$event : null)" [name]="'age' + i" required #pAge="ngModel" [class.is-invalid]="pAge.invalid && (pAge.dirty || pAge.touched)">
+                  @if (pAge.invalid && (pAge.dirty || pAge.touched)) {
+                    <div class="invalid-feedback">
+                      @if (pAge.errors?.['required']) { <span>Age is required.</span> }
+                      @if (pAge.errors?.['min'] || pAge.errors?.['max']) { <span>Age must be between 1 and 120.</span> }
+                    </div>
+                  }
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Gender <span class="text-rb-primary">*</span></label>
+                  <div class="row g-2">
+                    <div class="col-12 col-md-4">
+                      <label class="gender-option d-block border rounded p-2 text-center" [class.border-rb-primary]="passenger.gender === 'MALE'" [class.text-rb-primary]="passenger.gender === 'MALE'" style="cursor:pointer">
+                        <span>Male</span>
+                        <input type="radio" class="d-none" [name]="'gender' + i" value="MALE" [ngModel]="passenger.gender" (ngModelChange)="updatePassenger(i, 'gender', 'MALE')" required #pGender="ngModel">
+                      </label>
+                    </div>
+                    <div class="col-12 col-md-4">
+                      <label class="gender-option d-block border rounded p-2 text-center" [class.border-rb-primary]="passenger.gender === 'FEMALE'" [class.text-rb-primary]="passenger.gender === 'FEMALE'" style="cursor:pointer">
+                        <span>Female</span>
+                        <input type="radio" class="d-none" [name]="'gender' + i" value="FEMALE" [ngModel]="passenger.gender" (ngModelChange)="updatePassenger(i, 'gender', 'FEMALE')" required>
+                      </label>
+                    </div>
+                    <div class="col-12 col-md-4">
+                      <label class="gender-option d-block border rounded p-2 text-center" [class.border-rb-primary]="passenger.gender === 'OTHER'" [class.text-rb-primary]="passenger.gender === 'OTHER'" style="cursor:pointer">
+                        <span>Other</span>
+                        <input type="radio" class="d-none" [name]="'gender' + i" value="OTHER" [ngModel]="passenger.gender" (ngModelChange)="updatePassenger(i, 'gender', 'OTHER')" required>
+                      </label>
+                    </div>
+                  </div>
+                  <!-- Need to conditionally show the error since it's a radio group, checking pGender isn't easy to bind the class.is-invalid to labels, but we can just show the message -->
+                  @if (pGender.invalid && (pGender.dirty || pGender.touched)) {
+                    <div class="text-danger small mt-1">Gender is required.</div>
+                  }
+                </div>
+
+                @if (passenger.isPrimary) {
+                  <div class="mb-2">
+                    <label [for]="'phone' + i" class="form-label">Phone Number <span class="text-rb-primary">*</span></label>
+                    <input type="tel" [id]="'phone' + i" class="form-control" placeholder="Enter 10-digit phone number" maxlength="10" [ngModel]="passenger.contactNumber" (ngModelChange)="updatePassenger(i, 'contactNumber', $event)" [name]="'contactNumber' + i" required pattern="^[6-9]\d{9}$" #pPhone="ngModel" [class.is-invalid]="pPhone.invalid && (pPhone.dirty || pPhone.touched)">
+                    @if (pPhone.invalid && (pPhone.dirty || pPhone.touched)) {
+                      <div class="invalid-feedback">
+                        @if (pPhone.errors?.['required']) { <span>Phone number is required.</span> }
+                        @if (pPhone.errors?.['pattern']) { <span>Enter a valid 10-digit phone number.</span> }
+                      </div>
+                    }
+                  </div>
+                }
+
+              </div>
+            }
+
+
+            <!-- CONTINUE -->
+
+            @if (passengers().length > 0) {
+
+              <button
+                type="button"
+                class="btn btn-rb-primary w-100 py-3 fw-semibold"
+                (click)="continueBooking()" [disabled]="bookingForm.invalid">
+
+                Continue
+
+              </button>
+
+            }
+
+            </form>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- ====================================================
+           BOOKING SUMMARY
+      ===================================================== -->
+
+      <div class="col-lg-4">
+
+        <div class="card border-0 shadow-sm summary-card">
+
+          <div class="card-body p-4">
+
+
+            <h4 class="fw-bold mb-4">
+              Booking Summary
+            </h4>
+
+
+            <!-- ROUTE -->
+
+            <div class="summary-item">
+
+              <span class="text-secondary">
+                Route
+              </span>
+
+              <strong>
+
+                {{ fromCity() }}
+
+                <span class="text-rb-primary mx-1">
+                  →
+                </span>
+
+                {{ toCity() }}
+
+              </strong>
+
+            </div>
+
+
+            <!-- DATE -->
+
+            <div class="summary-item">
+
+              <span class="text-secondary">
+                Journey Date
+              </span>
+
+              <strong>
+                {{ journeyDate() }}
+              </strong>
+
+            </div>
+
+
+            <!-- BUS -->
+
+            @if (busName()) {
+
+              <div class="summary-item">
+
+                <span class="text-secondary">
+                  Bus
+                </span>
+
+                <strong>
+                  {{ busName() }}
+                </strong>
+
+              </div>
+
+            }
+
+
+            <!-- SEATS -->
+
+            <div class="summary-item">
+
+              <span class="text-secondary">
+                Selected Seats
+              </span>
+
+              <strong>
+                {{ selectedSeatNumbers().length }}
+              </strong>
+
+            </div>
+
+
+            <!-- SEAT LIST -->
+
+            <div class="selected-seats">
+
+              @for (
+                seat of selectedSeatNumbers();
+                track seat
+              ) {
+
+                <span class="seat-badge">
+                  {{ seat }}
+                </span>
+
+              }
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

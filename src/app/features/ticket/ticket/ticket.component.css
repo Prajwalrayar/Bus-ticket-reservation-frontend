@@ -1,0 +1,62 @@
+.ticket-page {
+  min-height: 100vh;
+  background-color: var(--rb-bg);
+}
+
+.ticket-wrapper {
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Create the ticket "notch" cutout effect */
+.ticket-wrapper::before,
+.ticket-wrapper::after {
+  content: '';
+  position: absolute;
+  top: 90px; /* Align with header bottom */
+  width: 20px;
+  height: 20px;
+  background-color: var(--rb-bg);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.ticket-wrapper::before {
+  left: -10px;
+}
+
+.ticket-wrapper::after {
+  right: -10px;
+}
+
+.border-dashed {
+  border-style: dashed !important;
+}
+
+.qr-placeholder {
+  width: 120px;
+  height: 120px;
+  border-radius: 8px;
+}
+
+/* Printing styles to remove UI clutter */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .ticket-page {
+    background-color: white;
+  }
+  
+  .ticket-wrapper {
+    box-shadow: none !important;
+    border: 1px solid #ccc;
+  }
+
+  .ticket-wrapper::before,
+  .ticket-wrapper::after {
+    display: none;
+  }
+}

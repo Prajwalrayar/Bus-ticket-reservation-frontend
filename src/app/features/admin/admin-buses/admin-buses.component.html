@@ -1,0 +1,86 @@
+<div class="row g-4">
+  <!-- Filters Sidebar -->
+  <div class="col-md-3">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold"><i class="bi bi-funnel me-2"></i>Filters</h6>
+        <button class="btn btn-link btn-sm text-decoration-none p-0" (click)="clearFilters()"
+          *ngIf="selectedCompanies.size > 0">Clear</button>
+      </div>
+      <div class="card-body">
+        <h6 class="text-muted small fw-bold mb-3">OPERATOR / COMPANY</h6>
+        @if (availableCompanies.length === 0 && !loading) {
+        <p class="text-muted small">No companies found.</p>
+        }
+        @for (company of availableCompanies; track company) {
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" [checked]="selectedCompanies.has(company)"
+            (change)="toggleCompanyFilter(company, $event)" [id]="'chk_'+company">
+          <label class="form-check-label" [for]="'chk_'+company">
+            {{ company }}
+          </label>
+        </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="col-md-9">
+    <div class="p-4 bg-white rounded shadow-sm">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0 fw-bold">Fleet Management</h4>
+      </div>
+
+      @if (loading) {
+      <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-secondary">Loading buses...</p>
+      </div>
+      } @else if (error) {
+      <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+      </div>
+      } @else if (filteredBuses.length === 0) {
+      <div class="alert alert-info text-center py-4">
+        <i class="bi bi-info-circle fs-3 d-block mb-2"></i>
+        No buses match the current filters.
+      </div>
+      } @else {
+      <div class="table-responsive">
+        <table class="table table-hover align-middle border">
+          <thead class="table-light">
+            <tr>
+              <th>Registration No.</th>
+              <th>Company</th>
+              <th>Type</th>
+              <th>Amenities</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (bus of filteredBuses; track bus.registrationNumber) {
+            <tr>
+              <td class="fw-bold">{{ bus.registrationNumber }}</td>
+              <td>{{ bus.operatorCompanyName }}</td>
+              <td><span class="badge bg-secondary">{{ bus.busType }}</span></td>
+              <td>{{ bus.amenities?.length || 0 }}</td>
+              <td>
+
+                @if (bus.isActive) {
+                <span class="badge bg-success">Active</span>
+                } @else {
+                <span class="badge bg-danger">Inactive</span>
+                }
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Modal removed -->

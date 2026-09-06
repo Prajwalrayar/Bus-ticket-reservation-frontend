@@ -1,0 +1,85 @@
+<div class="booking-success-page">
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+
+        @if (loading) {
+          <div class="text-center py-5">
+            <div class="spinner-border text-success mb-3" style="width: 3rem; height: 3rem;"></div>
+            <h5 class="fw-bold">Retrieving Booking Details...</h5>
+          </div>
+        }
+
+        @if (!loading && errorMessage) {
+          <div class="alert alert-danger text-center">
+            <i class="bi bi-exclamation-triangle fs-4 d-block mb-2"></i>
+            {{ errorMessage }}
+          </div>
+        }
+
+        @if (!loading && booking) {
+          <div class="card border-0 shadow-sm text-center p-4 p-md-5">
+            <i class="bi bi-check-circle-fill text-success mb-3" style="font-size: 5rem;"></i>
+            
+            <h2 class="fw-bold text-success mb-2">Booking Successful!</h2>
+            <p class="text-secondary mb-4">Your seats are secured and payment has been processed successfully.</p>
+
+            <div class="alert alert-light border d-inline-block px-4 py-3 mb-5">
+              <span class="text-secondary mb-1 d-block">Booking Reference Number</span>
+              <strong class="fs-4">{{ booking.bookingReference }}</strong>
+            </div>
+
+            <h4 class="fw-bold mb-4 text-start">Journey Summary</h4>
+            <div class="row g-4 text-start bg-light rounded p-4 mb-5 mx-0">
+              <div class="col-sm-6 col-md-3">
+                <span class="text-secondary d-block small">Bus Operator</span>
+                <strong class="fs-6">{{ trip?.operatorName || 'N/A' }}</strong>
+              </div>
+              <div class="col-sm-6 col-md-3">
+                <span class="text-secondary d-block small">Route</span>
+                <strong class="fs-6">{{ trip?.source }} &rarr; {{ trip?.destination }}</strong>
+              </div>
+              <div class="col-sm-6 col-md-3">
+                <span class="text-secondary d-block small">Journey Date</span>
+                <strong class="fs-6">{{ trip?.travelDate }}</strong>
+              </div>
+              <div class="col-sm-6 col-md-3">
+                <span class="text-secondary d-block small">Seats</span>
+                <strong class="fs-6">
+                  @for (seat of booking.bookingSeats; track seat.seatNumber) {
+                    <span class="badge bg-secondary me-1">{{ seat.seatNumber }}</span>
+                  }
+                </strong>
+              </div>
+            </div>
+
+            <h4 class="fw-bold mb-4 text-start">Payment Details</h4>
+            <div class="row g-4 text-start border rounded p-4 mx-0 mb-4">
+              <div class="col-sm-6">
+                <span class="text-secondary d-block small">Total Amount</span>
+                <strong class="fs-5 text-rb-primary">₹{{ booking.totalAmount }}</strong>
+              </div>
+              <div class="col-sm-6 text-sm-end">
+                <span class="text-secondary d-block small">Payment Status</span>
+                <span class="badge bg-success fs-6 px-3 py-2">
+                  <i class="bi bi-shield-check me-1"></i> PAID
+                </span>
+              </div>
+            </div>
+
+            <div class="d-flex flex-column flex-sm-row justify-content-center gap-3 mt-5">
+              <button class="btn btn-outline-secondary px-4 py-3 fw-bold" (click)="goHome()">
+                Back to Home
+              </button>
+              <button class="btn btn-rb-primary px-5 py-3 fw-bold" (click)="viewTicket()">
+                <i class="bi bi-ticket-detailed me-2"></i> View Ticket
+              </button>
+            </div>
+            
+          </div>
+        }
+
+      </div>
+    </div>
+  </div>
+</div>

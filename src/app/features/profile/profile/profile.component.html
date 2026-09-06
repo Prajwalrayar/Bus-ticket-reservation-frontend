@@ -1,0 +1,564 @@
+<div class="profile-page">
+  <div class="container py-5">
+    <div class="row g-4">
+      
+      <!-- Sidebar Navigation -->
+      <div class="col-lg-3">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body p-0">
+            <div class="p-4 bg-rb-primary text-white rounded-top text-center">
+              <div class="avatar-circle bg-white text-rb-primary fw-bold fs-3 mx-auto mb-2">
+                {{ myProfile?.userName?.charAt(0)?.toUpperCase() || 'U' }}
+              </div>
+              <h5 class="mb-0">{{ myProfile?.userName || 'Loading...' }}</h5>
+              <small>{{ myProfile?.userEmail || '...' }}</small>
+            </div>
+            
+            <div class="list-group list-group-flush profile-nav">
+              <button class="list-group-item list-group-item-action py-3"
+                      [class.active]="activeTab === 'BOOKINGS'"
+                      (click)="setTab('BOOKINGS')">
+                <i class="bi bi-ticket-detailed me-2"></i> My Bookings
+              </button>
+              <button class="list-group-item list-group-item-action py-3"
+                      [class.active]="activeTab === 'PASSENGERS'"
+                      (click)="setTab('PASSENGERS')">
+                <i class="bi bi-people me-2"></i> Saved Passengers
+              </button>
+              <button class="list-group-item list-group-item-action py-3"
+                      [class.active]="activeTab === 'SETTINGS'"
+                      (click)="setTab('SETTINGS')">
+                <i class="bi bi-gear me-2"></i> Account Settings
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content Area -->
+      <div class="col-lg-9">
+        
+        <!-- BOOKINGS TAB -->
+        @if (activeTab === 'BOOKINGS') {
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+              <h4 class="fw-bold mb-4">My Bookings</h4>
+
+              @if (cancelSuccess) {
+                <div class="alert alert-success alert-dismissible fade show">
+                  {{ cancelSuccess }}
+                  <button type="button" class="btn-close" (click)="cancelSuccess = ''"></button>
+                </div>
+              }
+              @if (cancelError) {
+                <div class="alert alert-danger alert-dismissible fade show">
+                  {{ cancelError }}
+                  <button type="button" class="btn-close" (click)="cancelError = ''"></button>
+                </div>
+              }
+
+              <!-- Sub Tabs -->
+              <ul class="nav nav-pills mb-4">
+                <li class="nav-item">
+                  <a class="nav-link active" data-bs-toggle="pill" href="#upcoming">Upcoming</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" data-bs-toggle="pill" href="#completed">Completed</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" data-bs-toggle="pill" href="#cancelled">Cancelled</a>
+                </li>
+              </ul>
+
+              <div class="tab-content">
+                <!-- Upcoming Tab -->
+                <div class="tab-pane fade show active" id="upcoming">
+                  @if (loadingBookings) {
+                    <div class="text-center py-4">
+                      <div class="spinner-border text-rb-primary" role="status"></div>
+                    </div>
+                  } @else if (upcomingBookings.length === 0) {
+                    <div class="text-center py-4 text-secondary">No upcoming bookings found.</div>
+                  } @else {
+                    @for (booking of upcomingBookings; track booking.bookingId) {
+                      <ng-container *ngTemplateOutlet="bookingCard; context: { $implicit: booking }"></ng-container>
+                    }
+                  }
+                </div>
+
+                <!-- Completed Tab -->
+                <div class="tab-pane fade" id="completed">
+                  @if (loadingBookings) {
+                    <div class="text-center py-4">
+                      <div class="spinner-border text-rb-primary" role="status"></div>
+                    </div>
+                  } @else if (completedBookings.length === 0) {
+                    <div class="text-center py-4 text-secondary">No completed bookings found.</div>
+                  } @else {
+                    @for (booking of completedBookings; track booking.bookingId) {
+                      <ng-container *ngTemplateOutlet="bookingCard; context: { $implicit: booking }"></ng-container>
+                    }
+                  }
+                </div>
+
+                <!-- Cancelled Tab -->
+                <div class="tab-pane fade" id="cancelled">
+                  @if (loadingBookings) {
+                    <div class="text-center py-4">
+                      <div class="spinner-border text-rb-primary" role="status"></div>
+                    </div>
+                  } @else if (cancelledBookings.length === 0) {
+                    <div class="text-center py-4 text-secondary">No cancelled bookings found.</div>
+                  } @else {
+                    @for (booking of cancelledBookings; track booking.bookingId) {
+                      <ng-container *ngTemplateOutlet="bookingCard; context: { $implicit: booking }"></ng-container>
+                    }
+                  }
+                </div>
+              </div>
+              
+            </div>
+          </div>
+        }
+
+        <!-- SAVED PASSENGERS TAB -->
+        @if (activeTab === 'PASSENGERS') {
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+              <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="fw-bold mb-0">Saved Passengers</h4>
+                <button class="btn btn-rb-primary btn-sm px-3" (click)="openPassengerModal()">
+                  <i class="bi bi-plus-lg me-1"></i> Add New
+                </button>
+              </div>
+              
+              @if (loadingPassengers) {
+                <div class="text-center py-4">
+                  <div class="spinner-border text-rb-primary" role="status"></div>
+                </div>
+              } @else if (savedPassengers.length === 0) {
+                <div class="text-center py-5 text-secondary bg-light rounded border border-dashed">
+                  <i class="bi bi-people fs-1 d-block mb-2 text-muted"></i>
+                  <p class="mb-0">No saved passengers found.</p>
+                  <small>Add passengers to auto-fill details during booking.</small>
+                </div>
+              } @else {
+                <div class="row g-3">
+                  @for (passenger of savedPassengers; track passenger.savedPassengerId) {
+                    <div class="col-md-6">
+                      <div class="border rounded p-3 d-flex justify-content-between align-items-start hover-shadow transition-all bg-white">
+                        <div>
+                          <div class="d-flex align-items-center mb-1">
+                            <h6 class="fw-bold mb-0 me-2">{{ passenger.passengerName }}</h6>
+                            <span class="badge bg-light text-dark border border-secondary border-opacity-25 rounded-pill" style="font-size: 0.7rem;">
+                              {{ passenger.gender }}
+                            </span>
+                          </div>
+                          <small class="text-secondary d-block mb-1">{{ passenger.age }} yrs old</small>
+                          
+                          @if (passenger.idType && passenger.idNumber) {
+                            <small class="text-muted d-block"><i class="bi bi-card-text me-1"></i>{{ passenger.idType }}: {{ passenger.idNumber }}</small>
+                          }
+                          @if (passenger.contactNumber) {
+                            <small class="text-muted d-block"><i class="bi bi-telephone me-1"></i>{{ passenger.contactNumber }}</small>
+                          }
+                        </div>
+                        <div class="d-flex flex-column gap-2">
+                          <button class="btn btn-sm btn-light text-rb-primary" (click)="openPassengerModal(passenger)" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                          </button>
+                          <button class="btn btn-sm btn-light text-danger" (click)="deletePassenger(passenger.savedPassengerId)" title="Delete">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- SETTINGS TAB -->
+        @if (activeTab === 'SETTINGS') {
+          <div class="row g-4">
+            
+            <!-- Edit Profile -->
+            <div class="col-12">
+              <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                  <h4 class="fw-bold mb-4">Edit Profile</h4>
+                  
+                  @if (profileUpdateSuccess) {
+                    <div class="alert alert-success">{{ profileUpdateSuccess }}</div>
+                  }
+                  @if (profileUpdateError) {
+                    <div class="alert alert-danger">{{ profileUpdateError }}</div>
+                  }
+
+                  <form [formGroup]="profileForm" (ngSubmit)="updateProfile()">
+                    <div class="row mb-3">
+                      <div class="col-md-6">
+                        <label class="form-label text-muted small fw-semibold">Full Name <span class="text-rb-primary">*</span></label>
+                        <input type="text" class="form-control" formControlName="userName" [class.is-invalid]="pf['userName'].invalid && (pf['userName'].dirty || pf['userName'].touched)">
+                        @if (pf['userName'].invalid && (pf['userName'].dirty || pf['userName'].touched)) {
+                          <div class="invalid-feedback">
+                            @if (pf['userName'].errors?.['required']) { <span>Name is required.</span> }
+                            @if (pf['userName'].errors?.['minlength']) { <span>Name must contain at least 3 characters.</span> }
+                            @if (pf['userName'].errors?.['maxlength']) { <span>Name cannot exceed 50 characters.</span> }
+                            @if (pf['userName'].errors?.['pattern']) { <span>Name can contain only letters and spaces.</span> }
+                            @if (pf['userName'].errors?.['invalidName']) { <span>Please enter a valid name.</span> }
+                          </div>
+                        }
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label text-muted small fw-semibold">Email Address</label>
+                        <input type="email" class="form-control bg-light" [value]="myProfile?.userEmail" disabled>
+                        <small class="text-secondary" style="font-size: 0.7rem;">Email cannot be changed</small>
+                      </div>
+                    </div>
+                    <div class="mb-4">
+                      <label class="form-label text-muted small fw-semibold">Mobile Number <span class="text-rb-primary">*</span></label>
+                      <input type="text" class="form-control" formControlName="mobileNumber" [class.is-invalid]="pf['mobileNumber'].invalid && (pf['mobileNumber'].dirty || pf['mobileNumber'].touched)">
+                      @if (pf['mobileNumber'].invalid && (pf['mobileNumber'].dirty || pf['mobileNumber'].touched)) {
+                        <div class="invalid-feedback">
+                          @if (pf['mobileNumber'].errors?.['required']) { <span>Phone number is required.</span> }
+                          @if (pf['mobileNumber'].errors?.['invalidPhone']) { <span>Enter a valid Indian mobile number.</span> }
+                        </div>
+                      }
+                    </div>
+                    <button type="submit" class="btn btn-rb-primary px-4" [disabled]="profileForm.invalid">Update Profile</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- Change Password -->
+            <div class="col-12">
+              <div class="card border-0 shadow-sm border-top border-warning border-3">
+                <div class="card-body p-4">
+                  <h4 class="fw-bold mb-4"><i class="bi bi-shield-lock me-2 text-warning"></i>Change Password</h4>
+
+                  @if (passwordSuccess) {
+                    <div class="alert alert-success">{{ passwordSuccess }}</div>
+                  }
+                  @if (passwordError) {
+                    <div class="alert alert-danger">{{ passwordError }}</div>
+                  }
+
+                  <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+                    <div class="mb-3">
+                      <label class="form-label text-muted small fw-semibold">Current Password <span class="text-rb-primary">*</span></label>
+                      <input type="password" class="form-control" formControlName="currentPassword" [class.is-invalid]="pwf['currentPassword'].invalid && (pwf['currentPassword'].dirty || pwf['currentPassword'].touched)">
+                      @if (pwf['currentPassword'].invalid && (pwf['currentPassword'].dirty || pwf['currentPassword'].touched)) {
+                        <div class="invalid-feedback">Current password is required.</div>
+                      }
+                    </div>
+                    <div class="row mb-4">
+                      <div class="col-md-6">
+                        <label class="form-label text-muted small fw-semibold">New Password <span class="text-rb-primary">*</span></label>
+                        <input type="password" class="form-control" formControlName="newPassword" [class.is-invalid]="pwf['newPassword'].invalid && (pwf['newPassword'].dirty || pwf['newPassword'].touched)">
+                        @if (pwf['newPassword'].invalid && (pwf['newPassword'].dirty || pwf['newPassword'].touched)) {
+                          <div class="invalid-feedback">
+                            @if (pwf['newPassword'].errors?.['required']) { <span>Password is required.</span> }
+                            @if (pwf['newPassword'].errors?.['length']) { <span>Password must be 8 to 20 characters.</span> }
+                            @if (pwf['newPassword'].errors?.['missingUppercase']) { <span>Password must contain at least 1 uppercase letter.</span> }
+                            @if (pwf['newPassword'].errors?.['missingLowercase']) { <span>Password must contain at least 1 lowercase letter.</span> }
+                            @if (pwf['newPassword'].errors?.['missingDigit']) { <span>Password must contain at least 1 digit.</span> }
+                            @if (pwf['newPassword'].errors?.['missingSpecial']) { <span>Password must contain at least 1 special character.</span> }
+                          </div>
+                        }
+                      </div>
+                      <div class="col-md-6 mt-3 mt-md-0">
+                        <label class="form-label text-muted small fw-semibold">Confirm New Password <span class="text-rb-primary">*</span></label>
+                        <input type="password" class="form-control" formControlName="confirmPassword" [class.is-invalid]="(pwf['confirmPassword'].invalid || passwordForm.errors?.['passwordMismatch']) && (pwf['confirmPassword'].dirty || pwf['confirmPassword'].touched)">
+                        @if ((pwf['confirmPassword'].invalid || passwordForm.errors?.['passwordMismatch']) && (pwf['confirmPassword'].dirty || pwf['confirmPassword'].touched)) {
+                          <div class="invalid-feedback">
+                            @if (pwf['confirmPassword'].errors?.['required']) { <span>Confirm password is required.</span> }
+                            @else if (passwordForm.errors?.['passwordMismatch']) { <span>Passwords do not match.</span> }
+                          </div>
+                        }
+                      </div>
+                    </div>
+                    <button type="submit" class="btn btn-warning px-4" [disabled]="passwordForm.invalid">Change Password</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- Appearance / Theme -->
+            <div class="col-12">
+              <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="bg-primary bg-opacity-10 rounded-circle p-2">
+                      <i class="bi bi-palette-fill text-primary fs-5"></i>
+                    </div>
+                    <div>
+                      <h6 class="fw-bold mb-0">Appearance</h6>
+                      <p class="text-muted small mb-0">Switch between light and dark theme</p>
+                    </div>
+                  </div>
+                  <div class="d-flex align-items-center gap-3">
+                    <span class="text-muted small">
+                      <i class="bi bi-sun-fill me-1 text-warning"></i>Light
+                    </span>
+                    <div class="form-check form-switch mb-0" style="transform: scale(1.3); transform-origin: left;">
+                      <input class="form-check-input" type="checkbox" role="switch" id="themeTogglePassenger"
+                        [checked]="themeService.getCurrentTheme() === 'dark'"
+                        (change)="themeService.toggleTheme()">
+                    </div>
+                    <span class="text-muted small">
+                      <i class="bi bi-moon-stars-fill me-1 text-primary"></i>Dark
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        }
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Saved Passenger Modal -->
+@if (showPassengerModal) {
+  <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header border-bottom-0 bg-light">
+          <h5 class="modal-title fw-bold">{{ editingPassengerId ? 'Edit Passenger' : 'Add Passenger' }}</h5>
+          <button type="button" class="btn-close" (click)="closePassengerModal()"></button>
+        </div>
+        <div class="modal-body p-4">
+          @if (passengerError) {
+            <div class="alert alert-danger p-2 mb-3 small">{{ passengerError }}</div>
+          }
+          
+          <form #passForm="ngForm" (ngSubmit)="savePassenger()">
+            <div class="mb-3">
+              <label class="form-label fw-semibold small">Full Name <span class="text-rb-primary">*</span></label>
+              <input type="text" class="form-control" [(ngModel)]="passengerForm.passengerName" name="name" required placeholder="Enter passenger name" #pName="ngModel" [class.is-invalid]="pName.invalid && (pName.dirty || pName.touched)">
+              @if (pName.invalid && (pName.dirty || pName.touched)) {
+                <div class="invalid-feedback">Passenger name is required.</div>
+              }
+            </div>
+            
+            <div class="row mb-3">
+              <div class="col-6">
+                <label class="form-label fw-semibold small">Age <span class="text-rb-primary">*</span></label>
+                <input type="number" class="form-control" [(ngModel)]="passengerForm.age" name="age" required min="1" max="120" #pAge="ngModel" [class.is-invalid]="pAge.invalid && (pAge.dirty || pAge.touched)">
+                @if (pAge.invalid && (pAge.dirty || pAge.touched)) {
+                  <div class="invalid-feedback">
+                    @if (pAge.errors?.['required']) { <span>Age is required.</span> }
+                    @if (pAge.errors?.['min'] || pAge.errors?.['max']) { <span>Age must be between 1 and 120.</span> }
+                  </div>
+                }
+              </div>
+              <div class="col-6">
+                <label class="form-label fw-semibold small">Gender <span class="text-rb-primary">*</span></label>
+                <select class="form-select" [(ngModel)]="passengerForm.gender" name="gender" required #pGender="ngModel" [class.is-invalid]="pGender.invalid && (pGender.dirty || pGender.touched)">
+                  <option value="MALE">Male</option>
+                  <option value="FEMALE">Female</option>
+                  <option value="OTHER">Other</option>
+                </select>
+                @if (pGender.invalid && (pGender.dirty || pGender.touched)) {
+                  <div class="invalid-feedback">Gender is required.</div>
+                }
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-6">
+                <label class="form-label fw-semibold small">ID Type <span class="text-muted fw-normal">(Optional)</span></label>
+                <select class="form-select" [(ngModel)]="passengerForm.idType" name="idType">
+                  <option value="">Select ID</option>
+                  <option value="AADHAAR">Aadhaar</option>
+                  <option value="PAN">PAN</option>
+                  <option value="PASSPORT">Passport</option>
+                  <option value="DRIVING_LICENSE">Driving License</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label fw-semibold small">ID Number <span class="text-muted fw-normal">(Optional)</span></label>
+                <input type="text" class="form-control" [(ngModel)]="passengerForm.idNumber" name="idNumber" placeholder="ID Number">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold small">Contact Number <span class="text-muted fw-normal">(Optional)</span></label>
+              <input type="text" class="form-control" [(ngModel)]="passengerForm.contactNumber" name="contactNumber" placeholder="10-digit mobile number">
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+              <button type="button" class="btn btn-outline-secondary" (click)="closePassengerModal()">Cancel</button>
+              <button type="submit" class="btn btn-rb-primary px-4" [disabled]="passForm.invalid">Save</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Reusable Booking Card Template -->
+<ng-template #bookingCard let-booking>
+  <div class="border rounded p-3 mb-3 booking-card shadow-sm">
+    <div class="d-flex flex-wrap justify-content-between align-items-start mb-3">
+      <div>
+        <span class="badge mb-2" 
+              [class.bg-success]="booking.status === 'CONFIRMED'" 
+              [class.bg-danger]="booking.status === 'CANCELLED' || booking.status === 'EXPIRED'"
+              [class.bg-warning]="booking.status === 'PENDING'">
+          {{ booking.status }}
+        </span>
+        <h5 class="fw-bold mb-1">{{ booking.from }} → {{ booking.to }}</h5>
+        <small class="text-secondary">Ref: <span class="fw-semibold text-dark">{{ booking.bookingReference }}</span></small>
+      </div>
+      <div class="text-end">
+        <div class="fw-bold fs-5 text-rb-primary">₹{{ booking.fare }}</div>
+        <small class="text-dark fw-semibold d-block">{{ booking.date | date:'mediumDate' }}</small>
+        <small class="text-secondary">{{ booking.time }}</small>
+      </div>
+    </div>
+    
+    <div class="d-flex flex-wrap justify-content-between align-items-center bg-light p-3 rounded">
+      <div>
+        <small class="text-secondary d-block">Operator & Seats</small>
+        <span class="fw-semibold">{{ booking.operator }}</span>
+        <span class="mx-2 text-muted">|</span>
+        <span>Seats: <strong class="text-dark">{{ booking.seats.join(', ') }}</strong></span>
+      </div>
+      <div class="mt-2 mt-sm-0 d-flex gap-2">
+        @if (booking.status === 'CONFIRMED') {
+          <button class="btn btn-rb-primary btn-sm px-3" (click)="viewTicket(booking.bookingReference)">
+            <i class="bi bi-ticket-detailed me-1"></i> View Ticket
+          </button>
+          <button class="btn btn-outline-warning btn-sm" (click)="openReviewModal(booking.bookingId)">
+            <i class="bi bi-star-fill me-1"></i> {{ reviewsByBookingId[booking.bookingId] ? 'View/Edit Review' : 'Write Review' }}
+          </button>
+        }
+        @if (booking.status === 'CONFIRMED' || booking.status === 'PENDING') {
+          <button class="btn btn-outline-danger btn-sm" (click)="cancelBooking(booking.bookingId)">
+            Cancel
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<!-- Cancellation Confirmation Modal -->
+@if (showCancelConfirmModal) {
+  <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header border-bottom-0 bg-light">
+          <h5 class="modal-title fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Cancel Booking</h5>
+          <button type="button" class="btn-close" (click)="closeCancelConfirmModal()"></button>
+        </div>
+        <div class="modal-body p-4">
+          <p class="mb-4 text-secondary">Are you sure you want to cancel this booking? This action cannot be undone.</p>
+          
+          <div class="form-group mb-3">
+            <label class="form-label text-muted small fw-semibold">Reason for Cancellation (Optional)</label>
+            <textarea class="form-control" rows="3" [(ngModel)]="cancelReason" placeholder="Tell us why you are cancelling..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer border-top-0 bg-light">
+          <button type="button" class="btn btn-outline-secondary" (click)="closeCancelConfirmModal()">Keep Booking</button>
+          <button type="button" class="btn btn-danger px-4" (click)="confirmCancelBooking()">Confirm Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Cancellation Result Modal -->
+@if (showCancelResultModal && cancellationResult) {
+  <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header border-bottom-0 bg-light">
+          <h5 class="modal-title fw-bold text-success"><i class="bi bi-check-circle-fill me-2"></i>Booking Cancelled</h5>
+          <button type="button" class="btn-close" (click)="closeCancelResultModal()"></button>
+        </div>
+        <div class="modal-body p-4">
+          
+          <div class="d-flex justify-content-between mb-3 pb-3 border-bottom">
+            <span class="text-secondary">Cancellation Ref</span>
+            <strong class="text-dark">{{ cancellationResult.cancellationReference }}</strong>
+          </div>
+          
+          <div class="d-flex justify-content-between mb-3 pb-3 border-bottom">
+            <span class="text-secondary">Cancellation Fee</span>
+            <strong class="text-danger">₹{{ cancellationResult.cancellationFee }}</strong>
+          </div>
+
+          <div class="d-flex justify-content-between mb-3 pb-3 border-bottom">
+            <span class="text-secondary">Refund Status</span>
+            <span class="badge" 
+                  [class.bg-success]="cancellationResult.refundStatus === 'COMPLETED'"
+                  [class.bg-warning]="cancellationResult.refundStatus === 'INITIATED'"
+                  [class.bg-secondary]="cancellationResult.refundStatus === 'NOT_APPLICABLE'">
+              {{ cancellationResult.refundStatus }}
+            </span>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded">
+            <span class="fw-bold">Total Refund Amount</span>
+            <h4 class="fw-bold text-success mb-0">₹{{ cancellationResult.refundAmount }}</h4>
+          </div>
+
+        </div>
+        <div class="modal-footer border-top-0">
+          <button type="button" class="btn btn-rb-primary px-4 w-100" (click)="closeCancelResultModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Review Modal -->
+@if (showReviewModal) {
+  <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header border-bottom-0 bg-light">
+          <h5 class="modal-title fw-bold text-warning"><i class="bi bi-star-fill me-2"></i>{{ isEditingReview ? 'View/Edit Review' : 'Write Review' }}</h5>
+          <button type="button" class="btn-close" (click)="closeReviewModal()"></button>
+        </div>
+        <div class="modal-body p-4">
+          @if (reviewError) {
+            <div class="alert alert-danger p-2 mb-4 small">{{ reviewError }}</div>
+          }
+          
+          <div class="mb-4 text-center">
+            <label class="form-label text-muted small fw-semibold d-block mb-2">Rating</label>
+            <div class="d-flex justify-content-center gap-2 fs-3 text-warning" style="cursor: pointer;">
+              @for (star of [1, 2, 3, 4, 5]; track star) {
+                <i class="bi" 
+                   [class.bi-star-fill]="star <= reviewForm.rating" 
+                   [class.bi-star]="star > reviewForm.rating"
+                   (click)="setRating(star)"></i>
+              }
+            </div>
+          </div>
+          
+          <div class="form-group mb-4">
+            <label class="form-label text-muted small fw-semibold">Comment</label>
+            <textarea class="form-control" rows="4" [(ngModel)]="reviewForm.comment" placeholder="Tell us about your trip..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer border-top-0 bg-light">
+          <button type="button" class="btn btn-outline-secondary" (click)="closeReviewModal()">Cancel</button>
+          <button type="button" class="btn btn-warning px-4" (click)="submitReview()">Submit Review</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,30 @@
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px 16px;
+}
+
+.loading-spinner .spinner-border {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.loading-spinner-sm .spinner-border {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.loading-spinner-lg .spinner-border {
+  width: 3.5rem;
+  height: 3.5rem;
+}
+
+.loading-message {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--rb-text-muted);
+  font-weight: 500;
+}

@@ -1,0 +1,61 @@
+<div class="p-4 bg-white rounded shadow-sm">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0 fw-bold">User Management</h4>
+    <button class="btn btn-outline-primary btn-sm" (click)="fetchAllUsers()">
+      <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <input type="text" class="form-control" placeholder="Filter by name..." 
+             [(ngModel)]="nameFilter" (keyup)="applyFilters()">
+    </div>
+    <div class="col-md-4">
+      <input type="text" class="form-control" placeholder="Filter by email..." 
+             [(ngModel)]="emailFilter" (keyup)="applyFilters()">
+    </div>
+  </div>
+
+  @if (loading) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="mt-2 text-secondary">Loading users...</p>
+    </div>
+  } @else if (error) {
+    <div class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+    </div>
+  } @else if (filteredUsers.length === 0) {
+    <div class="alert alert-info text-center py-4">
+      <i class="bi bi-info-circle fs-3 d-block mb-2"></i>
+      No users found.
+    </div>
+  } @else {
+    <div class="table-responsive">
+      <table class="table table-hover align-middle border">
+        <thead class="table-light">
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Created At</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of filteredUsers; track user.userId) {
+            <tr>
+              <td><span class="text-muted small">{{ user.userId.substring(0, 8) }}...</span></td>
+              <td class="fw-medium">{{ user.userName }}</td>
+              <td>{{ user.userEmail }}</td>
+              <td>{{ user.mobileNumber || 'N/A' }}</td>
+              <td>{{ user.createdAt | date:'mediumDate' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

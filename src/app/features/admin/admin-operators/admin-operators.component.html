@@ -1,0 +1,100 @@
+<div class="admin-operators-container">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h3 fw-bold text-dark mb-0">Operating Companies</h2>
+    <button class="btn btn-primary shadow-sm" (click)="openCreateModal()">
+      <i class="bi bi-building-add me-2"></i> Add Company
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="text-center my-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <div *ngIf="error" class="alert alert-danger shadow-sm">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error }}
+  </div>
+
+  <div *ngIf="!loading && !error" class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-4">Company Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Status</th>
+            <th class="text-end pe-4">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let op of operators">
+            <td class="ps-4 fw-semibold">{{ op.companyName }}</td>
+            <td>{{ op.contactEmail }}</td>
+            <td>{{ op.contactPhone }}</td>
+            <td>
+              <span class="badge rounded-pill" [ngClass]="op.isApproved ? 'bg-success' : 'bg-warning text-dark'">
+                {{ op.isApproved ? 'Approved' : 'Pending' }}
+              </span>
+            </td>
+            <td class="text-end pe-4">
+              <button *ngIf="!op.isApproved" class="btn btn-sm btn-success shadow-sm" (click)="approveOperator(op)">
+                <i class="bi bi-check-circle me-1"></i> Approve
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="operators.length === 0">
+            <td colspan="6" class="text-center py-4 text-muted">No operating companies found.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Create Modal -->
+  <div class="modal fade show" tabindex="-1" *ngIf="showCreateModal" style="display: block; background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-header border-bottom-0 pb-0">
+          <h5 class="modal-title fw-bold text-dark">Add Operating Company</h5>
+          <button type="button" class="btn-close" (click)="closeCreateModal()"></button>
+        </div>
+        <form (ngSubmit)="createOperator()" #createFormRef="ngForm">
+          <div class="modal-body py-4">
+            
+            <div *ngIf="createSuccess" class="alert alert-success py-2 mb-3">
+              <i class="bi bi-check-circle-fill me-2"></i> {{ createSuccess }}
+            </div>
+            
+            <div *ngIf="createError" class="alert alert-danger py-2 mb-3">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ createError }}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label text-secondary fw-semibold">Company Name</label>
+              <input type="text" class="form-control" name="companyName" [(ngModel)]="createForm.companyName" required minlength="3">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label text-secondary fw-semibold">Contact Email</label>
+              <input type="email" class="form-control" name="contactEmail" [(ngModel)]="createForm.contactEmail" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label text-secondary fw-semibold">Contact Phone</label>
+              <input type="text" class="form-control" name="contactPhone" [(ngModel)]="createForm.contactPhone" required minlength="10" maxlength="15">
+            </div>
+
+          </div>
+          <div class="modal-footer border-top-0 pt-0">
+            <button type="button" class="btn btn-light" (click)="closeCreateModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="!createFormRef.form.valid">
+              Add Company
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

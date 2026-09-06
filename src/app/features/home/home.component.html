@@ -1,0 +1,173 @@
+<!-- Hero -->
+<section class="rb-hero">
+  <div class="container position-relative">
+    <div class="row justify-content-center">
+      <div class="col-lg-10 text-center animate-fade-up">
+        <h1 class="rb-hero-title">India's Leading Online Bus Ticket Booking Site</h1>
+        <p class="rb-hero-subtitle">
+          Search buses, compare fares, and plan your journey with confidence.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Search Card -->
+<section id="bus-search" class="home-search-section">
+  <div class="container">
+    <div class="rb-search-card animate-fade-up">
+      <form (ngSubmit)="searchBuses()" novalidate>
+        <div class="row g-3 align-items-end">
+          <div class="col-12 col-lg-3">
+            <label for="fromCity" class="form-label">From</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
+              <input
+                type="text"
+                id="fromCity"
+                name="fromCity"
+                class="form-control"
+                [(ngModel)]="fromCity"
+                placeholder="Departure city"
+                autocomplete="off"
+              />
+            </div>
+          </div>
+
+          <div class="col-12 col-lg-1 d-flex justify-content-center">
+            <button
+              type="button"
+              class="btn-swap"
+              (click)="swapLocations()"
+              title="Swap locations"
+              aria-label="Swap departure and destination"
+            >
+              <i class="bi bi-arrow-left-right"></i>
+            </button>
+          </div>
+
+          <div class="col-12 col-lg-3">
+            <label for="toCity" class="form-label">To</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-geo-alt-fill"></i></span>
+              <input
+                type="text"
+                id="toCity"
+                name="toCity"
+                class="form-control"
+                [(ngModel)]="toCity"
+                placeholder="Destination city"
+                autocomplete="off"
+              />
+            </div>
+          </div>
+
+          <div class="col-12 col-lg-2">
+            <label for="journeyDate" class="form-label">Journey Date</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-calendar3"></i></span>
+              <input
+                type="date"
+                id="journeyDate"
+                name="journeyDate"
+                class="form-control"
+                [(ngModel)]="journeyDate"
+                [min]="minDate"
+              />
+            </div>
+          </div>
+
+          <div class="col-12 col-lg-3">
+            <button type="submit" class="btn btn-rb-primary w-100 h-100 py-3">
+              <i class="bi bi-search me-2"></i>
+              Search Buses
+            </button>
+          </div>
+        </div>
+
+        @if (errorMessage) {
+          <div class="alert alert-danger mt-3 mb-0" role="alert">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            {{ errorMessage }}
+          </div>
+        }
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- Offers -->
+<section class="home-section offers-section">
+  <div class="container">
+    <div class="section-header text-center">
+      <h2 class="section-title">Offers &amp; Deals</h2>
+      <p class="section-subtitle">Save more on your bus bookings</p>
+    </div>
+
+    <div class="row g-4">
+      @for (offer of offers; track offer.code) {
+        <div class="col-12 col-md-4">
+          <article class="offer-card">
+            <div class="offer-icon">
+              <i class="bi" [ngClass]="offer.icon"></i>
+            </div>
+            <div>
+              <h3 class="offer-title">{{ offer.title }}</h3>
+              <p class="offer-text">{{ offer.description }}</p>
+              <span class="offer-code">{{ offer.code }}</span>
+            </div>
+          </article>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- Popular Routes -->
+<section class="home-section routes-section">
+  <div class="container">
+    <div class="section-header text-center">
+      <h2 class="section-title">Popular Bus Routes</h2>
+      <p class="section-subtitle">Tap a route to fill the search form instantly</p>
+    </div>
+
+    <div class="row g-3">
+      @for (route of popularRoutes; track route.from + route.to) {
+        <div class="col-12 col-sm-6 col-lg-4">
+          <button type="button" class="route-card" (click)="selectPopularRoute(route)">
+            <div class="route-cities">
+              <strong>{{ route.from }}</strong>
+              <i class="bi bi-arrow-right-short"></i>
+              <strong>{{ route.to }}</strong>
+            </div>
+            <small class="route-label">{{ route.label }}</small>
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- Features / Benefits -->
+<section class="home-section features-section">
+  <div class="container">
+    <div class="section-header text-center">
+      <h2 class="section-title">Why Book With BusTicket?</h2>
+      <p class="section-subtitle">A professional booking experience built for every traveller</p>
+    </div>
+
+    <div class="row g-4">
+      @for (feature of features; track feature.title) {
+        <div class="col-12 col-sm-6 col-lg-3">
+          <article class="feature-card">
+            <div class="feature-icon">
+              <i class="bi" [ngClass]="feature.icon"></i>
+            </div>
+            <h3 class="feature-title">{{ feature.title }}</h3>
+            <p class="feature-text">{{ feature.description }}</p>
+          </article>
+        </div>
+      }
+    </div>
+  </div>
+</section>

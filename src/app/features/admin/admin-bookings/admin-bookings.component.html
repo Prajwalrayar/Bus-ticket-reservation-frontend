@@ -1,0 +1,137 @@
+<div class="row g-4">
+  <!-- Filters Sidebar -->
+  <div class="col-md-3">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold"><i class="bi bi-funnel me-2"></i>Date Filters</h6>
+      </div>
+      <div class="card-body">
+        
+        <div class="mb-3">
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="filterMode" id="filterAll" 
+                   [checked]="filterMode === 'ALL'" (change)="setFilterMode('ALL')">
+            <label class="form-check-label fw-medium" for="filterAll">All Bookings</label>
+          </div>
+          <div class="form-check mt-2">
+            <input class="form-check-input" type="radio" name="filterMode" id="filterSpecific" 
+                   [checked]="filterMode === 'SPECIFIC'" (change)="setFilterMode('SPECIFIC')">
+            <label class="form-check-label fw-medium" for="filterSpecific">Specific Date</label>
+          </div>
+          <div class="form-check mt-2">
+            <input class="form-check-input" type="radio" name="filterMode" id="filterRange" 
+                   [checked]="filterMode === 'RANGE'" (change)="setFilterMode('RANGE')">
+            <label class="form-check-label fw-medium" for="filterRange">Date Range</label>
+          </div>
+        </div>
+
+        <hr>
+
+        <!-- SPECIFIC DATE -->
+        @if (filterMode === 'SPECIFIC') {
+          <div class="mb-3">
+            <label class="form-label small text-muted fw-bold">TRAVEL DATE</label>
+            <input type="date" class="form-control" [(ngModel)]="specificDate">
+          </div>
+        }
+
+        <!-- DATE RANGE -->
+        @if (filterMode === 'RANGE') {
+          <div class="mb-3">
+            <label class="form-label small text-muted fw-bold">FROM DATE</label>
+            <input type="date" class="form-control" [(ngModel)]="fromDate">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small text-muted fw-bold">TO DATE</label>
+            <input type="date" class="form-control" [(ngModel)]="toDate">
+          </div>
+        }
+
+        @if (filterError) {
+          <div class="alert alert-danger py-2 small">{{ filterError }}</div>
+        }
+
+        @if (filterMode !== 'ALL') {
+          <div class="d-grid gap-2">
+            <button class="btn btn-primary" (click)="applyFilters()">Apply Filter</button>
+            <button class="btn btn-outline-secondary" (click)="clearFilters()">Clear</button>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="col-md-9">
+    <div class="p-4 bg-white rounded shadow-sm">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0 fw-bold">Bookings Management</h4>
+        <button class="btn btn-outline-primary btn-sm" (click)="fetchAllBookings()">
+          <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+        </button>
+      </div>
+
+      @if (loading) {
+        <div class="text-center py-5">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="mt-2 text-secondary">Loading bookings...</p>
+        </div>
+      } @else if (error) {
+        <div class="alert alert-danger">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+        </div>
+      } @else if (filteredBookings.length === 0) {
+        <div class="alert alert-info text-center py-4">
+          <i class="bi bi-info-circle fs-3 d-block mb-2"></i>
+          No bookings found for the selected date range.
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle border">
+            <thead class="table-light">
+              <tr>
+                <th>Booking Ref</th>
+                <th>User Details</th>
+                <th>Trip & Bus</th>
+                <th>Date / Time</th>
+                <th>Amount</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (booking of filteredBookings; track booking.bookingId) {
+                <tr>
+                  <td>
+                    <div class="fw-bold text-primary">{{ booking.bookingReference }}</div>
+                    <div class="text-muted small">Seats: {{ booking.totalSeats }}</div>
+                  </td>
+                  <td>
+                    <div class="text-muted small">User: {{ booking.userId?.substring(0, 8) || 'N/A' }}...</div>
+                  </td>
+                  <td>
+                    <div class="fw-bold">{{ booking.boardingPointName }} <i class="bi bi-arrow-right"></i> {{ booking.droppingPointName }}</div>
+                    <div class="text-muted small">Trip ID: {{ booking.tripId?.substring(0, 8) }}...</div>
+                  </td>
+                  <td>
+                    <div class="fw-medium">Created: {{ booking.createdAt | date:'mediumDate' }}</div>
+                    <div class="text-muted small">{{ booking.createdAt | date:'shortTime' }}</div>
+                  </td>
+                  <td class="fw-bold text-success">
+                    {{ booking.totalAmount | currency:'INR' }}
+                  </td>
+                  <td>
+                    <span class="badge" [ngClass]="{
+                      'bg-success': booking.bookingStatus === 'CONFIRMED',
+                      'bg-warning text-dark': booking.bookingStatus === 'PENDING',
+                      'bg-danger': booking.bookingStatus === 'CANCELLED'
+                    }">{{ booking.bookingStatus }}</span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
+</div>

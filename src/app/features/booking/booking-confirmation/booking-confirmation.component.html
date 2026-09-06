@@ -1,0 +1,904 @@
+<div class="booking-confirmation-page">
+
+    <div class="container py-4">
+
+
+        <!-- ==========================================================
+             BACK BUTTON
+        =========================================================== -->
+
+        <button
+            type="button"
+            class="btn btn-outline-secondary mb-4"
+            (click)="goBack()">
+
+            <i class="bi bi-arrow-left me-2"></i>
+
+            Back to passenger details
+
+        </button>
+
+
+        <!-- ==========================================================
+             LOADING
+        =========================================================== -->
+
+        @if (loading()) {
+
+        <div class="text-center py-5">
+
+            <div class="spinner-border text-rb-primary mb-3">
+            </div>
+
+            <div class="text-secondary">
+                Loading booking details...
+            </div>
+
+        </div>
+
+        }
+
+
+        <!-- ==========================================================
+             ERROR
+        =========================================================== -->
+
+        @if (!loading() && errorMessage()) {
+
+        <div class="alert alert-danger">
+
+            {{ errorMessage() }}
+
+        </div>
+
+        }
+
+
+        <!-- ==========================================================
+             MAIN CONTENT
+        =========================================================== -->
+
+        @if (!loading() && !errorMessage() && bus()) {
+
+        <div class="row g-4">
+
+
+            <!-- ==================================================
+                 LEFT SIDE
+            =================================================== -->
+
+            <div class="col-lg-8">
+
+
+                <!-- ==================================================
+                     JOURNEY DETAILS
+                =================================================== -->
+
+                <div class="card border-0 shadow-sm mb-4">
+
+                    <div class="card-body p-4">
+
+                        <h4 class="fw-bold mb-4">
+                            Journey Details
+                        </h4>
+
+
+                        <div class="row g-3">
+
+
+                            <!-- BUS -->
+
+                            <div class="col-md-6">
+
+                                <div class="summary-label">
+                                    Bus
+                                </div>
+
+                                <div class="fw-semibold">
+                                    {{ bus()!.operatorName }}
+                                </div>
+
+                            </div>
+
+
+                            <!-- BUS TYPE -->
+
+                            <div class="col-md-6">
+
+                                <div class="summary-label">
+                                    Bus Type
+                                </div>
+
+                                <div class="fw-semibold">
+                                    {{ bus()!.busType }}
+                                </div>
+
+                            </div>
+
+
+                            <!-- ROUTE -->
+
+                            <div class="col-md-6">
+
+                                <div class="summary-label">
+                                    Route
+                                </div>
+
+                                <div class="fw-semibold">
+
+                                    {{ bus()!.source }}
+
+                                    <span class="text-rb-primary mx-2">
+                                        →
+                                    </span>
+
+                                    {{ bus()!.destination }}
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- JOURNEY DATE -->
+
+                            <div class="col-md-6">
+
+                                <div class="summary-label">
+                                    Journey Date
+                                </div>
+
+                                <div class="fw-semibold">
+                                    {{ journeyDate() }}
+                                </div>
+
+                            </div>
+
+
+                            <!-- DEPARTURE -->
+
+                            <div class="col-md-6">
+
+                                <div class="summary-label">
+                                    Departure
+                                </div>
+
+                                <div class="fw-semibold">
+                                    {{ bus()!.departureTime }}
+                                </div>
+
+                            </div>
+
+
+                            <!-- ARRIVAL -->
+
+                            <div class="col-md-6">
+
+                                <div class="summary-label">
+                                    Arrival
+                                </div>
+
+                                <div class="fw-semibold">
+                                    {{ bus()!.arrivalTime }}
+                                </div>
+
+                            </div>
+
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ==================================================
+                     SELECTED SEATS
+                =================================================== -->
+
+                <div class="card border-0 shadow-sm mb-4">
+
+                    <div class="card-body p-4">
+
+                        <h4 class="fw-bold mb-4">
+                            Selected Seats
+                        </h4>
+
+
+                        <div class="selected-seat-container">
+
+                            @for (
+                            seat of selectedSeats();
+                            track seat.tripSeatId
+                            ) {
+
+                            <div class="seat-item">
+
+                                <i class="bi bi-armchair-fill"></i>
+
+                                <span>
+                                    {{ seat.seatNumber }}
+                                </span>
+
+                            </div>
+
+                            }
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ==================================================
+                     PASSENGER DETAILS
+                =================================================== -->
+
+                <div class="card border-0 shadow-sm">
+
+                    <div class="card-body p-4">
+
+                        <h4 class="fw-bold mb-4">
+                            Passenger Details
+                        </h4>
+
+
+                        <!-- EDIT -->
+
+                        <button
+                            type="button"
+                            class="btn btn-outline-secondary"
+                            (click)="editPassengerDetails()">
+
+                            <i class="bi bi-pencil me-2"></i>
+
+                            Edit Passenger Details
+
+                        </button>
+
+
+                        <!-- PASSENGERS -->
+
+                        @for (
+                        passenger of passengers();
+                        track passenger.seatNumber;
+                        let i = $index
+                        ) {
+
+                        <div class="passenger-summary mt-4">
+
+
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+
+                                <div>
+
+                                    <h5 class="fw-bold mb-1">
+                                        Passenger {{ i + 1 }}
+                                    </h5>
+
+                                    <span class="text-secondary">
+                                        Seat {{ passenger.seatNumber }}
+                                    </span>
+
+                                </div>
+
+
+                                <span class="seat-badge">
+
+                                    {{ passenger.seatNumber }}
+
+                                </span>
+
+                            </div>
+
+
+                            <div class="row g-3">
+
+
+                                <!-- NAME -->
+
+                                <div class="col-md-4">
+
+                                    <div class="summary-label">
+                                        Name
+                                    </div>
+
+                                    <div class="fw-semibold">
+                                        {{ passenger.passengerName }}
+                                    </div>
+
+                                </div>
+
+
+                                <!-- AGE -->
+
+                                <div class="col-md-4">
+
+                                    <div class="summary-label">
+                                        Age
+                                    </div>
+
+                                    <div class="fw-semibold">
+                                        {{ passenger.age }}
+                                    </div>
+
+                                </div>
+
+
+                                <!-- GENDER -->
+
+                                <div class="col-md-4">
+
+                                    <div class="summary-label">
+                                        Gender
+                                    </div>
+
+                                    <div class="fw-semibold">
+                                        {{ passenger.gender }}
+                                    </div>
+
+                                </div>
+
+
+                                <!-- PHONE -->
+
+                                <div class="col-md-6">
+
+                                    <div class="summary-label">
+                                        Phone
+                                    </div>
+
+                                    <div class="fw-semibold">
+                                        {{ passenger.contactNumber }}
+                                    </div>
+
+                                </div>
+
+
+                            </div>
+
+                        </div>
+
+                        }
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            <!-- ==================================================
+                 RIGHT SIDE
+            =================================================== -->
+
+            <div class="col-lg-4">
+
+
+                <!-- ==================================================
+                     OFFERS
+                =================================================== -->
+
+                <div class="card border-0 shadow-sm mb-4">
+
+                    <div class="card-body p-4">
+
+
+                        <!-- ==================================================
+                             MAIN OFFER TITLE
+                        =================================================== -->
+
+                        <h5 class="fw-bold mb-4">
+
+                            <i class="bi bi-percent me-2 text-success">
+                            </i>
+
+                            You may be eligible for an offer
+
+                        </h5>
+
+
+                        <!-- ==================================================
+                             LOGGED-IN USER
+                        =================================================== -->
+
+                        @if (currentUser()) {
+
+                        <div class="offers-container">
+
+
+                            <!-- ==================================================
+                                 OFFER HEADER
+                            =================================================== -->
+
+                            <div class="offers-header">
+
+                                <div class="offers-title">
+
+                                    <span class="offers-icon">
+                                        %
+                                    </span>
+
+                                    <h4>
+                                        Offers for you
+                                    </h4>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- ==================================================
+                                 OFFER CAROUSEL
+                            =================================================== -->
+
+                            <div class="offer-carousel">
+
+                                @if (getOffers().length > 0) {
+
+                                <div class="offer-card">
+
+                                    <div class="offer-card-content">
+
+
+                                        <!-- OFFER DETAILS -->
+
+                                        <div class="offer-details">
+
+                                            <h5>
+                                                {{ getOffers()[selectedOfferIndex()].title }}
+                                            </h5>
+
+                                            <p>
+                                                {{ getOffers()[selectedOfferIndex()].description }}
+                                            </p>
+
+                                            <span class="offer-code">
+                                                {{ getOffers()[selectedOfferIndex()].code }}
+                                            </span>
+
+                                        </div>
+
+
+                                        <!-- APPLY BUTTON -->
+
+                                        <div class="offer-action">
+
+                                            @if (
+                                            appliedOfferCode ===
+                                            getOffers()[selectedOfferIndex()].code
+                                            ) {
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-success"
+                                                (click)="removeOffer()">
+
+                                                ✓ Applied
+
+                                            </button>
+
+                                            }
+
+                                            @else {
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-rb-primary"
+                                                (click)="applyOffer(
+                                                    getOffers()[selectedOfferIndex()]
+                                                )">
+
+                                                Apply
+
+                                            </button>
+
+                                            }
+
+                                        </div>
+
+
+                                    </div>
+
+                                </div>
+
+                                }
+
+                            </div>
+
+
+                            <!-- ==================================================
+                                 CAROUSEL CONTROLS
+                            =================================================== -->
+
+                            @if (getOffers().length > 0) {
+
+                            <div class="offer-controls">
+
+
+                                <!-- PREVIOUS -->
+
+                                <button
+                                    type="button"
+                                    class="carousel-arrow"
+                                    (click)="previousOffer()"
+                                    aria-label="Previous offer">
+
+                                    ←
+
+                                </button>
+
+
+                                <!-- DOTS -->
+
+                                <div class="offer-dots">
+
+                                    @for (
+                                    offer of getOffers();
+                                    track offer.code;
+                                    let i = $index
+                                    ) {
+
+                                    <button
+                                        type="button"
+                                        class="offer-dot"
+                                        [class.active]="selectedOfferIndex() === i"
+                                        (click)="selectOffer(i)"
+                                        [attr.aria-label]="'Offer ' + (i + 1)">
+                                    </button>
+
+                                    }
+
+                                </div>
+
+
+                                <!-- NEXT -->
+
+                                <button
+                                    type="button"
+                                    class="carousel-arrow"
+                                    (click)="nextOffer()"
+                                    aria-label="Next offer">
+
+                                    →
+
+                                </button>
+
+
+                            </div>
+
+                            }
+
+                        </div>
+
+                        }
+
+
+                        <!-- ==================================================
+                             GUEST USER
+                        =================================================== -->
+
+                        @else {
+
+                        <div class="offer-box">
+
+                            <div>
+
+                                <h5 class="fw-bold mb-2">
+                                    Login to view offers
+                                </h5>
+
+                                <p class="text-secondary mb-0">
+                                    Check your eligibility
+                                </p>
+
+                            </div>
+
+
+                            <button
+                                type="button"
+                                class="btn btn-light fw-bold"
+                                (click)="goToLogin()">
+
+                                Login
+
+                            </button>
+
+                        </div>
+
+                        }
+
+
+                        <!-- ==================================================
+                             OR
+                        =================================================== -->
+
+                        <div class="text-center my-4 text-secondary">
+
+                            or
+
+                        </div>
+
+
+                        <!-- ==================================================
+                             COUPON SECTION
+                        =================================================== -->
+
+                        <div class="coupon-section">
+
+
+                            <!-- COUPON TOGGLE -->
+
+                            <button
+                                type="button"
+                                class="coupon-button"
+                                (click)="toggleCoupon()">
+
+                                <span class="coupon-left">
+
+                                    <i class="bi bi-ticket-perforated me-2">
+                                    </i>
+
+                                    <span>
+                                        Have a coupon code
+                                    </span>
+
+                                </span>
+
+
+                                @if (couponExpanded) {
+
+                                <i class="bi bi-chevron-up">
+                                </i>
+
+                                }
+
+                                @else {
+
+                                <i class="bi bi-chevron-down">
+                                </i>
+
+                                }
+
+                            </button>
+
+
+                            <!-- COUPON FORM -->
+
+                            @if (couponExpanded) {
+
+                            <div class="coupon-form mt-3">
+
+
+                                <div class="input-group">
+
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        [(ngModel)]="couponCode"
+                                        placeholder="Enter coupon code"
+                                        (keyup.enter)="applyCoupon()"
+                                    >
+
+
+                                    <button
+                                        type="button"
+                                        class="btn btn-rb-primary"
+                                        (click)="applyCoupon()">
+
+                                        Apply
+
+                                    </button>
+
+                                </div>
+
+
+                                <!-- ERROR -->
+
+                                @if (couponError) {
+
+                                <div class="coupon-error mt-2">
+
+                                    {{ couponError }}
+
+                                </div>
+
+                                }
+
+
+                                <!-- SUCCESS -->
+
+                                @if (
+                                appliedOfferCode &&
+                                !couponError
+                                ) {
+
+                                <div class="coupon-success mt-2">
+
+                                    Coupon
+                                    <strong>
+                                        {{ appliedOfferCode }}
+                                    </strong>
+                                    applied successfully.
+
+                                </div>
+
+                                }
+
+
+                                <small class="coupon-hint">
+
+                                    Try:
+                                    <strong>FIRSTBUS</strong>,
+                                    <strong>WEEKEND</strong>
+                                    or
+                                    <strong>BESTPRICE</strong>
+
+                                </small>
+
+
+                            </div>
+
+                            }
+
+                        </div>
+
+
+                    </div>
+
+                </div>
+
+
+                <!-- ==================================================
+                     FARE SUMMARY
+                =================================================== -->
+
+                <div class="card border-0 shadow-sm summary-card">
+
+                    <div class="card-body p-4">
+
+
+                        <h4 class="fw-bold mb-4">
+                            Fare Summary
+                        </h4>
+
+
+                        <!-- ==================================================
+                             PRICE PER SEAT
+                        =================================================== -->
+
+                        <div class="fare-row">
+
+                            <span class="text-secondary">
+                                Price per seat
+                            </span>
+
+                            <span class="fw-semibold">
+                                ₹{{ bus()!.baseFare }}
+                            </span>
+
+                        </div>
+
+
+                        <!-- ==================================================
+                             SEATS
+                        =================================================== -->
+
+                        <div class="fare-row">
+
+                            <span class="text-secondary">
+                                Seats
+                            </span>
+
+                            <span class="fw-semibold">
+                                {{ selectedSeats().length }}
+                            </span>
+
+                        </div>
+
+
+                        <!-- ==================================================
+                             DISCOUNT
+                        =================================================== -->
+
+                        @if (discountAmount > 0) {
+
+                        <div class="fare-row discount-row">
+
+                            <span class="text-success">
+
+                                Discount
+                                ({{ appliedOfferCode }})
+
+                            </span>
+
+                            <span class="fw-semibold text-success">
+
+                                - ₹{{ discountAmount }}
+
+                            </span>
+
+                        </div>
+
+                        }
+
+
+                        <hr>
+
+
+                        <!-- ==================================================
+                             TOTAL
+                        =================================================== -->
+
+                        <div class="fare-total">
+
+                            <span class="fw-bold">
+                                Total Amount
+                            </span>
+
+                            <span class="fw-bold fs-4 text-rb-primary">
+
+                                ₹{{ getTotalAmount() }}
+
+                            </span>
+
+                        </div>
+
+
+                        <!-- ==================================================
+                             CONFIRM BOOKING
+                        =================================================== -->
+
+                        <button
+                            type="button"
+                            class="btn btn-rb-primary w-100 mt-4 py-3 fw-semibold"
+                            [disabled]="loading()"
+                            (click)="confirmBooking()">
+
+
+                            @if (loading()) {
+
+                            <span class="spinner-border spinner-border-sm me-2">
+                            </span>
+
+                            Processing...
+
+                            }
+
+                            @else {
+
+                            Continue to Payment
+
+                            }
+
+                        </button>
+
+
+                        <div class="text-center mt-3">
+
+                            <small class="text-secondary">
+
+                                Please verify all passenger details
+                                before confirming.
+
+                            </small>
+
+                        </div>
+
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+        </div>
+
+        }
+
+    </div>
+
+</div>

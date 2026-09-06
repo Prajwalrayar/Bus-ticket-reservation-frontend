@@ -1,0 +1,323 @@
+<div class="container-fluid py-4 px-4">
+
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col">
+      <h2 class="mb-0 fw-bold"><i class="bi bi-headset me-2 text-primary"></i>Support Agent Dashboard</h2>
+      <p class="text-muted small mb-0">Resolve customer issues, view bookings, and manage support tickets for your company</p>
+    </div>
+  </div>
+
+  <!-- Resolve Error Alert -->
+  @if (resolveError) {
+    <div class="alert alert-danger alert-dismissible" role="alert">
+      <i class="bi bi-exclamation-triangle me-2"></i>{{ resolveError }}
+      <button type="button" class="btn-close" (click)="resolveError = ''"></button>
+    </div>
+  }
+
+  <!-- ======================== OVERVIEW (default/dashboard) ======================== -->
+  @if (activeTab === 'overview') {
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100 border-start border-danger border-4">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center gap-3">
+              <div class="bg-danger bg-opacity-10 rounded-circle p-3">
+                <i class="bi bi-exclamation-circle-fill text-danger fs-4"></i>
+              </div>
+              <div>
+                <h6 class="text-muted small mb-0">Open Issues</h6>
+                <h3 class="fw-bold mb-0">{{ openIssues.length }}</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100 border-start border-primary border-4">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center gap-3">
+              <div class="bg-primary bg-opacity-10 rounded-circle p-3">
+                <i class="bi bi-ticket-perforated-fill text-primary fs-4"></i>
+              </div>
+              <div>
+                <h6 class="text-muted small mb-0">Customer Bookings</h6>
+                <h3 class="fw-bold mb-0">{{ customerBookings.length }}</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100 border-start border-success border-4">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center gap-3">
+              <div class="bg-success bg-opacity-10 rounded-circle p-3">
+                <i class="bi bi-headset text-success fs-4"></i>
+              </div>
+              <div>
+                <h6 class="text-muted small mb-0">Total Tickets</h6>
+                <h3 class="fw-bold mb-0">{{ supportTickets.length }}</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-12">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body p-4 text-center text-muted py-5">
+            <i class="bi bi-arrow-left-circle fs-1 d-block mb-3"></i>
+            <p class="mb-0">Use the sidebar to navigate to Customer Issues, Tickets, Bookings, or Customer Information.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ======================== CUSTOMER ISSUES ======================== -->
+  @if (activeTab === 'customer-issues') {
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+        <div>
+          <h5 class="fw-bold mb-0"><i class="bi bi-exclamation-circle me-2 text-danger"></i>Customer Issues</h5>
+          <p class="text-muted small mb-0">Open and pending issues requiring attention</p>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary" (click)="loadSupportTickets()" [disabled]="supportTicketsLoading">
+          <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+        </button>
+      </div>
+      <div class="card-body p-4">
+        @if (supportTicketsLoading) {
+          <div class="text-center py-5"><div class="spinner-border text-danger"></div></div>
+        } @else if (supportTicketsError) {
+          <div class="alert alert-danger">{{ supportTicketsError }}</div>
+        } @else if (openIssues.length === 0) {
+          <div class="text-center py-5 text-muted">
+            <i class="bi bi-check-circle fs-1 d-block mb-3 text-success"></i>
+            <p class="fw-semibold mb-0">No open issues. All caught up!</p>
+          </div>
+        } @else {
+          <div class="row g-3">
+            @for (ticket of openIssues; track ticket.ticketId) {
+              <div class="col-12">
+                <div class="card border-0 shadow-sm border-start border-danger border-3">
+                  <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                      <h6 class="fw-bold mb-0">{{ ticket.issueSubject }}</h6>
+                      <span class="badge" [ngClass]="getStatusBadgeClass(ticket.status)">{{ ticket.status }}</span>
+                    </div>
+                    <p class="small text-muted mb-3">{{ ticket.issueDescription }}</p>
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                      <span class="badge bg-light text-dark border"><i class="bi bi-person me-1"></i>{{ ticket.customerName }}</span>
+                      @if (ticket.bookingReference) {
+                        <span class="badge bg-light text-dark border"><i class="bi bi-ticket-perforated me-1"></i>{{ ticket.bookingReference }}</span>
+                      }
+                      <span class="badge bg-light text-dark border small"><i class="bi bi-clock me-1"></i>{{ ticket.createdAt | date:'mediumDate' }}</span>
+                      <button class="btn btn-sm btn-outline-success ms-auto" (click)="resolveTicket(ticket.ticketId)">
+                        <i class="bi bi-check-circle me-1"></i>Mark Resolved
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ======================== SUPPORT TICKETS ======================== -->
+  @if (activeTab === 'tickets') {
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+        <div>
+          <h5 class="fw-bold mb-0"><i class="bi bi-headset me-2 text-primary"></i>Support Tickets</h5>
+          <p class="text-muted small mb-0">All support tickets for your company</p>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary" (click)="loadSupportTickets()" [disabled]="supportTicketsLoading">
+          <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+        </button>
+      </div>
+      <div class="card-body p-4">
+        @if (supportTicketsLoading) {
+          <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+        } @else if (supportTicketsError) {
+          <div class="alert alert-danger">{{ supportTicketsError }}</div>
+        } @else if (supportTickets.length === 0) {
+          <div class="text-center py-5 text-muted">
+            <i class="bi bi-headset fs-1 d-block mb-3"></i>
+            <p class="mb-0">No support tickets for your company yet.</p>
+          </div>
+        } @else {
+          <div class="row g-3">
+            @for (ticket of supportTickets; track ticket.ticketId) {
+              <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                  <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                      <h6 class="fw-bold mb-0">{{ ticket.issueSubject }}</h6>
+                      <span class="badge" [ngClass]="getStatusBadgeClass(ticket.status)">{{ ticket.status }}</span>
+                    </div>
+                    <p class="small text-muted mb-3">{{ ticket.issueDescription }}</p>
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                      <span class="badge bg-light text-dark border"><i class="bi bi-person me-1"></i>{{ ticket.customerName }}</span>
+                      @if (ticket.bookingReference) {
+                        <span class="badge bg-light text-dark border"><i class="bi bi-ticket-perforated me-1"></i>{{ ticket.bookingReference }}</span>
+                      }
+                      <span class="badge bg-light text-dark border small"><i class="bi bi-clock me-1"></i>{{ ticket.createdAt | date:'mediumDate' }}</span>
+                      @if (ticket.status !== 'RESOLVED') {
+                        <button class="btn btn-sm btn-outline-success ms-auto" (click)="resolveTicket(ticket.ticketId)">
+                          <i class="bi bi-check-circle me-1"></i>Resolve
+                        </button>
+                      }
+                    </div>
+                  </div>
+                  <div class="card-footer bg-light border-0 small text-muted">
+                    Opened {{ ticket.createdAt | date:'medium' }}
+                    @if (ticket.updatedAt && ticket.updatedAt !== ticket.createdAt) {
+                      &bull; Updated {{ ticket.updatedAt | date:'medium' }}
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ======================== BOOKINGS ======================== -->
+  @if (activeTab === 'customer-bookings') {
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+        <div>
+          <h5 class="fw-bold mb-0"><i class="bi bi-ticket-perforated me-2 text-primary"></i>Bookings</h5>
+          <p class="text-muted small mb-0">All customer bookings for your company's trips</p>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary" (click)="loadCustomerBookings()" [disabled]="customerBookingsLoading">
+          <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+        </button>
+      </div>
+      <div class="card-body p-0">
+        @if (customerBookingsLoading) {
+          <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+        } @else if (customerBookingsError) {
+          <div class="alert alert-danger m-4">{{ customerBookingsError }}</div>
+        } @else if (customerBookings.length === 0) {
+          <div class="text-center py-5 text-muted">
+            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+            <p class="mb-0">No customer bookings found for your company.</p>
+          </div>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Reference</th>
+                  <th>Customer</th>
+                  <th>Trip Date</th>
+                  <th>Route</th>
+                  <th>Seats</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (booking of customerBookings; track booking.bookingId) {
+                  <tr>
+                    <td class="fw-bold text-primary">{{ booking.bookingReference }}</td>
+                    <td>
+                      <div class="fw-semibold">{{ booking.userName }}</div>
+                      <div class="small text-muted">{{ booking.userEmail }}</div>
+                    </td>
+                    <td>{{ booking.createdAt | date:'mediumDate' }}</td>
+                    <td>{{ booking.boardingPointName }} &rarr; {{ booking.droppingPointName }}</td>
+                    <td>{{ booking.totalSeats }}</td>
+                    <td>
+                      <span class="badge"
+                            [class.bg-success]="booking.bookingStatus === 'CONFIRMED'"
+                            [class.bg-warning]="booking.bookingStatus === 'PENDING'"
+                            [class.bg-danger]="booking.bookingStatus === 'CANCELLED'"
+                            [class.bg-secondary]="booking.bookingStatus === 'EXPIRED'">
+                        {{ booking.bookingStatus }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ======================== CUSTOMER INFORMATION ======================== -->
+  @if (activeTab === 'customers') {
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+        <div>
+          <h5 class="fw-bold mb-0"><i class="bi bi-person-lines-fill me-2 text-info"></i>Customer Information</h5>
+          <p class="text-muted small mb-0">Relevant customer information derived from your company's bookings</p>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary" (click)="loadCustomerBookings()" [disabled]="customerBookingsLoading">
+          <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+        </button>
+      </div>
+      <div class="card-body p-0">
+        @if (customerBookingsLoading) {
+          <div class="text-center py-5"><div class="spinner-border text-info"></div></div>
+        } @else if (customerBookingsError) {
+          <div class="alert alert-danger m-4">{{ customerBookingsError }}</div>
+        } @else if (uniqueCustomers.length === 0) {
+          <div class="text-center py-5 text-muted">
+            <i class="bi bi-people fs-1 d-block mb-3"></i>
+            <p class="mb-0">No customer data available yet.</p>
+          </div>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>#</th>
+                  <th>Customer ID</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Bookings</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (customer of uniqueCustomers; track customer.userId; let i = $index) {
+                  <tr>
+                    <td class="text-muted">{{ i + 1 }}</td>
+                    <td class="font-monospace small">{{ customer.userId | slice:0:8 }}...</td>
+                    <td>
+                      @for (b of customerBookings; track b.bookingId) {
+                        @if (b.userId === customer.userId) {
+                          <span>{{ b.userName }}</span>
+                        }
+                      }
+                    </td>
+                    <td class="small text-muted">
+                      @for (b of customerBookings; track b.bookingId) {
+                        @if (b.userId === customer.userId) {
+                          <span>{{ b.userEmail }}</span>
+                        }
+                      }
+                    </td>
+                    <td><span class="badge bg-primary">{{ customer.bookingCount }}</span></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+</div>
+
+

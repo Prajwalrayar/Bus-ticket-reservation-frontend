@@ -1,0 +1,179 @@
+<div class="p-4 bg-white rounded shadow-sm">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0 fw-bold">Staff Management</h4>
+    <button class="btn btn-primary" (click)="openStaffModal()" [disabled]="operators.length === 0" title="You must create an Operating Company first">
+      <i class="bi bi-person-plus-fill me-2"></i> Add Staff
+    </button>
+  </div>
+  
+  @if (operators.length === 0 && !loading) {
+    <div class="alert alert-warning shadow-sm">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i> <strong>No Operating Companies found.</strong> You must create at least one Operating Company before you can add Bus Operators or Support Agents.
+    </div>
+  }
+
+  @if (loading) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="mt-2 text-secondary">Loading staff...</p>
+    </div>
+  } @else if (error) {
+    <div class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+    </div>
+  } @else if (staff.length === 0) {
+    <div class="alert alert-info text-center py-4">
+      <i class="bi bi-info-circle fs-3 d-block mb-2"></i>
+      No staff found.
+    </div>
+  } @else {
+    <div class="table-responsive">
+      <table class="table table-hover align-middle border">
+        <thead class="table-light">
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Role</th>
+            <th>Company</th>
+            <th>Created At</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of staff; track user.userId) {
+            <tr>
+              <td><span class="text-muted small">{{ user.userId.substring(0, 8) }}...</span></td>
+              <td class="fw-medium">{{ user.userName }}</td>
+              <td>{{ user.userEmail }}</td>
+              <td>{{ user.mobileNumber || 'N/A' }}</td>
+              <td>
+                <span class="badge" [class.bg-primary]="user.roleNames?.includes('BUS_OPERATOR')" [class.bg-info]="user.roleNames?.includes('SUPPORT_AGENT')">
+                  {{ user.roleNames?.includes('BUS_OPERATOR') ? 'Operator' : 'Support' }}
+                </span>
+              </td>
+              <td>{{ user.companyName || 'N/A' }}</td>
+              <td>{{ user.createdAt | date:'mediumDate' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+<!-- Add Staff Modal -->
+@if (showStaffModal) {
+<div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Add New Staff</h5>
+        <button type="button" class="btn-close" (click)="closeStaffModal()"></button>
+      </div>
+      <form #staffFormRef="ngForm" (ngSubmit)="staffFormRef.valid && createStaff()">
+        <div class="modal-body">
+          
+          @if (staffSubmitSuccess) {
+            <div class="alert alert-success">{{ staffSubmitSuccess }}</div>
+          }
+          @if (staffSubmitError) {
+            <div class="alert alert-danger">{{ staffSubmitError }}</div>
+          }
+
+          <div class="mb-3">
+            <label class="form-label">Full Name</label>
+            <input type="text" class="form-control" name="fullName" [(ngModel)]="staffForm.fullName" 
+                   (ngModelChange)="validateName()" (blur)="validateName()"
+                   placeholder="Enter name" required minlength="3" maxlength="50" pattern="^[a-zA-Z\s]+$"
+                   #fullName="ngModel" [class.is-invalid]="(fullName.invalid && (fullName.dirty || fullName.touched)) || (nameError && (fullName.dirty || fullName.touched))">
+            @if (fullName.invalid && (fullName.dirty || fullName.touched)) {
+              <div class="invalid-feedback">
+                @if (fullName.errors?.['required']) { <span>Name is required.</span> }
+                @if (fullName.errors?.['minlength']) { <span>Name must be at least 3 characters.</span> }
+                @if (fullName.errors?.['pattern']) { <span>Name can only contain alphabets and spaces.</span> }
+              </div>
+            }
+            @if (nameError && (fullName.dirty || fullName.touched)) {
+              <div class="invalid-feedback d-block">{{ nameError }}</div>
+            }
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" name="email" [(ngModel)]="staffForm.email" 
+                   (ngModelChange)="validateEmail()" (blur)="validateEmail()"
+                   placeholder="Enter email" required pattern="^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,4}$"
+                   #email="ngModel" [class.is-invalid]="(email.invalid && (email.dirty || email.touched)) || (emailError && (email.dirty || email.touched))">
+            @if (email.invalid && (email.dirty || email.touched)) {
+              <div class="invalid-feedback">
+                @if (email.errors?.['required']) { <span>Email is required.</span> }
+                @if (email.errors?.['pattern']) { <span>Enter a valid email address.</span> }
+              </div>
+            }
+            @if (emailError && (email.dirty || email.touched)) {
+              <div class="invalid-feedback d-block">{{ emailError }}</div>
+            }
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Mobile Number</label>
+            <input type="text" class="form-control" name="mobileNumber" [(ngModel)]="staffForm.mobileNumber" 
+                   placeholder="Enter 10-digit mobile number" required pattern="^[6-9][0-9]{9}$"
+                   #mobile="ngModel" [class.is-invalid]="mobile.invalid && (mobile.dirty || mobile.touched)">
+            @if (mobile.invalid && (mobile.dirty || mobile.touched)) {
+              <div class="invalid-feedback">
+                @if (mobile.errors?.['required']) { <span>Mobile number is required.</span> }
+                @if (mobile.errors?.['pattern']) { <span>Mobile number must be exactly 10 digits and start with 6, 7, 8, or 9.</span> }
+              </div>
+            }
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Password</label>
+            <!-- Using basic required and length here, advanced logic is in TS -->
+            <input type="password" class="form-control" name="password" [(ngModel)]="staffForm.password" 
+                   (ngModelChange)="validatePassword()" (blur)="validatePassword()"
+                   placeholder="Enter temporary password" required minlength="8" maxlength="20"
+                   #password="ngModel" [class.is-invalid]="(password.invalid && (password.dirty || password.touched)) || (passwordError && (password.dirty || password.touched))">
+            @if (password.invalid && (password.dirty || password.touched)) {
+              <div class="invalid-feedback">
+                @if (password.errors?.['required']) { <span>Password is required.</span> }
+                @if (password.errors?.['minlength']) { <span>Password must be at least 8 characters.</span> }
+              </div>
+            }
+            @if (passwordError && (password.dirty || password.touched)) {
+              <div class="invalid-feedback d-block">{{ passwordError }}</div>
+            }
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Role</label>
+            <select class="form-select" name="roleName" [(ngModel)]="staffForm.roleName" required #role="ngModel" [class.is-invalid]="role.invalid && (role.dirty || role.touched)">
+              <option value="BUS_OPERATOR">Bus Operator</option>
+              <option value="SUPPORT_AGENT">Support Agent</option>
+            </select>
+            @if (role.invalid && (role.dirty || role.touched)) {
+              <div class="invalid-feedback">Role is required.</div>
+            }
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Operating Company</label>
+            <select class="form-select" name="companyName" [(ngModel)]="staffForm.companyName" required #company="ngModel" [class.is-invalid]="company.invalid && (company.dirty || company.touched)">
+              <option value="" disabled selected>Select Operating Company</option>
+              @for (op of operators; track op.companyName) {
+                <option [value]="op.companyName">{{ op.companyName }}</option>
+              }
+            </select>
+            @if (company.invalid && (company.dirty || company.touched)) {
+              <div class="invalid-feedback">Operating Company is required.</div>
+            }
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeStaffModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="staffFormRef.invalid || nameError !== '' || emailError !== '' || passwordError !== ''">
+            Create Staff
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+}

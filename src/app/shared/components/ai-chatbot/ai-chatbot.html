@@ -1,0 +1,29 @@
+<div class="chatbot-container">
+  <button class="chat-toggle-btn" (click)="toggleChat()">
+    <i class="bi bi-chat-dots-fill" *ngIf="!isOpen"></i>
+    <i class="bi bi-x-lg" *ngIf="isOpen"></i>
+  </button>
+
+  <div class="chat-window" *ngIf="isOpen">
+    <div class="chat-header">
+      <i class="bi bi-robot me-2"></i> AI Assistant
+    </div>
+    <div class="chat-body" #chatBody>
+      <div *ngFor="let msg of messages" 
+           [ngClass]="{'bot-msg': msg.isBot, 'user-msg': !msg.isBot}" 
+           class="chat-msg">
+        {{ msg.text }}
+      </div>
+      <div *ngIf="isTyping" class="chat-msg bot-msg typing-indicator">
+        <i class="bi bi-three-dots"></i> Typing...
+      </div>
+    </div>
+    <div class="chat-footer">
+      <input type="text" [(ngModel)]="currentMessage" (keyup.enter)="sendMessage()" 
+             placeholder="Type a message..." class="chat-input"/>
+      <button class="send-btn" (click)="sendMessage()">
+        <i class="bi bi-send-fill"></i>
+      </button>
+    </div>
+  </div>
+</div>

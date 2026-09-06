@@ -1,0 +1,31 @@
+.payment-page {
+  min-height: 100vh;
+  background-color: var(--rb-bg);
+}
+
+.list-group-item {
+  border: none;
+  border-radius: 8px !important;
+  margin-bottom: 5px;
+  color: #495057;
+}
+
+.list-group-item.active {
+  background-color: var(--rb-primary-light);
+  color: var(--rb-primary-dark);
+  border-left: 4px solid var(--rb-primary);
+}
+
+.list-group-item:hover:not(.active) {
+  background-color: #f1f3f5;
+}
+
+.form-control, .form-select {
+  min-height: 48px;
+  border-radius: 8px;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--rb-primary);
+  box-shadow: 0 0 0 0.2rem rgba(216, 78, 85, 0.12);
+}

@@ -1,0 +1,104 @@
+<div class="p-4 bg-white rounded shadow-sm">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0 fw-bold">Route Management</h4>
+    <button class="btn btn-primary" (click)="openRouteModal()">
+      <i class="bi bi-plus-circle me-2"></i> Add Route
+    </button>
+  </div>
+
+  @if (loading) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="mt-2 text-secondary">Loading routes...</p>
+    </div>
+  } @else if (error) {
+    <div class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+    </div>
+  } @else if (routes.length === 0) {
+    <div class="alert alert-info text-center py-4">
+      <i class="bi bi-info-circle fs-3 d-block mb-2"></i>
+      No active routes found.
+    </div>
+  } @else {
+    <div class="table-responsive">
+      <table class="table table-hover align-middle border">
+        <thead class="table-light">
+          <tr>
+            <th>Route ID</th>
+            <th>Source</th>
+            <th>Destination</th>
+            <th>Distance (km)</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (route of routes; track route.routeId) {
+            <tr>
+              <td><span class="text-muted small">{{ route.routeId || route.source + '-' + route.destination }}</span></td>
+              <td class="fw-bold text-primary">{{ route.source }}</td>
+              <td class="fw-bold text-success">{{ route.destination }}</td>
+              <td>{{ route.distance }}</td>
+              <td>
+                <!-- We assume routes returned are active as per prompt unless marked otherwise -->
+                <span class="badge bg-success">Active</span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+<!-- Route Modal -->
+@if (showRouteModal) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header bg-primary text-white border-0">
+          <h5 class="modal-title fw-bold">
+            <i class="bi bi-signpost-split me-2"></i>
+            {{ isEditingRoute ? 'Edit Route' : 'Create New Route' }}
+          </h5>
+          <button type="button" class="btn-close btn-close-white" (click)="closeRouteModal()"></button>
+        </div>
+        <div class="modal-body p-4">
+          @if (routeSubmitError) { <div class="alert alert-danger">{{ routeSubmitError }}</div> }
+          @if (routeSubmitSuccess) { <div class="alert alert-success">{{ routeSubmitSuccess }}</div> }
+
+          <form (ngSubmit)="saveRoute()" #routeFormCtrl="ngForm">
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Source City <span class="text-primary">*</span></label>
+              <input type="text" class="form-control" name="source" [(ngModel)]="routeForm.source" required #rSrc="ngModel" [class.is-invalid]="rSrc.invalid && (rSrc.dirty || rSrc.touched)">
+              @if (rSrc.invalid && (rSrc.dirty || rSrc.touched)) {
+                <div class="invalid-feedback">Source city is required.</div>
+              }
+            </div>
+            
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Destination City <span class="text-primary">*</span></label>
+              <input type="text" class="form-control" name="destination" [(ngModel)]="routeForm.destination" required #rDest="ngModel" [class.is-invalid]="rDest.invalid && (rDest.dirty || rDest.touched)">
+              @if (rDest.invalid && (rDest.dirty || rDest.touched)) {
+                <div class="invalid-feedback">Destination city is required.</div>
+              }
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label text-muted small fw-semibold">Distance (km) <span class="text-primary">*</span></label>
+              <input type="number" class="form-control" name="distance" [(ngModel)]="routeForm.distance" required min="1" #rDist="ngModel" [class.is-invalid]="rDist.invalid && (rDist.dirty || rDist.touched)">
+              @if (rDist.invalid && (rDist.dirty || rDist.touched)) {
+                <div class="invalid-feedback">A valid distance (at least 1 km) is required.</div>
+              }
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <button type="button" class="btn btn-light px-4" (click)="closeRouteModal()">Cancel</button>
+              <button type="submit" class="btn btn-primary px-4" [disabled]="!routeFormCtrl.form.valid || routeSubmitSuccess !== ''">Save Route</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+}
