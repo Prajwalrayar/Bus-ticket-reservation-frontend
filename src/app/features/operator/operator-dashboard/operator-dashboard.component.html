@@ -704,7 +704,7 @@
 
             <!-- Base Fare -->
             <div class="mb-4">
-              <label class="form-label fw-semibold text-secondary small">Base Fare (₹) <span class="text-danger">*</span></label>
+              <label class="form-label fw-semibold text-secondary small">Base Fare to Final Destination (₹) <span class="text-danger">*</span></label>
               <div class="input-group">
                 <span class="input-group-text">₹</span>
                 <input type="number" class="form-control" name="baseFare" min="1"
@@ -716,6 +716,29 @@
                 <div class="text-danger small mt-1">Base fare must be at least ₹1.</div>
               }
             </div>
+
+            <!-- Intermediate Stop Fares -->
+            @if (routeStops.length > 0) {
+              <div class="mb-4">
+                <h6 class="fw-bold mb-3 border-bottom pb-2">Intermediate Stop Fares (From Source)</h6>
+                @if (routeStopsLoading) {
+                  <div class="text-center py-2"><div class="spinner-border spinner-border-sm text-rb-primary"></div></div>
+                } @else {
+                  <div class="row g-3">
+                    @for (stop of routeStops; track stop.routeStopId) {
+                      <div class="col-md-6">
+                        <label class="form-label fw-semibold text-secondary small">To {{ stop.stopName }} (₹)</label>
+                        <div class="input-group input-group-sm">
+                          <span class="input-group-text">₹</span>
+                          <input type="number" class="form-control" [value]="tripForm.stopFares ? tripForm.stopFares[stop.routeStopId] : 0"
+                                 (input)="onStopFareChange(stop.routeStopId, $event)" min="0" required>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
 
             <div class="d-flex gap-2 justify-content-end">
               <button type="button" class="btn btn-light px-4" (click)="closeTripModal()">Cancel</button>

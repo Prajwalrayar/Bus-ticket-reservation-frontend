@@ -1,4 +1,4 @@
-import { NgModule, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { NgModule, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from '@angular/core';
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { BrowserModule } from '@angular/platform-browser';
 
@@ -31,7 +31,11 @@ import { ProfileModule } from './features/profile/profile-module';
     ProfileModule,
     AppRoutingModule,
   ],
-  providers: [provideBrowserGlobalErrorListeners(), provideHttpClient(withInterceptorsFromDi())],
+  providers: [
+    provideZonelessChangeDetection(),
+    provideBrowserGlobalErrorListeners(), 
+    provideHttpClient(withInterceptorsFromDi())
+  ],
   bootstrap: [App],
 })
 export class AppModule {}

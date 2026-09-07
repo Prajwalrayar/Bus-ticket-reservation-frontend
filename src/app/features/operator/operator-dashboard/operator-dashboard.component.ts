@@ -343,10 +343,14 @@ export class OperatorDashboardComponent implements OnInit {
     }
   }
   // TRIP ASSIGNMENT FROM FLEET
+  routeStops: import('../../../core/models/trip').RouteStopDTO[] = [];
+  routeStopsLoading: boolean = false;
+
   openTripModal(bus: BusDTO): void {
     this.tripSubmitError = '';
     this.tripSubmitSuccess = '';
     this.selectedBusForTrip = bus;
+    this.routeStops = [];
     this.tripForm = {
       busRegistrationNumber: bus.registrationNumber,
       source: this.routes.length > 0 ? this.routes[0].source : '',
@@ -355,19 +359,59 @@ export class OperatorDashboardComponent implements OnInit {
       arrivalDate: '',
       departureTime: '',
       arrivalTime: '',
-      baseFare: 0
+      baseFare: 0,
+      stopFares: {}
     };
+    
+    if (this.routes.length > 0) {
+      this.fetchRouteStops(this.routes[0].source, this.routes[0].destination);
+    }
+    
     this.showTripModal = true;
   }
 
   closeTripModal(): void {
     this.showTripModal = false;
     this.selectedBusForTrip = null;
+    this.routeStops = [];
   }
 
   onRouteChange(route: RouteDTO): void {
     this.tripForm.source = route.source;
     this.tripForm.destination = route.destination;
+    this.fetchRouteStops(route.source, route.destination);
+  }
+
+  fetchRouteStops(source: string, destination: string): void {
+    this.routeStopsLoading = true;
+    this.routeService.getRouteStops(source, destination).subscribe({
+      next: (stops) => {
+        // Filter out the primary source from dropping points if necessary, 
+        // usually we just want to set fares to intermediate/dropping points
+        this.routeStops = stops.filter(s => s.stopName.toLowerCase() !== source.toLowerCase());
+        this.routeStopsLoading = false;
+        
+        // Initialize stopFares
+        this.tripForm.stopFares = {};
+        this.routeStops.forEach(stop => {
+          this.tripForm.stopFares![stop.routeStopId] = 0;
+        });
+        
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.routeStopsLoading = false;
+        this.routeStops = [];
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  onStopFareChange(routeStopId: string, event: Event): void {
+    const val = parseFloat((event.target as HTMLInputElement).value) || 0;
+    if (this.tripForm.stopFares) {
+      this.tripForm.stopFares[routeStopId] = val;
+    }
   }
 
   saveTrip(): void {

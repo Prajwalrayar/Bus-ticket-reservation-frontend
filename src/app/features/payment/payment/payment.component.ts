@@ -1,9 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BookingStateService } from '../../../core/services/booking-state.service';
 import { PaymentService } from '../../../core/services/payment.service';
 import { BookingService } from '../../../core/services/booking.service';
-import { PaymentStatus, PaymentRequest } from '../../../core/models/payment';
+import { PaymentStatus, PaymentRequest, PaymentDTO } from '../../../core/models/payment';
 
 @Component({
   selector: 'app-payment',
@@ -27,7 +27,8 @@ export class PaymentComponent implements OnInit {
     private route: ActivatedRoute,
     private paymentService: PaymentService,
     private bookingService: BookingService,
-    private bookingState: BookingStateService
+    private bookingState: BookingStateService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -45,9 +46,11 @@ export class PaymentComponent implements OnInit {
     this.bookingService.getBookingById(this.bookingId).subscribe({
       next: (booking) => {
         this.totalAmount = booking.totalAmount;
+        this.cdr.markForCheck();
       },
       error: () => {
         this.errorMessage = 'Unable to fetch booking details.';
+        this.cdr.markForCheck();
       }
     });
   }
@@ -63,6 +66,7 @@ export class PaymentComponent implements OnInit {
 
     this.paymentStatus = 'PROCESSING';
     this.errorMessage = '';
+    this.cdr.markForCheck();
 
     const request: PaymentRequest = {
       paymentMethod: this.paymentMethod
@@ -73,22 +77,28 @@ export class PaymentComponent implements OnInit {
         const payment = res.data;
         if (payment.paymentStatus === PaymentStatus.SUCCESS) {
           this.paymentStatus = 'SUCCESS';
-          this.completeBooking();
+          this.cdr.markForCheck();
+          this.completeBooking(payment);
         } else {
           this.paymentStatus = 'FAILED';
           this.errorMessage = payment.failureReason || 'Payment failed. Please try again.';
+          this.cdr.markForCheck();
         }
       },
       error: (err) => {
         this.paymentStatus = 'FAILED';
         this.errorMessage = err.error?.message || 'Payment failed due to server error. Please try again.';
+        this.cdr.markForCheck();
       }
     });
   }
 
-  completeBooking(): void {
+  completeBooking(payment: PaymentDTO): void {
     setTimeout(() => {
-      this.router.navigate(['/booking-success'], { queryParams: { bookingId: this.bookingId } });
+      this.router.navigate(['/booking-success'], { 
+        queryParams: { bookingId: this.bookingId },
+        state: { payment: payment }
+      });
     }, 1500);
   }
 

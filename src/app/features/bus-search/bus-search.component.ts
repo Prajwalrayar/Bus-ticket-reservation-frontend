@@ -12,7 +12,7 @@ import { AuthStateService } from '../../core/services/auth-state.service';
   styleUrl: './bus-search.component.css',
 })
 export class BusSearchComponent implements OnInit {
-  
+
   buses: TripDTO[] = [];
   filteredBuses: TripDTO[] = [];
 
@@ -101,7 +101,7 @@ export class BusSearchComponent implements OnInit {
 
   private fetchAiData() {
     this.isAiLoading = true;
-    
+
     // Smart Route Recommendations (Phase 3)
     this.aiService.getTravelRecommendations(this.fromCity, this.toCity, this.journeyDate).subscribe({
       next: (res) => {
@@ -159,7 +159,7 @@ export class BusSearchComponent implements OnInit {
     // Filter by Seater/Sleeper
     if (this.selectedBusTypes.size > 0) {
       result = result.filter(bus => {
-        return Array.from(this.selectedBusTypes).some(selected => 
+        return Array.from(this.selectedBusTypes).some(selected =>
           bus.busType?.toUpperCase().includes(selected.toUpperCase())
         );
       });
@@ -205,6 +205,23 @@ export class BusSearchComponent implements OnInit {
     // Toggle on and load
     this.expandedTrips.set(trip.tripId, { loading: true, boarding: [], dropping: [], error: '' });
 
+    if (trip.stopFares && trip.stopFares.length > 0) {
+      // Use pre-loaded stop fares to construct stops
+      const stops = trip.stopFares.map(tsf => ({
+        routeStopId: tsf.routeStopId,
+        stopName: tsf.stopName,
+        stopSequence: tsf.stopSequence,
+        stopType: tsf.stopType as import('../../core/models/trip').StopType,
+        distanceFromSourceKm: 0, // not critical for UI
+        source: trip.source,
+        destination: trip.destination
+      }));
+      const boarding = stops.filter(s => s.stopType === 'BOARDING' || s.stopType === 'INTERMEDIATE').sort((a, b) => a.stopSequence - b.stopSequence);
+      const dropping = stops.filter(s => s.stopType === 'DROPPING' || s.stopType === 'INTERMEDIATE').sort((a, b) => a.stopSequence - b.stopSequence);
+      this.expandedTrips.set(trip.tripId, { loading: false, boarding, dropping, error: '' });
+      return;
+    }
+
     this.tripService.getRouteStops(trip.source, trip.destination).subscribe({
       next: (response) => {
         const stops = response.data || [];
@@ -224,25 +241,25 @@ export class BusSearchComponent implements OnInit {
 
   getDuration(departureTime: string, arrivalTime: string): string {
     if (!departureTime || !arrivalTime) return '';
-    
+
     const [depH, depM] = departureTime.split(':').map(Number);
     const [arrH, arrM] = arrivalTime.split(':').map(Number);
-    
+
     let depDate = new Date();
     depDate.setHours(depH, depM, 0, 0);
-    
+
     let arrDate = new Date();
     arrDate.setHours(arrH, arrM, 0, 0);
-    
+
     // If arrival is earlier than departure, assume next day
     if (arrDate < depDate) {
       arrDate.setDate(arrDate.getDate() + 1);
     }
-    
+
     const diffMs = arrDate.getTime() - depDate.getTime();
     const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
     const diffMins = Math.round((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-    
+
     return `${diffHrs}h ${diffMins}m`;
   }
 

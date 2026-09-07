@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BookingService } from '../../../core/services/booking.service';
 import { TripService } from '../../../core/services/trip.service';
@@ -26,10 +26,20 @@ export class BookingSuccess implements OnInit {
     private router: Router,
     private bookingService: BookingService,
     private tripService: TripService,
-    private paymentService: PaymentService
-  ) {}
+    private paymentService: PaymentService,
+    private cdr: ChangeDetectorRef
+  ) {
+    const navigation = this.router.getCurrentNavigation();
+    if (navigation?.extras.state?.['payment']) {
+      this.payment = navigation.extras.state['payment'];
+    }
+  }
 
   ngOnInit(): void {
+    if (!this.payment && history.state?.payment) {
+      this.payment = history.state.payment;
+    }
+
     this.route.queryParams.subscribe(params => {
       this.bookingId = params['bookingId'];
       if (!this.bookingId) {
@@ -42,16 +52,24 @@ export class BookingSuccess implements OnInit {
 
   fetchBookingDetails(): void {
     this.loading = true;
+    this.cdr.markForCheck();
+    
     this.bookingService.getBookingById(this.bookingId).subscribe({
       next: (booking) => {
         this.booking = booking;
         this.fetchTripDetails(booking.tripId);
-        this.fetchPaymentDetails();
+        
+        if (!this.payment) {
+          this.fetchPaymentDetails();
+        } else {
+          this.checkLoadingComplete();
+        }
       },
       error: (err) => {
         console.error('Error fetching booking', err);
         this.errorMessage = 'Unable to retrieve booking details.';
         this.loading = false;
+        this.cdr.markForCheck();
       }
     });
   }
@@ -70,12 +88,10 @@ export class BookingSuccess implements OnInit {
   }
 
   fetchPaymentDetails(): void {
-    // Assuming backend endpoint exists or we can just show Booking status, wait, backend has getPaymentsByBooking!
     this.paymentService.getPaymentsByBooking(this.bookingId).subscribe({
       next: (res) => {
         const payments = res.data;
         if (payments && payments.length > 0) {
-          // get most recent
           this.payment = payments[payments.length - 1];
         }
         this.checkLoadingComplete();
@@ -89,9 +105,8 @@ export class BookingSuccess implements OnInit {
 
   checkLoadingComplete(): void {
     if (this.booking && this.trip !== undefined && this.payment !== undefined) {
-      // Actually, since both are async, we can just set loading = false whenever both are fetched, 
-      // or simply rely on *ngIf in HTML
       this.loading = false;
+      this.cdr.markForCheck();
     }
   }
 

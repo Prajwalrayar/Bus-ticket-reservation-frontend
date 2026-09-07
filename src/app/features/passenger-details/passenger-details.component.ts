@@ -1,4 +1,5 @@
 import { Component, OnInit, signal } from '@angular/core';
+import { finalize } from 'rxjs/operators';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Passenger } from '../../core/models/passenger';
 import { BookingStateService } from '../../core/services/booking-state.service';
@@ -132,22 +133,47 @@ export class PassengerDetailsComponent implements OnInit {
   }
 
   loadRouteStops(): void {
-    const from = this.fromCity();
-    const to = this.toCity();
+    const from = this.fromCity().toLowerCase();
+    const to = this.toCity().toLowerCase();
     if (!from || !to) return;
 
     this.loading.set(true);
-    this.tripService.getRouteStops(from, to).subscribe({
-      next: (response) => {
-        const stops = response.data || [];
-        this.boardingPoints.set(stops.filter(s => s.stopType === 'BOARDING' || s.stopType === 'INTERMEDIATE'));
-        this.droppingPoints.set(stops.filter(s => s.stopType === 'DROPPING' || s.stopType === 'INTERMEDIATE'));
-        this.loading.set(false);
+
+    this.tripService.getTripById(this.tripId()).pipe(
+      finalize(() => this.loading.set(false))
+    ).subscribe({
+      next: (tripRes) => {
+        const trip = tripRes.data;
+        if (trip && trip.stopFares && trip.stopFares.length > 0) {
+          const stops = trip.stopFares.map(tsf => ({
+            routeStopId: tsf.routeStopId,
+            stopName: tsf.stopName,
+            stopSequence: tsf.stopSequence,
+            stopType: tsf.stopType as import('../../core/models/trip').StopType,
+            distanceFromSourceKm: 0,
+            source: trip.source,
+            destination: trip.destination
+          }));
+          this.boardingPoints.set(stops.filter(s => s.stopType === 'BOARDING' || s.stopType === 'INTERMEDIATE').sort((a,b) => a.stopSequence - b.stopSequence));
+          this.droppingPoints.set(stops.filter(s => s.stopType === 'DROPPING' || s.stopType === 'INTERMEDIATE').sort((a,b) => a.stopSequence - b.stopSequence));
+        } else {
+          // Fallback to generic route stops
+          this.tripService.getRouteStops(from, to).subscribe({
+            next: (response) => {
+              const stops = response.data || [];
+              this.boardingPoints.set(stops.filter(s => s.stopType === 'BOARDING' || s.stopType === 'INTERMEDIATE').sort((a,b) => a.stopSequence - b.stopSequence));
+              this.droppingPoints.set(stops.filter(s => s.stopType === 'DROPPING' || s.stopType === 'INTERMEDIATE').sort((a,b) => a.stopSequence - b.stopSequence));
+            },
+            error: (err) => {
+              console.error('Failed to load route stops:', err);
+              this.errorMessage.set('Could not load boarding and dropping points.');
+            }
+          });
+        }
       },
       error: (err) => {
-        console.error('Failed to load route stops:', err);
-        this.errorMessage.set('Could not load boarding and dropping points.');
-        this.loading.set(false);
+        console.error('Failed to load trip details:', err);
+        this.errorMessage.set('Could not load trip details.');
       }
     });
   }
