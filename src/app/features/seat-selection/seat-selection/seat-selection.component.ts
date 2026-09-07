@@ -83,7 +83,34 @@ export class SeatSelectionComponent implements OnInit {
   loadSeats(tripId: string): void {
     this.seatService.getTripSeats(tripId).subscribe({
       next: (response) => {
-        const loadedSeats = response.data || [];
+        let loadedSeats = response.data || [];
+        
+        // Dynamically calculate seatFare based on stopFares and search query (from/to)
+        if (this.bus() && this.bus()!.stopFares && this.bus()!.stopFares!.length > 0) {
+          const fromCity = this.fromCity().toLowerCase();
+          const toCity = this.toCity().toLowerCase();
+          
+          let sourceFare = 0;
+          let destFare = this.bus()!.baseFare;
+          
+          for (const tsf of this.bus()!.stopFares!) {
+            if (tsf.stopName.toLowerCase() === fromCity) {
+              sourceFare = tsf.fareFromSource;
+            }
+            if (tsf.stopName.toLowerCase() === toCity) {
+              destFare = tsf.fareFromSource;
+            }
+          }
+          
+          const segmentFare = destFare - sourceFare;
+          if (segmentFare > 0) {
+            loadedSeats = loadedSeats.map(seat => ({
+              ...seat,
+              seatFare: segmentFare
+            }));
+          }
+        }
+
         this.seats.set(loadedSeats);
         
         if (this.bus()) {

@@ -328,10 +328,11 @@ export class ProfileComponent implements OnInit {
         };
       });
 
-      const now = new Date();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-      this.upcomingBookings = uiBookings.filter(b => b.status === 'CONFIRMED' && b.date && b.date >= now);
-      this.completedBookings = uiBookings.filter(b => b.status === 'CONFIRMED' && b.date && b.date < now);
+      this.upcomingBookings = uiBookings.filter(b => b.status === 'CONFIRMED' && b.date && b.date >= today);
+      this.completedBookings = uiBookings.filter(b => b.status === 'CONFIRMED' && b.date && b.date < today);
       this.cancelledBookings = uiBookings.filter(b => b.status === 'CANCELLED' || b.status === 'EXPIRED');
 
       this.loadingBookings = false;

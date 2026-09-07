@@ -16,6 +16,7 @@ export interface TripDTO {
   arrivalDate: string; // YYYY-MM-DD
   arrivalTime: string; // HH:mm:ss
   baseFare: number;
+  stopFares?: TripStopFareDTO[];
   isCancelled: boolean;
   cancellationReason: string;
   source: string;
@@ -26,6 +27,14 @@ export interface TripDTO {
   operatorName: string;
   totalSeats: number;
   availableSeats: number;
+}
+
+export interface TripStopFareDTO {
+  routeStopId: string;
+  stopName: string;
+  fareFromSource: number;
+  stopSequence: number;
+  stopType: string;
 }
 
 export type StopType = 'BOARDING' | 'DROPPING' | 'INTERMEDIATE';
@@ -56,4 +65,5 @@ export interface TripCreateRequest {
   departureTime: string; // HH:MM:SS or HH:MM
   arrivalTime: string; // HH:MM:SS or HH:MM
   baseFare: number;
+  stopFares?: { [routeStopId: string]: number };
 }

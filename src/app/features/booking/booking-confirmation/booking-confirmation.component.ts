@@ -697,11 +697,17 @@ export class BookingConfirmationComponent implements OnInit, OnDestroy {
 
 
 
+  submitting = false;
+
   // ==========================================================
   // CONFIRM BOOKING
   // ==========================================================
 
   confirmBooking(): void {
+
+    if (this.submitting) {
+      return;
+    }
 
     this.errorMessage.set('');
 
@@ -783,6 +789,7 @@ export class BookingConfirmationComponent implements OnInit, OnDestroy {
     // SAVE BOOKING
     // ==========================================================
 
+    this.submitting = true;
     this.loading.set(true);
 
 
@@ -802,6 +809,7 @@ export class BookingConfirmationComponent implements OnInit, OnDestroy {
           );
 
 
+          this.submitting = false;
           this.loading.set(false);
 
 
@@ -836,11 +844,14 @@ export class BookingConfirmationComponent implements OnInit, OnDestroy {
           );
 
 
+          this.submitting = false;
           this.loading.set(false);
 
+          
+          const backendMessage = error?.error?.message || error?.message;
 
           this.errorMessage.set(
-            'Unable to confirm booking. Please try again.'
+            backendMessage || 'Unable to confirm booking. Please try again.'
           );
 
         }
