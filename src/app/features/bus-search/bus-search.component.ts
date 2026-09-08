@@ -18,6 +18,8 @@ export class BusSearchComponent implements OnInit {
 
   fromCity = '';
   toCity = '';
+  fromLocationId: number | null = null;
+  toLocationId: number | null = null;
   journeyDate = '';
 
   loading = signal(false);
@@ -62,6 +64,8 @@ export class BusSearchComponent implements OnInit {
     this.route.queryParams.subscribe(params => {
       this.fromCity = params['from'] || '';
       this.toCity = params['to'] || '';
+      this.fromLocationId = params['fromId'] ? Number(params['fromId']) : null;
+      this.toLocationId = params['toId'] ? Number(params['toId']) : null;
       this.journeyDate = params['date'] || '';
 
       this.searchBuses();
@@ -79,6 +83,8 @@ export class BusSearchComponent implements OnInit {
     const request: TripSearchRequest = {
       source: this.fromCity,
       destination: this.toCity,
+      fromLocationId: this.fromLocationId || undefined,
+      toLocationId: this.toLocationId || undefined,
       travelDate: this.journeyDate || undefined
     };
 
@@ -266,13 +272,15 @@ export class BusSearchComponent implements OnInit {
   // --- UI Interactions ---
 
   modifySearch(): void {
-    this.router.navigate(['/'], {
-      queryParams: {
-        from: this.fromCity,
-        to: this.toCity,
-        date: this.journeyDate
-      }
-    });
+    const queryParams: any = {
+      from: this.fromCity,
+      to: this.toCity,
+      date: this.journeyDate
+    };
+    if (this.fromLocationId) queryParams.fromId = this.fromLocationId;
+    if (this.toLocationId) queryParams.toId = this.toLocationId;
+
+    this.router.navigate(['/'], { queryParams });
   }
 
   viewSeats(bus: TripDTO): void {
@@ -283,7 +291,8 @@ export class BusSearchComponent implements OnInit {
           tripId: bus.tripId,
           from: this.fromCity,
           to: this.toCity,
-          date: this.journeyDate
+          date: this.journeyDate,
+          fare: bus.baseFare
         }
       }
     );

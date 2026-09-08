@@ -1,0 +1,37 @@
+<div class="position-relative w-100">
+  <div class="input-group">
+    <span class="input-group-text"><i class="bi" [ngClass]="iconClass"></i></span>
+    <input
+      type="text"
+      class="form-control form-control-lg"
+      [placeholder]="placeholder"
+      [formControl]="searchControl"
+      (focus)="onFocus()"
+      autocomplete="off"
+    />
+    <button *ngIf="searchControl.value" type="button" class="btn btn-outline-secondary" (click)="clearSelection()">
+      <i class="bi bi-x-circle"></i>
+    </button>
+  </div>
+  
+  <div class="dropdown-menu w-100 shadow-sm show" *ngIf="showSuggestions" style="position: absolute; top: 100%; left: 0; z-index: 1050; max-height: 250px; overflow-y: auto;">
+    <div class="dropdown-item text-center text-muted py-2" *ngIf="isLoading">
+      <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+      Loading...
+    </div>
+    <div class="dropdown-item text-center text-danger py-2" *ngIf="errorMessage && !isLoading">
+      {{ errorMessage }}
+    </div>
+    <div class="dropdown-item text-center text-muted py-2" *ngIf="!isLoading && !errorMessage && suggestions.length === 0 && searchControl.value && searchControl.value.length >= 1">
+      No locations found
+    </div>
+    
+    <button class="dropdown-item d-flex align-items-center py-2" *ngFor="let suggestion of suggestions" (click)="selectSuggestion(suggestion)">
+      <i class="bi bi-geo-alt-fill text-danger me-2"></i>
+      <div>
+        <div class="fw-bold">{{ suggestion.displayAlias }}</div>
+        <small class="text-muted" *ngIf="suggestion.displayAlias !== suggestion.canonicalName">{{ suggestion.canonicalName }}</small>
+      </div>
+    </button>
+  </div>
+</div>

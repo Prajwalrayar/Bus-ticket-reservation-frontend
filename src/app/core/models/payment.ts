@@ -7,6 +7,7 @@ export enum PaymentStatus {
 
 export interface PaymentRequest {
   paymentMethod: string;
+  useWallet?: boolean;
 }
 
 export interface PaymentDTO {
@@ -16,6 +17,7 @@ export interface PaymentDTO {
   paymentMethod: string;
   paymentStatus: PaymentStatus;
   paymentAmount: number;
+  walletAmountUsed: number;
   failureReason: string;
   paymentInitiatedAt: string;
   paymentCompletedAt: string;

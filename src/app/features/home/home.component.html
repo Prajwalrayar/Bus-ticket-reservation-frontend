@@ -19,22 +19,16 @@
       <form (ngSubmit)="searchBuses()" novalidate>
         <div class="row g-3 align-items-end">
           <div class="col-12 col-lg-3">
-            <label for="fromCity" class="form-label">From</label>
-            <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
-              <input
-                type="text"
-                id="fromCity"
-                name="fromCity"
-                class="form-control"
-                [(ngModel)]="fromCity"
-                placeholder="Departure city"
-                autocomplete="off"
-              />
-            </div>
+            <label class="form-label">From</label>
+            <app-location-autocomplete
+              placeholder="Departure city"
+              iconClass="bi-geo-alt"
+              [initialLocation]="initialFromLocation"
+              (locationSelected)="onFromSelected($event)">
+            </app-location-autocomplete>
           </div>
 
-          <div class="col-12 col-lg-1 d-flex justify-content-center">
+          <div class="col-12 col-lg-1 d-flex justify-content-center pb-2">
             <button
               type="button"
               class="btn-swap"
@@ -47,19 +41,13 @@
           </div>
 
           <div class="col-12 col-lg-3">
-            <label for="toCity" class="form-label">To</label>
-            <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-geo-alt-fill"></i></span>
-              <input
-                type="text"
-                id="toCity"
-                name="toCity"
-                class="form-control"
-                [(ngModel)]="toCity"
-                placeholder="Destination city"
-                autocomplete="off"
-              />
-            </div>
+            <label class="form-label">To</label>
+            <app-location-autocomplete
+              placeholder="Destination city"
+              iconClass="bi-geo-alt-fill"
+              [initialLocation]="initialToLocation"
+              (locationSelected)="onToSelected($event)">
+            </app-location-autocomplete>
           </div>
 
           <div class="col-12 col-lg-2">

@@ -85,8 +85,18 @@ export class SeatSelectionComponent implements OnInit {
       next: (response) => {
         let loadedSeats = response.data || [];
         
-        // Dynamically calculate seatFare based on stopFares and search query (from/to)
-        if (this.bus() && this.bus()!.stopFares && this.bus()!.stopFares!.length > 0) {
+        // Use fare query parameter if available (from dynamic fare calculation in search page)
+        const fareParam = this.route.snapshot.queryParamMap.get('fare');
+        if (fareParam) {
+          const dynamicFare = Number(fareParam);
+          if (dynamicFare > 0) {
+            loadedSeats = loadedSeats.map(seat => ({
+              ...seat,
+              seatFare: dynamicFare
+            }));
+          }
+        } else if (this.bus() && this.bus()!.stopFares && this.bus()!.stopFares!.length > 0) {
+          // Fallback to recalculating (might fail if aliases are used directly)
           const fromCity = this.fromCity().toLowerCase();
           const toCity = this.toCity().toLowerCase();
           
