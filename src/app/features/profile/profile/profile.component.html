@@ -380,18 +380,27 @@
 
             <div class="row mb-3">
               <div class="col-6">
-                <label class="form-label fw-semibold small">ID Type <span class="text-muted fw-normal">(Optional)</span></label>
-                <select class="form-select" [(ngModel)]="passengerForm.idType" name="idType">
-                  <option value="">Select ID</option>
+                <label class="form-label fw-semibold small">ID Type <span class="text-rb-primary">*</span></label>
+                <select class="form-select" [(ngModel)]="passengerForm.idType" (ngModelChange)="passengerForm.idNumber = ''" name="idType" required #pIdType="ngModel" [class.is-invalid]="pIdType.invalid && (pIdType.dirty || pIdType.touched)">
+                  <option value="" disabled>Select ID</option>
                   <option value="AADHAAR">Aadhaar</option>
                   <option value="PAN">PAN</option>
-                  <option value="PASSPORT">Passport</option>
-                  <option value="DRIVING_LICENSE">Driving License</option>
                 </select>
+                @if (pIdType.invalid && (pIdType.dirty || pIdType.touched)) {
+                  <div class="invalid-feedback">ID Type is required.</div>
+                }
               </div>
               <div class="col-6">
-                <label class="form-label fw-semibold small">ID Number <span class="text-muted fw-normal">(Optional)</span></label>
-                <input type="text" class="form-control" [(ngModel)]="passengerForm.idNumber" name="idNumber" placeholder="ID Number">
+                <label class="form-label fw-semibold small">ID Number <span class="text-rb-primary">*</span></label>
+                <input type="text" class="form-control" [(ngModel)]="passengerForm.idNumber" name="idNumber" [placeholder]="passengerForm.idType === 'AADHAAR' ? '12-digit Aadhaar' : (passengerForm.idType === 'PAN' ? '10-char PAN' : 'ID Number')" required [pattern]="passengerForm.idType === 'AADHAAR' ? '^[2-9]{1}[0-9]{11}$' : '^[A-Z]{5}[0-9]{4}[A-Z]{1}$'" #pIdNumber="ngModel" [class.is-invalid]="pIdNumber.invalid && (pIdNumber.dirty || pIdNumber.touched)" [maxlength]="passengerForm.idType === 'AADHAAR' ? 12 : 10" [style.text-transform]="passengerForm.idType === 'PAN' ? 'uppercase' : 'none'" [disabled]="!passengerForm.idType">
+                @if (pIdNumber.invalid && (pIdNumber.dirty || pIdNumber.touched)) {
+                  <div class="invalid-feedback">
+                    @if (pIdNumber.errors?.['required']) { <span>ID Number is required.</span> }
+                    @if (pIdNumber.errors?.['pattern']) { 
+                      <span>{{ passengerForm.idType === 'AADHAAR' ? 'Invalid Aadhaar (12 digits, cannot start with 0 or 1)' : 'Invalid PAN (e.g. ABCDE1234F)' }}</span> 
+                    }
+                  </div>
+                }
               </div>
             </div>
 
