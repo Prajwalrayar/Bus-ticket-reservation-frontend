@@ -13,6 +13,7 @@ import { BookingSuccess } from './features/booking/booking-success/booking-succe
 import { PaymentComponent } from './features/payment/payment/payment.component';
 import { NotificationsComponent } from './features/notifications/notifications.component';
 import { ProfileComponent } from './features/profile/profile/profile.component';
+import { WalletComponent } from './features/profile/wallet/wallet.component';
 import { LoginComponent } from './auth/login/login.component';
 import { RegisterComponent } from './auth/register/register.component';
 import { GuestGuard } from './core/guards/guest-guard';
@@ -77,6 +78,11 @@ const routes: Routes = [
       {
         path: 'profile',
         component: ProfileComponent,
+        canActivate: [AuthGuard],
+      },
+      {
+        path: 'profile/wallet',
+        component: WalletComponent,
         canActivate: [AuthGuard],
       },
     ],

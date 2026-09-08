@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { BookingStateService } from '../../../core/services/booking-state.service';
 import { PaymentService } from '../../../core/services/payment.service';
 import { BookingService } from '../../../core/services/booking.service';
+import { WalletService } from '../../../core/services/wallet.service';
 import { PaymentStatus, PaymentRequest, PaymentDTO } from '../../../core/models/payment';
 
 @Component({
@@ -22,11 +23,24 @@ export class PaymentComponent implements OnInit {
   // Form fields
   upiId: string = '';
 
+  // Wallet
+  walletBalance: number = 0;
+  useWallet: boolean = false;
+  walletLoaded: boolean = false;
+
+  get remainingAmount(): number {
+    if (this.useWallet && this.walletBalance > 0) {
+      return Math.max(0, this.totalAmount - this.walletBalance);
+    }
+    return this.totalAmount;
+  }
+
   constructor(
     private router: Router,
     private route: ActivatedRoute,
     private paymentService: PaymentService,
     private bookingService: BookingService,
+    private walletService: WalletService,
     private bookingState: BookingStateService,
     private cdr: ChangeDetectorRef
   ) {}
@@ -39,6 +53,7 @@ export class PaymentComponent implements OnInit {
         return;
       }
       this.fetchBookingDetails();
+      this.fetchWalletBalance();
     });
   }
 
@@ -55,12 +70,30 @@ export class PaymentComponent implements OnInit {
     });
   }
 
+  fetchWalletBalance(): void {
+    this.walletService.getMyWallet().subscribe({
+      next: (wallet) => {
+        this.walletBalance = wallet.balance;
+        this.walletLoaded = true;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.walletLoaded = true; // Still mark as loaded to proceed
+      }
+    });
+  }
+
+  toggleWallet(): void {
+    this.useWallet = !this.useWallet;
+  }
+
   setPaymentMethod(method: string): void {
     this.paymentMethod = method;
   }
 
   processPayment(): void {
-    if (this.paymentMethod === 'UPI' && !this.upiId.trim()) {
+    // Only require UPI ID if there's a remaining amount to be paid via UPI
+    if (this.remainingAmount > 0 && this.paymentMethod === 'UPI' && !this.upiId.trim()) {
       return;
     }
 
@@ -69,7 +102,8 @@ export class PaymentComponent implements OnInit {
     this.cdr.markForCheck();
 
     const request: PaymentRequest = {
-      paymentMethod: this.paymentMethod
+      paymentMethod: this.remainingAmount === 0 ? 'WALLET' : this.paymentMethod,
+      useWallet: this.useWallet
     };
 
     this.paymentService.mockCheckout(this.bookingId, request).subscribe({

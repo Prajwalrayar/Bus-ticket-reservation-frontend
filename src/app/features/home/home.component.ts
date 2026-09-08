@@ -29,6 +29,8 @@ interface OfferItem {
 export class HomeComponent implements OnInit {
   fromCity = '';
   toCity = '';
+  fromLocationId: number | null = null;
+  toLocationId: number | null = null;
   journeyDate = '';
   minDate = '';
   errorMessage = '';
@@ -41,6 +43,8 @@ export class HomeComponent implements OnInit {
     { from: 'Chennai', to: 'Coimbatore', label: 'Popular route' },
     { from: 'Kolkata', to: 'Siliguri', label: 'Scenic journey' },
   ];
+
+  // Rest of the properties omitted for brevity...
 
   readonly offers: OfferItem[] = [
     {
@@ -98,19 +102,58 @@ export class HomeComponent implements OnInit {
     this.route.queryParams.subscribe((params) => {
       this.fromCity = params['from'] || '';
       this.toCity = params['to'] || '';
+      this.fromLocationId = params['fromId'] ? Number(params['fromId']) : null;
+      this.toLocationId = params['toId'] ? Number(params['toId']) : null;
       this.journeyDate = params['date'] || '';
     });
   }
 
+  get initialFromLocation() {
+    return this.fromCity && this.fromLocationId ? { id: this.fromLocationId, name: this.fromCity } : null;
+  }
+
+  get initialToLocation() {
+    return this.toCity && this.toLocationId ? { id: this.toLocationId, name: this.toCity } : null;
+  }
+
+  onFromSelected(location: import('../../core/models/location').LocationDTO | null) {
+    if (location) {
+      this.fromCity = location.displayAlias;
+      this.fromLocationId = location.locationId;
+    } else {
+      this.fromCity = '';
+      this.fromLocationId = null;
+    }
+  }
+
+  onToSelected(location: import('../../core/models/location').LocationDTO | null) {
+    if (location) {
+      this.toCity = location.displayAlias;
+      this.toLocationId = location.locationId;
+    } else {
+      this.toCity = '';
+      this.toLocationId = null;
+    }
+  }
+
   swapLocations(): void {
-    const temporaryCity = this.fromCity;
+    const tempCity = this.fromCity;
+    const tempId = this.fromLocationId;
     this.fromCity = this.toCity;
-    this.toCity = temporaryCity;
+    this.fromLocationId = this.toLocationId;
+    this.toCity = tempCity;
+    this.toLocationId = tempId;
   }
 
   selectPopularRoute(route: PopularRoute): void {
     this.fromCity = route.from;
     this.toCity = route.to;
+    // We do not have IDs for popular routes here, but that's okay, 
+    // the backend will fallback to string matching if IDs are missing,
+    // or we can require them to select from the dropdown. 
+    // Let's clear the IDs so the search uses the string fallback.
+    this.fromLocationId = null;
+    this.toLocationId = null;
     this.errorMessage = '';
     this.scrollToSearch();
   }
@@ -133,13 +176,16 @@ export class HomeComponent implements OnInit {
       return;
     }
 
-    this.router.navigate(['/search'], {
-      queryParams: {
-        from: this.fromCity.trim(),
-        to: this.toCity.trim(),
-        date: this.journeyDate,
-      },
-    });
+    const queryParams: any = {
+      from: this.fromCity.trim(),
+      to: this.toCity.trim(),
+      date: this.journeyDate,
+    };
+    
+    if (this.fromLocationId) queryParams.fromId = this.fromLocationId;
+    if (this.toLocationId) queryParams.toId = this.toLocationId;
+
+    this.router.navigate(['/search'], { queryParams });
   }
 
   private scrollToSearch(): void {

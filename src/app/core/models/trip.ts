@@ -1,12 +1,15 @@
 export interface TripSearchRequest {
   source: string;
   destination: string;
+  fromLocationId?: number;
+  toLocationId?: number;
   travelDate?: string; // YYYY-MM-DD
   busType?: string;
   minPrice?: number;
   maxPrice?: number;
   departureStart?: string; // HH:mm:ss
   departureEnd?: string; // HH:mm:ss
+  isAc?: boolean;
 }
 
 export interface TripDTO {

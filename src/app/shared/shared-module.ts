@@ -11,6 +11,7 @@ import { ErrorStateComponent } from './components/error-state/error-state.compon
 import { AiChatbotComponent } from './components/ai-chatbot/ai-chatbot';
 
 import { UserProfileComponent } from './components/user-profile/user-profile.component';
+import { LocationAutocompleteComponent } from './components/location-autocomplete/location-autocomplete';
 
 const SHARED_COMPONENTS = [
   NavbarComponent,
@@ -19,11 +20,19 @@ const SHARED_COMPONENTS = [
   EmptyStateComponent,
   ErrorStateComponent,
   UserProfileComponent,
+  LocationAutocompleteComponent
 ];
 
 @NgModule({
   declarations: [...SHARED_COMPONENTS],
   imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, AiChatbotComponent],
-  exports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, ...SHARED_COMPONENTS, AiChatbotComponent],
+  exports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    RouterModule,
+    ...SHARED_COMPONENTS,
+    AiChatbotComponent,
+  ],
 })
 export class SharedModule {}

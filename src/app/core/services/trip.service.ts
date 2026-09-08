@@ -21,6 +21,12 @@ export class TripService {
     if (request.travelDate) {
       params = params.set('travelDate', request.travelDate);
     }
+    if (request.fromLocationId) {
+      params = params.set('fromLocationId', request.fromLocationId.toString());
+    }
+    if (request.toLocationId) {
+      params = params.set('toLocationId', request.toLocationId.toString());
+    }
     if (request.busType) {
       params = params.set('busType', request.busType);
     }

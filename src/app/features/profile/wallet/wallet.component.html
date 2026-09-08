@@ -1,0 +1,128 @@
+<div class="container py-5">
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <!-- Wallet Balance Card -->
+      <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white;">
+        <div class="card-body p-4 text-center d-flex flex-column justify-content-center">
+          <i class="bi bi-wallet2 display-3 mb-3 text-white-50"></i>
+          <h5 class="fw-light mb-1">Available Balance</h5>
+          @if (isLoading) {
+            <div class="spinner-border spinner-border-sm text-light my-3" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          } @else {
+            <h1 class="display-4 fw-bold mb-0">₹{{ wallet?.balance | number:'1.2-2' }}</h1>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <!-- Recharge Card -->
+      <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+          <h5 class="card-title fw-bold mb-4">Recharge Wallet</h5>
+          
+          @if (errorMessage) {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              {{ errorMessage }}
+              <button type="button" class="btn-close" (click)="errorMessage = ''" aria-label="Close"></button>
+            </div>
+          }
+          
+          @if (successMessage) {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+              {{ successMessage }}
+              <button type="button" class="btn-close" (click)="successMessage = ''" aria-label="Close"></button>
+            </div>
+          }
+          <form (ngSubmit)="recharge()" #rechargeForm="ngForm">
+            <div class="row g-3 align-items-end">
+              <div class="col-md-5">
+                <label for="amount" class="form-label">Amount (₹)</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light border-end-0">₹</span>
+                  <input type="number" class="form-control border-start-0 ps-0" id="amount" name="amount"
+                         [(ngModel)]="rechargeAmount" required min="100" #amountCtrl="ngModel"
+                         [ngClass]="{'is-invalid': amountCtrl.invalid && (amountCtrl.dirty || amountCtrl.touched)}">
+                </div>
+                @if (amountCtrl.invalid && (amountCtrl.dirty || amountCtrl.touched)) {
+                  <div class="text-danger small mt-1">Minimum recharge amount is ₹100.</div>
+                }
+              </div>
+              
+              <div class="col-md-5">
+                <label for="upiId" class="form-label">UPI ID</label>
+                <input type="text" class="form-control" id="upiId" name="upiId" placeholder="username@bank"
+                       [(ngModel)]="upiId" required pattern="^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$" #upiCtrl="ngModel"
+                       [ngClass]="{'is-invalid': upiCtrl.invalid && (upiCtrl.dirty || upiCtrl.touched)}">
+                @if (upiCtrl.invalid && (upiCtrl.dirty || upiCtrl.touched)) {
+                  <div class="text-danger small mt-1">Please enter a valid UPI ID.</div>
+                }
+              </div>
+
+              <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100" [disabled]="rechargeForm.invalid || isRecharging">
+                  @if (isRecharging) {
+                    <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                  } @else {
+                    Add Money
+                  }
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Transactions Card -->
+      <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+          <h5 class="card-title fw-bold mb-4">Recent Transactions</h5>
+          
+          @if (isLoading) {
+            <div class="text-center py-4">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          } @else if (transactions.length === 0) {
+            <div class="text-center py-5 text-muted">
+              <i class="bi bi-clock-history display-4 mb-3 d-block"></i>
+              <p class="mb-0">No transactions found.</p>
+            </div>
+          } @else {
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Reference</th>
+                    <th class="text-end">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (tx of transactions; track tx.transactionId) {
+                    <tr>
+                      <td class="text-nowrap">
+                        <small class="text-muted">{{ tx.createdAt | date:'MMM d, y, h:mm a' }}</small>
+                      </td>
+                      <td>{{ tx.description }}</td>
+                      <td>
+                        <small class="text-muted font-monospace">{{ tx.referenceId }}</small>
+                      </td>
+                      <td class="text-end fw-bold" [ngClass]="tx.transactionType === 'CREDIT' ? 'text-success' : 'text-danger'">
+                        {{ tx.transactionType === 'CREDIT' ? '+' : '-' }}₹{{ tx.amount | number:'1.2-2' }}
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
