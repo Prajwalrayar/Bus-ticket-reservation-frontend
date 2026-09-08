@@ -48,8 +48,8 @@
               <td>{{ user.userEmail }}</td>
               <td>{{ user.mobileNumber || 'N/A' }}</td>
               <td>
-                <span class="badge" [class.bg-primary]="user.roleNames?.includes('BUS_OPERATOR')" [class.bg-info]="user.roleNames?.includes('SUPPORT_AGENT')">
-                  {{ user.roleNames?.includes('BUS_OPERATOR') ? 'Operator' : 'Support' }}
+                <span class="badge" [class.bg-primary]="user.roleNames.includes('BUS_OPERATOR')" [class.bg-info]="user.roleNames.includes('SUPPORT_AGENT')">
+                  {{ user.roleNames.includes('BUS_OPERATOR') ? 'Operator' : 'Support' }}
                 </span>
               </td>
               <td>{{ user.companyName || 'N/A' }}</td>

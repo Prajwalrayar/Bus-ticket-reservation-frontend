@@ -9,6 +9,7 @@ import { AdminRoutesComponent } from './admin-routes/admin-routes.component';
 import { AdminTripsComponent } from './admin-trips/admin-trips.component';
 import { AdminBookingsComponent } from './admin-bookings/admin-bookings.component';
 import { AdminOperatorsComponent } from './admin-operators/admin-operators.component';
+import { AdminLocationsComponent } from './admin-locations/admin-locations.component';
 
 @NgModule({
   declarations: [
@@ -20,7 +21,8 @@ import { AdminOperatorsComponent } from './admin-operators/admin-operators.compo
     AdminRoutesComponent,
     AdminTripsComponent,
     AdminBookingsComponent,
-    AdminOperatorsComponent
+    AdminOperatorsComponent,
+    AdminLocationsComponent
   ],
   imports: [SharedModule],
   exports: [

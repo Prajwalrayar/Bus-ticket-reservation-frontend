@@ -39,6 +39,7 @@ export class AdminLayoutComponent {
   readonly adminNavItems: AdminNavItem[] = [
     { icon: 'bi-speedometer2', label: 'Dashboard', route: '/admin', roles: [APP_CONSTANTS.ROLES.ADMIN] },
     { icon: 'bi-person-circle', label: 'My Profile', route: '/admin/profile', roles: [APP_CONSTANTS.ROLES.ADMIN] },
+    { icon: 'bi-geo-alt', label: 'Locations', route: '/admin/locations', roles: [APP_CONSTANTS.ROLES.ADMIN] },
     { icon: 'bi-building', label: 'Operating Companies', route: '/admin/operators', roles: [APP_CONSTANTS.ROLES.ADMIN] },
     { icon: 'bi-people', label: 'Users', route: '/admin/users', roles: [APP_CONSTANTS.ROLES.ADMIN] },
     { icon: 'bi-person-badge', label: 'Staff', route: '/admin/staff', roles: [APP_CONSTANTS.ROLES.ADMIN] },

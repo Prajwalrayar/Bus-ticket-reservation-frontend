@@ -4,6 +4,7 @@ import { WalletDTO, WalletTransactionDTO } from '../../../core/models/wallet';
 
 @Component({
   selector: 'app-wallet',
+  standalone: false,
   templateUrl: './wallet.component.html',
   styleUrls: ['./wallet.component.css']
 })

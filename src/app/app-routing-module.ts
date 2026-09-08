@@ -29,6 +29,7 @@ import { AdminRoutesComponent } from './features/admin/admin-routes/admin-routes
 import { AdminTripsComponent } from './features/admin/admin-trips/admin-trips.component';
 import { AdminBookingsComponent } from './features/admin/admin-bookings/admin-bookings.component';
 import { AdminOperatorsComponent } from './features/admin/admin-operators/admin-operators.component';
+import { AdminLocationsComponent } from './features/admin/admin-locations/admin-locations.component';
 import { OperatorDashboardComponent } from './features/operator/operator-dashboard/operator-dashboard.component';
 import { SupportDashboard } from './features/support/support-dashboard/support-dashboard';
 import { UserProfileComponent } from './shared/components/user-profile/user-profile.component';
@@ -111,6 +112,11 @@ const routes: Routes = [
       {
         path: 'admin',
         component: AdminDashboardComponent,
+        data: { expectedRoles: [APP_CONSTANTS.ROLES.ADMIN] }
+      },
+      {
+        path: 'admin/locations',
+        component: AdminLocationsComponent,
         data: { expectedRoles: [APP_CONSTANTS.ROLES.ADMIN] }
       },
       {

@@ -9,4 +9,4 @@ import { WalletComponent } from './wallet/wallet.component';
   imports: [SharedModule, FormsModule],
   exports: [ProfileComponent, WalletComponent]
 })
-export class ProfileModule {}
+export class ProfileModule { }

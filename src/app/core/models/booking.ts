@@ -20,7 +20,7 @@ export interface Booking {
 
   bookingReference: string;
 
-  bookingStatus: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'EXPIRED';
+  bookingStatus: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'FAILED';
 
   totalSeats: number;
 
@@ -35,6 +35,8 @@ export interface Booking {
   totalAmount: number;
 
   createdAt: string;
+
+  expiryTime?: string;
 
   boardingPointName: string;
 

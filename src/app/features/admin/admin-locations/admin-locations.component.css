@@ -1,0 +1,11 @@
+.modal-backdrop.show {
+  opacity: 0.5;
+}
+
+.table th {
+  white-space: nowrap;
+}
+
+.input-group-text {
+  background-color: transparent;
+}
