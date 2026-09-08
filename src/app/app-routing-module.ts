@@ -14,6 +14,7 @@ import { PaymentComponent } from './features/payment/payment/payment.component';
 import { NotificationsComponent } from './features/notifications/notifications.component';
 import { ProfileComponent } from './features/profile/profile/profile.component';
 import { WalletComponent } from './features/profile/wallet/wallet.component';
+import { TicketComponent } from './features/ticket/ticket/ticket.component';
 import { LoginComponent } from './auth/login/login.component';
 import { RegisterComponent } from './auth/register/register.component';
 import { GuestGuard } from './core/guards/guest-guard';
@@ -84,6 +85,11 @@ const routes: Routes = [
       {
         path: 'profile/wallet',
         component: WalletComponent,
+        canActivate: [AuthGuard],
+      },
+      {
+        path: 'ticket',
+        component: TicketComponent,
         canActivate: [AuthGuard],
       },
     ],

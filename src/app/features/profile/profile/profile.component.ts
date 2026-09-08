@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { BookingService } from '../../../core/services/booking.service';
 import { TripService } from '../../../core/services/trip.service';
@@ -29,6 +29,7 @@ export interface UIBooking {
   date: Date | null;
   time: string;
   seats: string[];
+  isCompletedJourney: boolean;
 }
 
 @Component({
@@ -39,6 +40,7 @@ export interface UIBooking {
 })
 export class ProfileComponent implements OnInit {
   activeTab: 'BOOKINGS' | 'PASSENGERS' | 'SETTINGS' = 'BOOKINGS';
+  bookingTab: 'UPCOMING' | 'COMPLETED' | 'CANCELLED' = 'UPCOMING';
 
   upcomingBookings: UIBooking[] = [];
   completedBookings: UIBooking[] = [];
@@ -100,7 +102,8 @@ export class ProfileComponent implements OnInit {
     private reviewService: ReviewService,
     private userService: UserService,
     private fb: FormBuilder,
-    public themeService: ThemeService
+    public themeService: ThemeService,
+    private cdr: ChangeDetectorRef
   ) {
     this.profileForm = this.fb.group({
       userName: ['', [Validators.required, CustomValidators.validName()]],
@@ -145,7 +148,12 @@ export class ProfileComponent implements OnInit {
     if (tab === 'PASSENGERS') {
       this.fetchSavedPassengers();
     }
-    // Profile is already fetched on init
+    this.cdr.markForCheck();
+  }
+
+  setBookingTab(tab: 'UPCOMING' | 'COMPLETED' | 'CANCELLED'): void {
+    this.bookingTab = tab;
+    this.cdr.markForCheck();
   }
 
   // --- PROFILE SETTINGS ---
@@ -158,8 +166,12 @@ export class ProfileComponent implements OnInit {
           userName: profile.userName,
           mobileNumber: profile.mobileNumber
         });
+        this.cdr.markForCheck();
       },
-      error: (err) => console.error('Failed to load profile', err)
+      error: (err) => {
+        console.error('Failed to load profile', err);
+        this.cdr.markForCheck();
+      }
     });
   }
 
@@ -216,8 +228,12 @@ export class ProfileComponent implements OnInit {
         reviews.forEach(r => {
           this.reviewsByBookingId[r.bookingId] = r;
         });
+        this.cdr.markForCheck();
       },
-      error: (err) => console.error('Failed to fetch reviews', err)
+      error: (err) => {
+        console.error('Failed to fetch reviews', err);
+        this.cdr.markForCheck();
+      }
     });
   }
 
@@ -288,6 +304,7 @@ export class ProfileComponent implements OnInit {
       error: (err) => {
         console.error('Error fetching bookings', err);
         this.loadingBookings = false;
+        this.cdr.markForCheck();
       }
     });
   }
@@ -298,6 +315,7 @@ export class ProfileComponent implements OnInit {
       this.completedBookings = [];
       this.cancelledBookings = [];
       this.loadingBookings = false;
+      this.cdr.markForCheck();
       return;
     }
 
@@ -324,7 +342,8 @@ export class ProfileComponent implements OnInit {
           fare: b.totalAmount,
           date: travelDate,
           time: trip?.departureTime || '',
-          seats: b.bookingSeats?.map(s => s.seatNumber) || []
+          seats: b.bookingSeats?.map(s => s.seatNumber) || [],
+          isCompletedJourney: false
         };
       });
 
@@ -335,7 +354,13 @@ export class ProfileComponent implements OnInit {
       this.completedBookings = uiBookings.filter(b => b.status === 'CONFIRMED' && b.date && b.date < today);
       this.cancelledBookings = uiBookings.filter(b => b.status === 'CANCELLED' || b.status === 'FAILED');
 
+      // Set isCompletedJourney flag based on the same logic used for completedBookings
+      uiBookings.forEach(b => {
+        b.isCompletedJourney = b.status === 'CONFIRMED' && b.date !== null && b.date < today;
+      });
+
       this.loadingBookings = false;
+      this.cdr.markForCheck();
     });
   }
 
@@ -386,10 +411,12 @@ export class ProfileComponent implements OnInit {
       next: (passengers) => {
         this.savedPassengers = passengers.filter(p => p.isActive);
         this.loadingPassengers = false;
+        this.cdr.markForCheck();
       },
       error: (err) => {
-        console.error('Failed to fetch saved passengers', err);
+        console.error('Error loading passengers', err);
         this.loadingPassengers = false;
+        this.cdr.markForCheck();
       }
     });
   }
@@ -418,10 +445,12 @@ export class ProfileComponent implements OnInit {
       };
     }
     this.showPassengerModal = true;
+    this.cdr.markForCheck();
   }
 
   closePassengerModal(): void {
     this.showPassengerModal = false;
+    this.cdr.markForCheck();
   }
 
   savePassenger(): void {
@@ -430,6 +459,7 @@ export class ProfileComponent implements OnInit {
     // Basic validation
     if (!this.passengerForm.passengerName.trim() || !this.passengerForm.age || !this.passengerForm.gender) {
       this.passengerError = 'Name, Age, and Gender are required.';
+      this.cdr.markForCheck();
       return;
     }
 
@@ -438,9 +468,11 @@ export class ProfileComponent implements OnInit {
         next: () => {
           this.fetchSavedPassengers();
           this.closePassengerModal();
+          this.cdr.markForCheck();
         },
         error: (err) => {
           this.passengerError = err.error?.message || 'Failed to update passenger.';
+          this.cdr.markForCheck();
         }
       });
     } else {
@@ -448,9 +480,11 @@ export class ProfileComponent implements OnInit {
         next: () => {
           this.fetchSavedPassengers();
           this.closePassengerModal();
+          this.cdr.markForCheck();
         },
         error: (err) => {
           this.passengerError = err.error?.message || 'Failed to save passenger.';
+          this.cdr.markForCheck();
         }
       });
     }
@@ -461,12 +495,13 @@ export class ProfileComponent implements OnInit {
       this.savedPassengerService.deactivateSavedPassenger(savedPassengerId).subscribe({
         next: () => {
           this.fetchSavedPassengers();
+          this.cdr.markForCheck();
         },
         error: (err) => {
           console.error('Failed to delete passenger', err);
+          this.cdr.markForCheck();
         }
       });
     }
   }
 }
-

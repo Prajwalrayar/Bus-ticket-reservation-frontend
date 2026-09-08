@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { LocationService } from '../../../core/services/location.service';
 import { AdminLocationDTO, AdminLocationAliasDTO } from '../../../core/models/location';
@@ -37,7 +37,8 @@ export class AdminLocationsComponent implements OnInit {
 
   constructor(
     private locationService: LocationService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private cdr: ChangeDetectorRef
   ) {
     this.locationForm = this.fb.group({
       name: ['', [Validators.required, Validators.pattern(/.*\S.*/)]]
@@ -59,10 +60,12 @@ export class AdminLocationsComponent implements OnInit {
         this.locations = res.data || [];
         this.filterLocations();
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.error = err.error?.message || 'Failed to load locations';
         this.loading = false;
+        this.cdr.markForCheck();
       }
     });
   }
@@ -110,23 +113,27 @@ export class AdminLocationsComponent implements OnInit {
           this.submitLoading = false;
           this.closeLocationModal();
           this.loadLocations();
+          this.cdr.markForCheck();
         },
         error: (err) => {
           this.error = err.error?.message || 'Failed to update location';
           this.submitLoading = false;
+          this.cdr.markForCheck();
         }
       });
     } else {
       this.locationService.createLocation(name).subscribe({
         next: (res) => {
-          this.success = 'Location created successfully';
+          this.success = 'Location added successfully';
           this.submitLoading = false;
           this.closeLocationModal();
           this.loadLocations();
+          this.cdr.markForCheck();
         },
         error: (err) => {
-          this.error = err.error?.message || 'Failed to create location';
+          this.error = err.error?.message || 'Failed to add location';
           this.submitLoading = false;
+          this.cdr.markForCheck();
         }
       });
     }
@@ -135,12 +142,14 @@ export class AdminLocationsComponent implements OnInit {
   toggleLocationStatus(location: AdminLocationDTO): void {
     const newStatus = !location.isActive;
     this.locationService.updateLocationStatus(location.locationId, newStatus).subscribe({
-      next: (res) => {
-        location.isActive = res.data?.isActive ?? newStatus;
-        this.success = `Location ${location.isActive ? 'activated' : 'deactivated'} successfully`;
+      next: () => {
+        this.success = `Location ${newStatus ? 'activated' : 'deactivated'} successfully`;
+        this.loadLocations();
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.error = err.error?.message || 'Failed to update status';
+        this.cdr.markForCheck();
       }
     });
   }
@@ -162,6 +171,8 @@ export class AdminLocationsComponent implements OnInit {
     this.showAliasModal = false;
     this.selectedLocation = null;
     this.aliases = [];
+    this.error = '';
+    this.success = '';
   }
 
   loadAliases(locationId: number): void {
@@ -170,10 +181,12 @@ export class AdminLocationsComponent implements OnInit {
       next: (res) => {
         this.aliases = res.data || [];
         this.aliasesLoading = false;
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.error = err.error?.message || 'Failed to load aliases';
         this.aliasesLoading = false;
+        this.cdr.markForCheck();
       }
     });
   }
@@ -198,6 +211,13 @@ export class AdminLocationsComponent implements OnInit {
     this.error = '';
     this.success = '';
     const aliasValue = this.aliasForm.value.alias;
+
+    if (aliasValue.toLowerCase().trim() === this.selectedLocation.name.toLowerCase().trim()) {
+      this.error = 'Alias cannot be the same as the canonical location name.';
+      this.submitLoading = false;
+      return;
+    }
+
     const locationId = this.selectedLocation.locationId;
 
     if (this.isEditingAlias && this.currentAliasId) {
@@ -207,10 +227,12 @@ export class AdminLocationsComponent implements OnInit {
           this.submitLoading = false;
           this.cancelEditAlias();
           this.loadAliases(locationId);
+          this.cdr.markForCheck();
         },
         error: (err) => {
           this.error = err.error?.message || 'Failed to update alias';
           this.submitLoading = false;
+          this.cdr.markForCheck();
         }
       });
     } else {
@@ -220,10 +242,12 @@ export class AdminLocationsComponent implements OnInit {
           this.submitLoading = false;
           this.cancelEditAlias();
           this.loadAliases(locationId);
+          this.cdr.markForCheck();
         },
         error: (err) => {
           this.error = err.error?.message || 'Failed to add alias';
           this.submitLoading = false;
+          this.cdr.markForCheck();
         }
       });
     }

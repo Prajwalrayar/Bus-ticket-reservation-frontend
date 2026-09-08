@@ -417,15 +417,24 @@ export class OperatorDashboardComponent implements OnInit {
   saveTrip(): void {
     this.tripSubmitError = '';
     this.tripSubmitSuccess = '';
-    this.tripService.createTrip(this.tripForm).subscribe({
+
+    const payload = { ...this.tripForm };
+    if (payload.departureTime && payload.departureTime.length === 5) {
+      payload.departureTime += ':00';
+    }
+    if (payload.arrivalTime && payload.arrivalTime.length === 5) {
+      payload.arrivalTime += ':00';
+    }
+
+    this.tripService.createTrip(payload).subscribe({
       next: () => {
         this.tripSubmitSuccess = 'Trip scheduled successfully!';
         setTimeout(() => this.closeTripModal(), 1600);
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.tripSubmitError = err.error?.message || 'Failed to schedule trip.';
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }
     });
   }

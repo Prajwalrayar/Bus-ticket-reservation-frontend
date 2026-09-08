@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { NgForm } from '@angular/forms';
 import { WalletService } from '../../../core/services/wallet.service';
 import { WalletDTO, WalletTransactionDTO } from '../../../core/models/wallet';
 
@@ -21,7 +22,8 @@ export class WalletComponent implements OnInit {
   successMessage: string = '';
   
   constructor(
-    private walletService: WalletService
+    private walletService: WalletService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -30,14 +32,21 @@ export class WalletComponent implements OnInit {
 
   loadWalletData(): void {
     this.isLoading = true;
+    this.errorMessage = '';
     this.walletService.getMyWallet().subscribe({
       next: (wallet) => {
         this.wallet = wallet;
         this.loadTransactions();
+        this.cdr.markForCheck();
       },
       error: (err) => {
-        this.errorMessage = 'Failed to load wallet balance';
+        if (err.status === 403 || err.status === 401) {
+          this.errorMessage = 'Please log in to access your wallet.';
+        } else {
+          this.errorMessage = err.error?.message || 'Could not load wallet balance. Please refresh the page.';
+        }
         this.isLoading = false;
+        this.cdr.markForCheck();
       }
     });
   }
@@ -47,17 +56,26 @@ export class WalletComponent implements OnInit {
       next: (transactions) => {
         this.transactions = transactions;
         this.isLoading = false;
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.errorMessage = 'Failed to load recent transactions';
         this.isLoading = false;
+        this.cdr.markForCheck();
       }
     });
   }
 
-  recharge(): void {
+  recharge(form: NgForm): void {
     this.errorMessage = '';
     this.successMessage = '';
+
+    if (form.invalid) {
+      Object.values(form.controls).forEach(control => {
+        control.markAsTouched();
+      });
+      return;
+    }
 
     if (this.rechargeAmount < 100) {
       this.errorMessage = 'Minimum recharge amount is ₹100';
@@ -79,10 +97,12 @@ export class WalletComponent implements OnInit {
         this.upiId = '';
         this.loadTransactions();
         this.isRecharging = false;
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.errorMessage = err.error?.message || 'Failed to recharge wallet';
         this.isRecharging = false;
+        this.cdr.markForCheck();
       }
     });
   }

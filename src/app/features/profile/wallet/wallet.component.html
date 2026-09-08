@@ -10,8 +10,11 @@
             <div class="spinner-border spinner-border-sm text-light my-3" role="status">
               <span class="visually-hidden">Loading...</span>
             </div>
+          } @else if (wallet) {
+            <h1 class="display-4 fw-bold mb-0">₹{{ wallet.balance | number:'1.2-2' }}</h1>
           } @else {
-            <h1 class="display-4 fw-bold mb-0">₹{{ wallet?.balance | number:'1.2-2' }}</h1>
+            <h1 class="display-4 fw-bold mb-0 text-white-50">₹ —</h1>
+            <small class="text-white-50 mt-1">Unable to load</small>
           }
         </div>
       </div>
@@ -25,21 +28,21 @@
           
           @if (errorMessage) {
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
-              {{ errorMessage }}
+              <i class="bi bi-exclamation-triangle me-2"></i>{{ errorMessage }}
               <button type="button" class="btn-close" (click)="errorMessage = ''" aria-label="Close"></button>
             </div>
           }
           
           @if (successMessage) {
             <div class="alert alert-success alert-dismissible fade show" role="alert">
-              {{ successMessage }}
+              <i class="bi bi-check-circle me-2"></i>{{ successMessage }}
               <button type="button" class="btn-close" (click)="successMessage = ''" aria-label="Close"></button>
             </div>
           }
-          <form (ngSubmit)="recharge()" #rechargeForm="ngForm">
-            <div class="row g-3 align-items-end">
-              <div class="col-md-5">
-                <label for="amount" class="form-label">Amount (₹)</label>
+          <form (ngSubmit)="recharge(rechargeForm)" #rechargeForm="ngForm">
+            <div class="row g-3 align-items-start">
+              <div class="col-md-4">
+                <label for="amount" class="form-label fw-semibold">Amount (₹)</label>
                 <div class="input-group">
                   <span class="input-group-text bg-light border-end-0">₹</span>
                   <input type="number" class="form-control border-start-0 ps-0" id="amount" name="amount"
@@ -48,25 +51,34 @@
                 </div>
                 @if (amountCtrl.invalid && (amountCtrl.dirty || amountCtrl.touched)) {
                   <div class="text-danger small mt-1">Minimum recharge amount is ₹100.</div>
+                } @else {
+                  <div class="form-text">Minimum ₹100</div>
                 }
               </div>
               
               <div class="col-md-5">
-                <label for="upiId" class="form-label">UPI ID</label>
-                <input type="text" class="form-control" id="upiId" name="upiId" placeholder="username@bank"
-                       [(ngModel)]="upiId" required pattern="^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$" #upiCtrl="ngModel"
+                <label for="upiId" class="form-label fw-semibold">UPI ID</label>
+                <input type="text" class="form-control" id="upiId" name="upiId"
+                       placeholder="name@ybl or name@okaxis"
+                       [(ngModel)]="upiId" required #upiCtrl="ngModel"
+                       pattern="^[a-zA-Z0-9._-]{3,256}@(ybl|upi|oksbi|okaxis|okicici|okhdfcbank|okbizaxis|paytm|paytmbank|naviaxis|axl|fbl|ibl|indus|kotak|allbank|andb|barodampay|boi|citi|cnrb|centralbank|eazypay|equitas|federal|finobank|hdfcbankjd|hsbc|idbi|idfc|idfcbank|idfcfirst|ikwik|indbank|iob|jkb|jsb|juspay|karnataka|kvb|lime|lvb|mahb|nsdl|obc|pingpay|pnb|pockets|psb|rbl|rmhdfcbank|sbi|sbiepay|sc|scb|shriramhfl|slicepay|superyes|tjsb|ubi|ucb|unionbank|utbi|vijb|waaxis|yesbankltd|airtel|airtelpaymentsbank|amazonnew|apl|bhim|cbp|dlb|dz|fam|gjsb|gpay|imobile|kbl|kmb|kpsc|laxmi|niyoicici|postbank|ratnaker|rns|rpcb|rupay|sib|syndicate|tapicici|timecosmos|uco|united|utiitsl|vijaya|zoicici)$"
                        [ngClass]="{'is-invalid': upiCtrl.invalid && (upiCtrl.dirty || upiCtrl.touched)}">
                 @if (upiCtrl.invalid && (upiCtrl.dirty || upiCtrl.touched)) {
-                  <div class="text-danger small mt-1">Please enter a valid UPI ID.</div>
+                  <div class="text-danger small mt-1">
+                    <i class="bi bi-exclamation-circle me-1"></i>
+                    Enter a valid UPI ID (e.g. name@ybl, name@okaxis, name@paytm).
+                  </div>
+                } @else {
+                  <div class="form-text">@ybl, @okaxis, @paytm, @gpay, @apl and more</div>
                 }
               </div>
 
-              <div class="col-md-2">
-                <button type="submit" class="btn btn-primary w-100" [disabled]="rechargeForm.invalid || isRecharging">
+              <div class="col-md-3 d-flex align-items-end" style="padding-top: 1.75rem;">
+                <button type="submit" class="btn btn-primary w-100" [disabled]="isRecharging">
                   @if (isRecharging) {
-                    <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                    <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> Adding...
                   } @else {
-                    Add Money
+                    <i class="bi bi-plus-circle me-1"></i> Add Money
                   }
                 </button>
               </div>
