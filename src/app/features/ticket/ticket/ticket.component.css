@@ -1,62 +1,109 @@
+/* ==============================
+   E-TICKET STYLES
+   ============================== */
+
 .ticket-page {
+  background-color: #f0f4f8;
   min-height: 100vh;
-  background-color: var(--rb-bg);
 }
 
 .ticket-wrapper {
-  border-radius: 12px;
-  overflow: hidden;
-  position: relative;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
-/* Create the ticket "notch" cutout effect */
-.ticket-wrapper::before,
-.ticket-wrapper::after {
-  content: '';
+/* Ticket cutout circles (decorative notch effect) */
+.ticket-cutout {
   position: absolute;
-  top: 90px; /* Align with header bottom */
-  width: 20px;
-  height: 20px;
-  background-color: var(--rb-bg);
+  width: 28px;
+  height: 28px;
+  background: #f0f4f8;
   border-radius: 50%;
+  right: -14px;
   z-index: 1;
+  border: 1px solid #dee2e6;
 }
 
-.ticket-wrapper::before {
-  left: -10px;
+.cutout-top {
+  top: -14px;
 }
 
-.ticket-wrapper::after {
-  right: -10px;
+.cutout-bottom {
+  bottom: -14px;
 }
 
-.border-dashed {
-  border-style: dashed !important;
+/* Seat badges */
+.seat-badge-upper {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffc107;
 }
 
-.qr-placeholder {
-  width: 120px;
-  height: 120px;
-  border-radius: 8px;
+.seat-badge-lower {
+  background-color: #d1e7dd;
+  color: #0a3622;
+  border: 1px solid #198754;
 }
 
-/* Printing styles to remove UI clutter */
+/* Table styling */
+.table th {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.table td {
+  font-size: 0.88rem;
+  vertical-align: middle;
+}
+
+/* ==============================
+   PRINT STYLES
+   ============================== */
+
 @media print {
-  .no-print {
+  body {
+    background: white !important;
+    font-size: 11pt;
+  }
+
+  .ticket-page {
+    background: white !important;
+    padding: 0 !important;
+  }
+
+  .d-print-none {
     display: none !important;
   }
-  
-  .ticket-page {
-    background-color: white;
-  }
-  
+
   .ticket-wrapper {
+    max-width: 100% !important;
+    width: 100% !important;
     box-shadow: none !important;
-    border: 1px solid #ccc;
   }
 
-  .ticket-wrapper::before,
-  .ticket-wrapper::after {
+  .ticket-header {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .ticket-cutout {
     display: none;
+  }
+
+  .card {
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+  }
+
+  .badge {
+    border: 1px solid #999 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .table-primary th {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }

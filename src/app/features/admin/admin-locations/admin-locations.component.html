@@ -135,6 +135,20 @@
         </div>
         <div class="modal-body">
           
+          @if (error) {
+            <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+              {{ error }}
+              <button type="button" class="btn-close" (click)="error = ''"></button>
+            </div>
+          }
+
+          @if (success) {
+            <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+              {{ success }}
+              <button type="button" class="btn-close" (click)="success = ''"></button>
+            </div>
+          }
+
           <!-- Add/Edit Alias Form -->
           <div class="card bg-light mb-4 border-0">
             <div class="card-body">

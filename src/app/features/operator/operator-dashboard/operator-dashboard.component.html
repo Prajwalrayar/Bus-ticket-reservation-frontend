@@ -727,12 +727,18 @@
                   <div class="row g-3">
                     @for (stop of routeStops; track stop.routeStopId) {
                       <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">To {{ stop.stopName }} (₹)</label>
+                        <label class="form-label fw-semibold text-secondary small">
+                          {{ stop.stopType === 'BOARDING' ? 'From' : 'To' }} {{ stop.stopName }} (₹)
+                        </label>
                         <div class="input-group input-group-sm">
                           <span class="input-group-text">₹</span>
                           <input type="number" class="form-control" [value]="tripForm.stopFares ? tripForm.stopFares[stop.routeStopId] : 0"
-                                 (input)="onStopFareChange(stop.routeStopId, $event)" min="0" required>
+                                 (input)="onStopFareChange(stop.routeStopId, $event)" min="0" [max]="tripForm.baseFare" required
+                                 [class.is-invalid]="tripForm.stopFares && tripForm.stopFares[stop.routeStopId] > tripForm.baseFare">
                         </div>
+                        @if (tripForm.stopFares && tripForm.stopFares[stop.routeStopId] > tripForm.baseFare) {
+                          <div class="text-danger small mt-1">Stop fare cannot exceed base fare (₹{{ tripForm.baseFare }}).</div>
+                        }
                       </div>
                     }
                   </div>

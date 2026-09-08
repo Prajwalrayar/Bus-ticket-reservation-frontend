@@ -26,7 +26,7 @@
       No locations found
     </div>
     
-    <button class="dropdown-item d-flex align-items-center py-2" *ngFor="let suggestion of suggestions" (click)="selectSuggestion(suggestion)">
+    <button type="button" class="dropdown-item d-flex align-items-center py-2" *ngFor="let suggestion of suggestions" (click)="selectSuggestion(suggestion)">
       <i class="bi bi-geo-alt-fill text-danger me-2"></i>
       <div>
         <div class="fw-bold">{{ suggestion.displayAlias }}</div>

@@ -2,7 +2,7 @@
   <div class="container py-5">
     <div class="row justify-content-center">
       <div class="col-lg-8">
-        
+
         <button type="button" class="btn btn-outline-secondary mb-4" (click)="goBack()" [disabled]="paymentStatus === 'PROCESSING'">
           <i class="bi bi-arrow-left me-2"></i> Back to Confirmation
         </button>
@@ -11,13 +11,14 @@
           <div class="card-body p-4 p-md-5">
             <h3 class="fw-bold mb-4">Complete Your Payment</h3>
 
+            <!-- Countdown -->
             @if (countdownTimer && paymentStatus !== 'EXPIRED' && paymentStatus !== 'SUCCESS') {
               <div class="alert alert-warning mb-4 d-flex justify-content-between align-items-center">
                 <span><i class="bi bi-stopwatch me-2"></i>Complete payment within:</span>
                 <span class="fs-4 fw-bold font-monospace">{{ remainingTimeDisplay }}</span>
               </div>
             }
-            
+
             @if (paymentStatus === 'EXPIRED') {
               <div class="alert alert-danger mb-4">
                 <i class="bi bi-x-circle-fill me-2"></i> {{ errorMessage }}
@@ -26,19 +27,20 @@
                 </div>
               </div>
             }
-            
+
+            <!-- Amount Summary -->
             <div class="alert alert-info mb-4">
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="fs-5">Booking Amount</span>
-                <span class="fs-5 fw-bold">₹{{ totalAmount }}</span>
+                <span class="fs-5 fw-bold">₹{{ totalAmount | number:'1.2-2' }}</span>
               </div>
-              
+
               @if (walletLoaded && walletBalance > 0) {
-                <div class="form-check form-switch fs-5 mb-2 border-bottom pb-2">
-                  <input class="form-check-input" type="checkbox" id="useWallet" 
+                <div class="form-check form-switch fs-6 mb-2 border-bottom pb-2">
+                  <input class="form-check-input" type="checkbox" id="useWallet"
                          [checked]="useWallet" (change)="toggleWallet()">
                   <label class="form-check-label d-flex justify-content-between w-100" for="useWallet">
-                    <span>Use Wallet Balance (Available: ₹{{ walletBalance | number:'1.2-2' }})</span>
+                    <span>Use Wallet Balance (₹{{ walletBalance | number:'1.2-2' }} available)</span>
                     @if (useWallet) {
                       <span class="text-success fw-bold">- ₹{{ (totalAmount - remainingAmount) | number:'1.2-2' }}</span>
                     }
@@ -58,6 +60,7 @@
               </div>
             }
 
+            <!-- States -->
             @if (paymentStatus === 'PROCESSING') {
               <div class="text-center py-5">
                 <div class="spinner-border text-rb-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
@@ -78,6 +81,7 @@
               </div>
             } @else {
               <div class="row g-4">
+
                 <!-- Payment Methods Sidebar -->
                 <div class="col-md-4 border-end">
                   <div class="list-group list-group-flush">
@@ -88,14 +92,17 @@
                         <i class="bi bi-phone me-2"></i> UPI
                       </button>
                       <button class="list-group-item list-group-item-action py-3 fw-semibold"
-                              [class.active]="paymentMethod === 'CREDIT_CARD'"
-                              (click)="setPaymentMethod('CREDIT_CARD')">
-                        <i class="bi bi-credit-card me-2"></i> Credit Card
+                              [class.active]="paymentMethod === 'WALLET'"
+                              (click)="setPaymentMethod('WALLET')">
+                        <i class="bi bi-wallet2 me-2"></i> Wallet
+                        @if (walletLoaded) {
+                          <div class="small fw-normal text-muted">₹{{ walletBalance | number:'1.2-2' }}</div>
+                        }
                       </button>
                     } @else {
                       <div class="alert alert-success m-3">
                         <i class="bi bi-check-circle-fill me-2"></i>
-                        Entire amount will be paid via Wallet.
+                        Entire amount covered by Wallet.
                       </div>
                     }
                   </div>
@@ -103,31 +110,167 @@
 
                 <!-- Payment Form -->
                 <div class="col-md-8 px-md-4">
-                  
+
                   @if (remainingAmount > 0) {
+
+                    <!-- UPI Form -->
                     @if (paymentMethod === 'UPI') {
                       <h5 class="fw-bold mb-3">Pay via UPI</h5>
                       <div class="mb-4">
                         <label class="form-label text-secondary">Enter your UPI ID</label>
-                        <input type="text" class="form-control form-control-lg" placeholder="e.g. username@bank" [(ngModel)]="upiId">
-                        <div class="form-text mt-2"><i class="bi bi-shield-check text-success me-1"></i>Secure payment powered by UPI</div>
+                        <input type="text" class="form-control form-control-lg"
+                               placeholder="e.g. name@ybl, name@okaxis, name@paytm"
+                               [(ngModel)]="upiId"
+                               (blur)="validateUpi()"
+                               (input)="upiError = ''"
+                               [class.is-invalid]="upiError">
+                        @if (upiError) {
+                          <div class="invalid-feedback d-block">
+                            <i class="bi bi-exclamation-circle me-1"></i>{{ upiError }}
+                          </div>
+                        }
+                        <div class="form-text mt-2">
+                          <i class="bi bi-shield-check text-success me-1"></i>
+                          Accepted: @ybl, @okaxis, @oksbi, @okhdfcbank, @paytm, @gpay, @apl and more
+                        </div>
                       </div>
                     }
-                    @if (paymentMethod === 'CREDIT_CARD') {
-                      <h5 class="fw-bold mb-3">Pay via Credit Card</h5>
-                      <div class="mb-4 text-muted">
-                        Credit Card processing is not implemented in this demo.
-                      </div>
+
+                    <!-- Wallet Form -->
+                    @if (paymentMethod === 'WALLET') {
+                      <h5 class="fw-bold mb-3">Pay via Wallet</h5>
+
+                      <!-- Recharge success banner -->
+                      @if (rechargeSuccess) {
+                        <div class="alert alert-success py-2 mb-3">
+                          <i class="bi bi-check-circle-fill me-2"></i>{{ rechargeSuccess }}
+                        </div>
+                      }
+
+                      <!-- Wallet sufficient -->
+                      @if (walletBalance >= totalAmount) {
+                        <div class="alert alert-success">
+                          <i class="bi bi-check-circle-fill me-2"></i>
+                          Your wallet balance (<strong>₹{{ walletBalance | number:'1.2-2' }}</strong>) covers
+                          the full amount of ₹{{ totalAmount | number:'1.2-2' }}.
+                          Enable <strong>"Use Wallet Balance"</strong> above and click Pay.
+                        </div>
+                      }
+
+                      <!-- Wallet partial — show shortfall + recharge -->
+                      @if (walletBalance > 0 && walletBalance < totalAmount) {
+                        <div class="alert alert-warning mb-3">
+                          <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                              <i class="bi bi-exclamation-triangle me-1"></i>
+                              <strong>Insufficient wallet balance</strong><br>
+                              <small>
+                                Balance: ₹{{ walletBalance | number:'1.2-2' }} &nbsp;|&nbsp;
+                                Required: ₹{{ totalAmount | number:'1.2-2' }} &nbsp;|&nbsp;
+                                <span class="text-danger fw-bold">Short by ₹{{ walletShortfall | number:'1.2-2' }}</span>
+                              </small>
+                            </div>
+                          </div>
+                        </div>
+                        @if (!showRechargeForm) {
+                          <button class="btn btn-outline-primary btn-sm mb-3" (click)="openRechargeForm()">
+                            <i class="bi bi-plus-circle me-1"></i>
+                            Add ₹{{ walletShortfall | number:'1.2-2' }} to Wallet &amp; Pay
+                          </button>
+                        }
+                      }
+
+                      <!-- Wallet empty — must recharge -->
+                      @if (walletBalance === 0) {
+                        <div class="alert alert-danger mb-3">
+                          <i class="bi bi-wallet2 me-2"></i>
+                          Your wallet is empty. Add at least <strong>₹{{ suggestedRechargeAmount | number:'1.2-2' }}</strong> to pay via wallet.
+                        </div>
+                        @if (!showRechargeForm) {
+                          <button class="btn btn-outline-primary btn-sm mb-3" (click)="openRechargeForm()">
+                            <i class="bi bi-plus-circle me-1"></i>
+                            Recharge Wallet (min ₹100)
+                          </button>
+                        }
+                      }
+
+                      <!-- Inline Recharge Form -->
+                      @if (showRechargeForm) {
+                        <div class="card border border-primary rounded-3 p-3 mb-3">
+                          <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0"><i class="bi bi-wallet2 me-2 text-primary"></i>Quick Wallet Recharge</h6>
+                            <button type="button" class="btn-close" (click)="closeRechargeForm()"></button>
+                          </div>
+
+                          @if (rechargeError) {
+                            <div class="alert alert-danger py-2 small">
+                              <i class="bi bi-exclamation-circle me-1"></i>{{ rechargeError }}
+                            </div>
+                          }
+
+                          <div class="mb-3">
+                            <label class="form-label fw-semibold small">Amount to Add (₹)</label>
+                            <div class="input-group">
+                              <span class="input-group-text">₹</span>
+                              <input type="number" class="form-control"
+                                     [(ngModel)]="rechargeAmount"
+                                     [min]="100"
+                                     [class.is-invalid]="rechargeAmount < 100">
+                            </div>
+                            @if (walletShortfall > 0) {
+                              <div class="form-text text-primary">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Suggested: ₹{{ suggestedRechargeAmount | number:'1.2-2' }} to cover the full booking.
+                              </div>
+                            }
+                            @if (rechargeAmount < 100) {
+                              <div class="text-danger small mt-1">Minimum recharge is ₹100.</div>
+                            }
+                          </div>
+
+                          <div class="mb-3">
+                            <label class="form-label fw-semibold small">UPI ID</label>
+                            <input type="text" class="form-control"
+                                   placeholder="name@ybl or name@okaxis"
+                                   [(ngModel)]="rechargeUpiId"
+                                   (blur)="validateRechargeUpi()"
+                                   (input)="rechargeUpiError = ''"
+                                   [class.is-invalid]="rechargeUpiError">
+                            @if (rechargeUpiError) {
+                              <div class="invalid-feedback d-block small">
+                                <i class="bi bi-exclamation-circle me-1"></i>{{ rechargeUpiError }}
+                              </div>
+                            }
+                            <div class="form-text">@ybl, @okaxis, @paytm, @gpay, @apl and more</div>
+                          </div>
+
+                          <button class="btn btn-primary w-100" (click)="rechargeWallet()"
+                                  [disabled]="isRecharging || rechargeAmount < 100 || !rechargeUpiId.trim()">
+                            @if (isRecharging) {
+                              <span class="spinner-border spinner-border-sm me-2"></span> Adding Money...
+                            } @else {
+                              <i class="bi bi-arrow-up-circle me-1"></i>
+                              Add ₹{{ rechargeAmount | number:'1.2-2' }} to Wallet
+                            }
+                          </button>
+                        </div>
+                      }
                     }
                   }
 
-                  <button class="btn btn-primary btn-lg w-100 fw-bold" 
+                  <!-- Pay Button -->
+                  <button class="btn btn-primary btn-lg w-100 fw-bold mt-2"
                           (click)="processPayment()"
-                          [disabled]="(remainingAmount > 0 && paymentMethod === 'UPI' && !upiId.trim())">
+                          [disabled]="
+                            (remainingAmount > 0 && paymentMethod === 'UPI' && !upiId.trim()) ||
+                            (paymentMethod === 'WALLET' && walletBalance < totalAmount && !useWallet) ||
+                            (paymentMethod === 'WALLET' && walletBalance === 0) ||
+                            isRecharging
+                          ">
                     @if (remainingAmount > 0) {
-                      Pay ₹{{ remainingAmount | number:'1.2-2' }} Securely
+                      <i class="bi bi-lock-fill me-2"></i>Pay ₹{{ remainingAmount | number:'1.2-2' }} Securely
                     } @else {
-                      Pay ₹{{ totalAmount | number:'1.2-2' }} from Wallet
+                      <i class="bi bi-wallet2 me-2"></i>Pay ₹{{ totalAmount | number:'1.2-2' }} from Wallet
                     }
                   </button>
                   <p class="text-center text-secondary small mt-3">
