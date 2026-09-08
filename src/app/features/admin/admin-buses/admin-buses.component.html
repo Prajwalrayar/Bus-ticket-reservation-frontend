@@ -64,7 +64,7 @@
               <td class="fw-bold">{{ bus.registrationNumber }}</td>
               <td>{{ bus.operatorCompanyName }}</td>
               <td><span class="badge bg-secondary">{{ bus.busType }}</span></td>
-              <td>{{ bus.amenities?.length || 0 }}</td>
+              <td>{{ bus.amenities.length || 0 }}</td>
               <td>
 
                 @if (bus.isActive) {

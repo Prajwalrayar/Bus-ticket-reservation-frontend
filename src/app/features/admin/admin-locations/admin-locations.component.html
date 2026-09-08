@@ -1,0 +1,213 @@
+<div class="container-fluid p-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Location Management</h2>
+    <button class="btn btn-primary" (click)="openLocationModal()">
+      <i class="bi bi-plus-circle me-2"></i> Add Location
+    </button>
+  </div>
+
+  @if (error) {
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      {{ error }}
+      <button type="button" class="btn-close" (click)="error = ''"></button>
+    </div>
+  }
+
+  @if (success) {
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      {{ success }}
+      <button type="button" class="btn-close" (click)="success = ''"></button>
+    </div>
+  }
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" placeholder="Search locations..." [(ngModel)]="searchQuery" (input)="filterLocations()">
+          </div>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Location Name</th>
+              <th>Status</th>
+              <th>Created At</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (loading) {
+              <tr>
+                <td colspan="5" class="text-center py-4">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                </td>
+              </tr>
+            } @else if (filteredLocations.length === 0) {
+              <tr>
+                <td colspan="5" class="text-center py-4 text-muted">No locations found.</td>
+              </tr>
+            } @else {
+              @for (loc of filteredLocations; track loc.locationId) {
+                <tr>
+                  <td class="text-muted small">#{{ loc.locationId }}</td>
+                  <td class="fw-bold">{{ loc.name }}</td>
+                  <td>
+                    <span class="badge" [class.bg-success]="loc.isActive" [class.bg-secondary]="!loc.isActive">
+                      {{ loc.isActive ? 'Active' : 'Inactive' }}
+                    </span>
+                  </td>
+                  <td class="text-muted small">{{ loc.createdAt | date:'mediumDate' }}</td>
+                  <td class="text-end">
+                    <button class="btn btn-sm btn-outline-info me-2" (click)="openManageAliases(loc)">
+                      Manage Aliases
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary me-2" (click)="openLocationModal(loc)">
+                      <i class="bi bi-pencil"></i> Edit
+                    </button>
+                    <button class="btn btn-sm" [class.btn-outline-danger]="loc.isActive" [class.btn-outline-success]="!loc.isActive" (click)="toggleLocationStatus(loc)">
+                      <i class="bi" [class.bi-x-circle]="loc.isActive" [class.bi-check-circle]="!loc.isActive"></i>
+                      {{ loc.isActive ? 'Deactivate' : 'Activate' }}
+                    </button>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Location Modal -->
+@if (showLocationModal) {
+  <div class="modal-backdrop fade show"></div>
+  <div class="modal fade show d-block" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ isEditingLocation ? 'Edit Location' : 'Add New Location' }}</h5>
+          <button type="button" class="btn-close" (click)="closeLocationModal()"></button>
+        </div>
+        <div class="modal-body">
+          <form [formGroup]="locationForm" (ngSubmit)="saveLocation()">
+            <div class="mb-3">
+              <label class="form-label">Location Name</label>
+              <input type="text" class="form-control" formControlName="name" placeholder="e.g. Bengaluru">
+              @if (locationForm.get('name')?.invalid && locationForm.get('name')?.touched) {
+                <div class="text-danger small mt-1">A valid location name is required.</div>
+              }
+            </div>
+            <div class="d-flex justify-content-end gap-2 mt-4">
+              <button type="button" class="btn btn-secondary" (click)="closeLocationModal()">Cancel</button>
+              <button type="submit" class="btn btn-primary" [disabled]="locationForm.invalid || submitLoading">
+                @if (submitLoading) {
+                  <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                }
+                Save
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Aliases Modal -->
+@if (showAliasModal && selectedLocation) {
+  <div class="modal-backdrop fade show"></div>
+  <div class="modal fade show d-block" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-light">
+          <h5 class="modal-title">Manage Aliases for <span class="fw-bold text-primary">{{ selectedLocation.name }}</span></h5>
+          <button type="button" class="btn-close" (click)="closeAliasModal()"></button>
+        </div>
+        <div class="modal-body">
+          
+          <!-- Add/Edit Alias Form -->
+          <div class="card bg-light mb-4 border-0">
+            <div class="card-body">
+              <h6 class="card-title mb-3">{{ isEditingAlias ? 'Edit Alias' : 'Add New Alias' }}</h6>
+              <form [formGroup]="aliasForm" (ngSubmit)="saveAlias()" class="d-flex gap-2 align-items-start">
+                <div class="flex-grow-1">
+                  <input type="text" class="form-control" formControlName="alias" placeholder="e.g. Bangalore">
+                  @if (aliasForm.get('alias')?.invalid && aliasForm.get('alias')?.touched) {
+                    <div class="text-danger small mt-1">A valid alias is required.</div>
+                  }
+                </div>
+                <button type="submit" class="btn btn-primary text-nowrap" [disabled]="aliasForm.invalid || submitLoading">
+                  @if (submitLoading) {
+                    <span class="spinner-border spinner-border-sm me-1"></span>
+                  }
+                  {{ isEditingAlias ? 'Update' : 'Add' }}
+                </button>
+                @if (isEditingAlias) {
+                  <button type="button" class="btn btn-outline-secondary text-nowrap" (click)="cancelEditAlias()">Cancel</button>
+                }
+              </form>
+            </div>
+          </div>
+
+          <!-- Aliases List -->
+          <h6 class="mb-3">Existing Aliases</h6>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th>Alias Name</th>
+                  <th>Status</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @if (aliasesLoading) {
+                  <tr>
+                    <td colspan="3" class="text-center py-3">
+                      <div class="spinner-border spinner-border-sm text-primary"></div>
+                    </td>
+                  </tr>
+                } @else if (aliases.length === 0) {
+                  <tr>
+                    <td colspan="3" class="text-center py-3 text-muted">No aliases found.</td>
+                  </tr>
+                } @else {
+                  @for (alias of aliases; track alias.aliasId) {
+                    <tr>
+                      <td class="fw-medium">{{ alias.alias }}</td>
+                      <td>
+                        <span class="badge" [class.bg-success]="alias.isActive" [class.bg-secondary]="!alias.isActive">
+                          {{ alias.isActive ? 'Active' : 'Inactive' }}
+                        </span>
+                      </td>
+                      <td class="text-end">
+                        <button class="btn btn-sm btn-link text-primary p-0 me-3" (click)="editAlias(alias)">Edit</button>
+                        <button class="btn btn-sm btn-link p-0" [class.text-danger]="alias.isActive" [class.text-success]="!alias.isActive" (click)="toggleAliasStatus(alias)">
+                          {{ alias.isActive ? 'Deactivate' : 'Activate' }}
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeAliasModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

@@ -412,7 +412,7 @@
       <div>
         <span class="badge mb-2" 
               [class.bg-success]="booking.status === 'CONFIRMED'" 
-              [class.bg-danger]="booking.status === 'CANCELLED' || booking.status === 'EXPIRED'"
+              [class.bg-danger]="booking.status === 'CANCELLED' || booking.status === 'FAILED'"
               [class.bg-warning]="booking.status === 'PENDING'">
           {{ booking.status }}
         </span>

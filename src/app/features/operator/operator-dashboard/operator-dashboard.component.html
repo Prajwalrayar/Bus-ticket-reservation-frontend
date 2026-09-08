@@ -417,7 +417,7 @@
                         <td class="text-muted small">{{ i + 1 }}</td>
                         <td><strong>{{ route.source }}</strong></td>
                         <td><strong>{{ route.destination }}</strong></td>
-                        <td>{{ route.distance ?? '—' }}</td>
+                        <td>{{ route.distance }}</td>
                         <td>
                           <span class="badge" [class.bg-success]="route.isActive" [class.bg-secondary]="!route.isActive">
                             {{ route.isActive ? 'Active' : 'Inactive' }}

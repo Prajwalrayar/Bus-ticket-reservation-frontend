@@ -95,7 +95,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   get isCustomer(): boolean {
-    return this.userRoles.includes(this.roles.CUSTOMER);
+    return this.userRoles.includes(this.roles.CUSTOMER) || this.userRoles.includes('PASSENGER');
   }
 
   get userInitial(): string {

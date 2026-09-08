@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BookingStateService } from '../../../core/services/booking-state.service';
 import { PaymentService } from '../../../core/services/payment.service';
@@ -12,7 +12,7 @@ import { PaymentStatus, PaymentRequest, PaymentDTO } from '../../../core/models/
   templateUrl: './payment.component.html',
   styleUrl: './payment.component.css',
 })
-export class PaymentComponent implements OnInit {
+export class PaymentComponent implements OnInit, OnDestroy {
   
   totalAmount: number = 0;
   paymentMethod: string = 'UPI';
@@ -22,6 +22,10 @@ export class PaymentComponent implements OnInit {
 
   // Form fields
   upiId: string = '';
+
+  // Timer
+  countdownTimer: any;
+  remainingTimeDisplay: string = '';
 
   // Wallet
   walletBalance: number = 0;
@@ -61,6 +65,12 @@ export class PaymentComponent implements OnInit {
     this.bookingService.getBookingById(this.bookingId).subscribe({
       next: (booking) => {
         this.totalAmount = booking.totalAmount;
+        if (booking.bookingStatus === 'FAILED') {
+          this.paymentStatus = 'EXPIRED';
+          this.errorMessage = 'Booking payment window has expired.';
+        } else if (booking.expiryTime) {
+          this.startTimer(booking.expiryTime);
+        }
         this.cdr.markForCheck();
       },
       error: () => {
@@ -134,6 +144,39 @@ export class PaymentComponent implements OnInit {
         state: { payment: payment }
       });
     }, 1500);
+  }
+
+  startTimer(expiryTimeString: string): void {
+    const expiryTime = new Date(expiryTimeString).getTime();
+    
+    this.countdownTimer = setInterval(() => {
+      const now = new Date().getTime();
+      const distance = expiryTime - now;
+
+      if (distance <= 0) {
+        clearInterval(this.countdownTimer);
+        this.remainingTimeDisplay = '00:00';
+        this.paymentStatus = 'EXPIRED';
+        this.errorMessage = 'Booking payment window has expired. Please start a new booking.';
+        this.cdr.markForCheck();
+        return;
+      }
+
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+      
+      this.remainingTimeDisplay = 
+        (minutes < 10 ? '0' : '') + minutes + ':' + 
+        (seconds < 10 ? '0' : '') + seconds;
+      
+      this.cdr.markForCheck();
+    }, 1000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.countdownTimer) {
+      clearInterval(this.countdownTimer);
+    }
   }
 
   goBack(): void {

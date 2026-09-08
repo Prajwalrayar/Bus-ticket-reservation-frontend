@@ -333,7 +333,7 @@ export class ProfileComponent implements OnInit {
 
       this.upcomingBookings = uiBookings.filter(b => b.status === 'CONFIRMED' && b.date && b.date >= today);
       this.completedBookings = uiBookings.filter(b => b.status === 'CONFIRMED' && b.date && b.date < today);
-      this.cancelledBookings = uiBookings.filter(b => b.status === 'CANCELLED' || b.status === 'EXPIRED');
+      this.cancelledBookings = uiBookings.filter(b => b.status === 'CANCELLED' || b.status === 'FAILED');
 
       this.loadingBookings = false;
     });

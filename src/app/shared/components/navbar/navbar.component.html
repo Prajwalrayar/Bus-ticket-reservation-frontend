@@ -103,13 +103,6 @@
               }
               <li><hr class="dropdown-divider" /></li>
 
-              <!-- Preferences Section -->
-              <li>
-                <a class="dropdown-item" routerLink="/profile" [queryParams]="{tab: 'settings'}" (click)="isUserMenuOpen = false">
-                  <i class="bi bi-gear me-2"></i>Settings
-                </a>
-              </li>
-              
               <!-- Appearance Submenu -->
               <li class="dropdown-item p-0">
                 <div class="d-flex align-items-center justify-content-between px-3 py-2 cursor-pointer appearance-toggle" (click)="toggleAppearanceMenu($event)">
@@ -131,6 +124,14 @@
                     </li>
                   </ul>
                 }
+              </li>
+              <li><hr class="dropdown-divider" /></li>
+
+              <!-- Preferences Section -->
+              <li>
+                <a class="dropdown-item" routerLink="/profile" [queryParams]="{tab: 'settings'}" (click)="isUserMenuOpen = false">
+                  <i class="bi bi-gear me-2"></i>Settings
+                </a>
               </li>
               <li><hr class="dropdown-divider" /></li>
 
