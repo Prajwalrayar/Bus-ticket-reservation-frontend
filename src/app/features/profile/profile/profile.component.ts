@@ -463,6 +463,39 @@ export class ProfileComponent implements OnInit {
       return;
     }
 
+    if (!this.passengerForm.idType || !['AADHAAR', 'PAN'].includes(this.passengerForm.idType)) {
+      this.passengerError = 'Please select a valid ID Type (Aadhaar or PAN).';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    if (!this.passengerForm.idNumber || !this.passengerForm.idNumber.trim()) {
+      this.passengerError = 'ID Number is required.';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    if (this.passengerForm.idType === 'AADHAAR') {
+      const aadhaarRegex = /^[2-9]{1}[0-9]{11}$/;
+      if (!aadhaarRegex.test(this.passengerForm.idNumber)) {
+        this.passengerError = 'Invalid Aadhaar Number. Must be 12 digits and cannot start with 0 or 1.';
+        this.cdr.markForCheck();
+        return;
+      }
+      if (/^([0-9])\1{11}$/.test(this.passengerForm.idNumber)) {
+        this.passengerError = 'Invalid Aadhaar Number. Cannot contain continuous identical digits.';
+        this.cdr.markForCheck();
+        return;
+      }
+    } else if (this.passengerForm.idType === 'PAN') {
+      const panRegex = /^[A-Za-z]{5}[0-9]{4}[A-Za-z]{1}$/;
+      if (!panRegex.test(this.passengerForm.idNumber)) {
+        this.passengerError = 'Invalid PAN Number. Format: 5 letters, 4 digits, 1 letter.';
+        this.cdr.markForCheck();
+        return;
+      }
+    }
+
     if (this.editingPassengerId) {
       this.savedPassengerService.updateSavedPassenger(this.editingPassengerId, this.passengerForm).subscribe({
         next: () => {

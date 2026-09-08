@@ -147,6 +147,35 @@
                   }
                 </div>
 
+                  <!-- ID Type -->
+                  <div class="mb-3">
+                    <label [for]="'idType' + i" class="form-label">ID Proof Type <span class="text-rb-primary">*</span></label>
+                    <select [id]="'idType' + i" class="form-select" [ngModel]="passenger.idType" (ngModelChange)="updatePassenger(i, 'idType', $event); updatePassenger(i, 'idNumber', '')" [name]="'idType' + i" required #pIdType="ngModel" [class.is-invalid]="pIdType.invalid && (pIdType.dirty || pIdType.touched)">
+                      <option value="" disabled>Select ID Type</option>
+                      <option value="AADHAAR">Aadhaar Card</option>
+                      <option value="PAN">PAN Card</option>
+                    </select>
+                    @if (pIdType.invalid && (pIdType.dirty || pIdType.touched)) {
+                      <div class="invalid-feedback">ID Type is required.</div>
+                    }
+                  </div>
+
+                  <!-- ID Number -->
+                  @if (passenger.idType) {
+                    <div class="mb-3">
+                      <label [for]="'idNumber' + i" class="form-label">ID Number <span class="text-rb-primary">*</span></label>
+                      <input type="text" [id]="'idNumber' + i" class="form-control" [placeholder]="passenger.idType === 'AADHAAR' ? 'Enter 12-digit Aadhaar Number' : 'Enter 10-character PAN'" [ngModel]="passenger.idNumber" (ngModelChange)="updatePassenger(i, 'idNumber', $event)" [name]="'idNumber' + i" required [pattern]="passenger.idType === 'AADHAAR' ? '^[2-9]{1}[0-9]{11}$' : '^[A-Z]{5}[0-9]{4}[A-Z]{1}$'" #pIdNumber="ngModel" [class.is-invalid]="pIdNumber.invalid && (pIdNumber.dirty || pIdNumber.touched)" [maxlength]="passenger.idType === 'AADHAAR' ? 12 : 10" [style.text-transform]="passenger.idType === 'PAN' ? 'uppercase' : 'none'">
+                      @if (pIdNumber.invalid && (pIdNumber.dirty || pIdNumber.touched)) {
+                        <div class="invalid-feedback">
+                          @if (pIdNumber.errors?.['required']) { <span>ID Number is required.</span> }
+                          @if (pIdNumber.errors?.['pattern']) { 
+                            <span>{{ passenger.idType === 'AADHAAR' ? 'Invalid Aadhaar format (12 digits, cannot start with 0 or 1).' : 'Invalid PAN format (e.g. ABCDE1234F).' }}</span> 
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+
                 @if (passenger.isPrimary) {
                   <div class="mb-2">
                     <label [for]="'phone' + i" class="form-label">Phone Number <span class="text-rb-primary">*</span></label>

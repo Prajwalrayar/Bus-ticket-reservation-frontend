@@ -216,6 +216,34 @@ export class PassengerDetailsComponent implements OnInit {
         return false;
       }
 
+      if (!passenger.idType || !['AADHAAR', 'PAN'].includes(passenger.idType)) {
+        this.errorMessage.set(`Please select a valid ID Type for seat ${passenger.seatNumber}.`);
+        return false;
+      }
+
+      if (!passenger.idNumber || !passenger.idNumber.trim()) {
+        this.errorMessage.set(`Please enter ID Number for seat ${passenger.seatNumber}.`);
+        return false;
+      }
+
+      if (passenger.idType === 'AADHAAR') {
+        const aadhaarRegex = /^[2-9]{1}[0-9]{11}$/;
+        if (!aadhaarRegex.test(passenger.idNumber)) {
+          this.errorMessage.set(`Invalid Aadhaar Number for seat ${passenger.seatNumber}. Must be 12 digits and cannot start with 0 or 1.`);
+          return false;
+        }
+        if (/^([0-9])\1{11}$/.test(passenger.idNumber)) {
+           this.errorMessage.set(`Invalid Aadhaar Number for seat ${passenger.seatNumber}. Cannot contain continuous identical digits.`);
+           return false;
+        }
+      } else if (passenger.idType === 'PAN') {
+        const panRegex = /^[A-Za-z]{5}[0-9]{4}[A-Za-z]{1}$/;
+        if (!panRegex.test(passenger.idNumber)) {
+          this.errorMessage.set(`Invalid PAN Number for seat ${passenger.seatNumber}. Format: 5 letters, 4 digits, 1 letter.`);
+          return false;
+        }
+      }
+
       if (passenger.isPrimary) {
         if (!passenger.contactNumber || !passenger.contactNumber.trim() || !/^[6-9]\d{9}$/.test(passenger.contactNumber)) {
           this.errorMessage.set(`Please enter a valid phone number for the primary passenger.`);
