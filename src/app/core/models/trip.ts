@@ -40,6 +40,10 @@ export interface TripStopFareDTO {
   stopType: string;
   stopTime?: string; // HH:mm:ss
   stopDate?: string; // YYYY-MM-DD
+  fareLocationId?: string;
+  fareLocationName?: string;
+  canBoard?: boolean;
+  canDrop?: boolean;
 }
 
 export type StopType = 'BOARDING' | 'DROPPING' | 'INTERMEDIATE';
@@ -52,6 +56,10 @@ export interface RouteStopDTO {
   distanceFromSourceKm: number;
   source: string;
   destination: string;
+  fareLocationId?: string;
+  fareLocationName?: string;
+  canBoard?: boolean;
+  canDrop?: boolean;
 }
 
 export interface RouteStopCreateRequest {
@@ -59,6 +67,9 @@ export interface RouteStopCreateRequest {
   stopSequence: number;
   stopType: StopType;
   distanceFromSourceKm: number;
+  fareLocationId?: string;
+  canBoard?: boolean;
+  canDrop?: boolean;
 }
 
 export interface TripCreateRequest {
@@ -73,4 +84,38 @@ export interface TripCreateRequest {
   stopFares?: { [routeStopId: string]: number };
   stopTimes?: { [routeStopId: string]: string };
   stopDates?: { [routeStopId: string]: string };
+}
+
+// ── FareLocation ──────────────────────────────────────────────
+
+export interface FareLocationDTO {
+  fareLocationId: string;
+  name: string;
+  description?: string;
+  routeId: string;
+  source: string;
+  destination: string;
+}
+
+export interface FareLocationCreateRequest {
+  name: string;
+  description?: string;
+}
+
+// ── RouteFare ─────────────────────────────────────────────────
+
+export interface RouteFareDTO {
+  routeFareId: string;
+  routeId: string;
+  fromFareLocationId: string;
+  fromFareLocationName: string;
+  toFareLocationId: string;
+  toFareLocationName: string;
+  fare: number;
+}
+
+export interface RouteFareCreateRequest {
+  fromFareLocationId: string;
+  toFareLocationId: string;
+  fare: number;
 }

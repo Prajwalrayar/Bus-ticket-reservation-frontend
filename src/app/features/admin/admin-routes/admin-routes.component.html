@@ -45,9 +45,14 @@
                 <span class="badge bg-success">Active</span>
               </td>
               <td>
-                <button class="btn btn-sm btn-outline-primary" (click)="openStopsModal(route)">
-                  <i class="bi bi-geo-alt me-1"></i> Manage Stops
-                </button>
+                <div class="d-flex gap-2">
+                  <button class="btn btn-sm btn-outline-primary" (click)="openStopsModal(route)">
+                    <i class="bi bi-geo-alt me-1"></i> Stops
+                  </button>
+                  <button class="btn btn-sm btn-outline-secondary" (click)="openFaresModal(route)">
+                    <i class="bi bi-cash-coin me-1"></i> Fares
+                  </button>
+                </div>
               </td>
             </tr>
           }
@@ -144,6 +149,7 @@
                       <th>Stop Name</th>
                       <th>Type</th>
                       <th>Dist (km)</th>
+                      <th>Zone / Boarding / Dropping</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -158,6 +164,15 @@
                           </span>
                         </td>
                         <td>{{ stop.distanceFromSourceKm }} km</td>
+                        <td>
+                          <div class="small">
+                            <span class="d-block text-muted">Zone: <span class="fw-bold text-dark">{{ stop.fareLocationName || 'None' }}</span></span>
+                            <span class="d-block mt-1">
+                              Board: <i class="bi" [class.bi-check-circle-fill.text-success]="stop.canBoard" [class.bi-x-circle-fill.text-danger]="!stop.canBoard"></i> | 
+                              Drop: <i class="bi" [class.bi-check-circle-fill.text-success]="stop.canDrop" [class.bi-x-circle-fill.text-danger]="!stop.canDrop"></i>
+                            </span>
+                          </div>
+                        </td>
                         <td>
                           <button class="btn btn-sm btn-outline-secondary" (click)="editStop(stop)">
                             <i class="bi bi-pencil"></i>
@@ -212,6 +227,34 @@
                   </div>
                 }
               </div>
+
+              <div class="col-md-12">
+                <hr class="my-3">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label text-muted small fw-semibold">Fare Zone <span class="text-primary">*</span></label>
+                <select class="form-select" name="fareLocationId" [(ngModel)]="newStop.fareLocationId" required #sFareZone="ngModel" [class.is-invalid]="sFareZone.invalid && (sFareZone.dirty || sFareZone.touched)">
+                  <option value="" disabled selected>-- Select a Fare Zone --</option>
+                  @for (loc of fareLocations; track loc.fareLocationId) {
+                    <option [value]="loc.fareLocationId">{{ loc.name }}</option>
+                  }
+                </select>
+                @if (sFareZone.invalid && (sFareZone.dirty || sFareZone.touched)) {
+                  <div class="invalid-feedback">A fare zone is required.</div>
+                }
+              </div>
+
+              <div class="col-md-6 d-flex align-items-center">
+                <div class="form-check form-switch me-4 mt-4">
+                  <input class="form-check-input" type="checkbox" role="switch" id="canBoardSwitch" name="canBoard" [(ngModel)]="newStop.canBoard">
+                  <label class="form-check-label text-muted small fw-semibold" for="canBoardSwitch">Allow Boarding</label>
+                </div>
+                <div class="form-check form-switch mt-4">
+                  <input class="form-check-input" type="checkbox" role="switch" id="canDropSwitch" name="canDrop" [(ngModel)]="newStop.canDrop">
+                  <label class="form-check-label text-muted small fw-semibold" for="canDropSwitch">Allow Dropping</label>
+                </div>
+              </div>
             </div>
 
             <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
@@ -221,6 +264,146 @@
               </button>
             </div>
           </form>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Fares Modal -->
+@if (showFaresModal && selectedRouteForFares) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header bg-secondary text-white border-0">
+          <h5 class="modal-title fw-bold">
+            <i class="bi bi-cash-coin me-2"></i>
+            Fare Configurations for {{ selectedRouteForFares.source }} to {{ selectedRouteForFares.destination }}
+          </h5>
+          <button type="button" class="btn-close btn-close-white" (click)="closeFaresModal()"></button>
+        </div>
+        <div class="modal-body p-4 bg-light">
+          @if (fareSubmitError) { <div class="alert alert-danger">{{ fareSubmitError }}</div> }
+          @if (fareSubmitSuccess) { <div class="alert alert-success">{{ fareSubmitSuccess }}</div> }
+
+          <div class="row g-4">
+            <!-- Left Column: Fare Zones -->
+            <div class="col-lg-5">
+              <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-bottom py-3">
+                  <h6 class="mb-0 fw-bold"><i class="bi bi-map me-2 text-primary"></i>Fare Zones (Locations)</h6>
+                </div>
+                <div class="card-body">
+                  <!-- List of Fare Zones -->
+                  @if (loadingFares) {
+                    <div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></div>
+                  } @else if (fareLocations.length === 0) {
+                    <div class="alert alert-secondary small py-2">No fare zones defined yet.</div>
+                  } @else {
+                    <div class="table-responsive mb-4">
+                      <table class="table table-sm align-middle">
+                        <thead class="table-light"><tr><th>Zone Name</th><th>Description</th><th>Action</th></tr></thead>
+                        <tbody>
+                          @for (loc of fareLocations; track loc.fareLocationId) {
+                            <tr>
+                              <td class="fw-bold">{{ loc.name }}</td>
+                              <td class="small text-muted">{{ loc.description || '-' }}</td>
+                              <td><button class="btn btn-sm btn-outline-danger py-0 px-2" (click)="deleteFareLocation(loc.fareLocationId)"><i class="bi bi-trash"></i></button></td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  }
+
+                  <!-- Add Zone Form -->
+                  <div class="bg-light p-3 rounded border">
+                    <h6 class="fw-bold small text-muted mb-3">Add New Fare Zone</h6>
+                    <form (ngSubmit)="addFareLocation()" #fareLocForm="ngForm">
+                      <div class="mb-2">
+                        <input type="text" class="form-control form-control-sm" name="name" [(ngModel)]="newFareLocation.name" placeholder="Zone Name (e.g. City Center)" required>
+                      </div>
+                      <div class="mb-2">
+                        <input type="text" class="form-control form-control-sm" name="description" [(ngModel)]="newFareLocation.description" placeholder="Description (Optional)">
+                      </div>
+                      <button type="submit" class="btn btn-sm btn-primary w-100" [disabled]="!fareLocForm.form.valid">Add Zone</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column: Route Fares -->
+            <div class="col-lg-7">
+              <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-bottom py-3">
+                  <h6 class="mb-0 fw-bold"><i class="bi bi-tags me-2 text-success"></i>Fares Between Zones</h6>
+                </div>
+                <div class="card-body">
+                  <!-- List of Route Fares -->
+                  @if (loadingFares) {
+                    <div class="text-center py-3"><div class="spinner-border spinner-border-sm text-success"></div></div>
+                  } @else if (routeFares.length === 0) {
+                    <div class="alert alert-secondary small py-2">No fares defined between zones yet.</div>
+                  } @else {
+                    <div class="table-responsive mb-4">
+                      <table class="table table-sm align-middle table-hover">
+                        <thead class="table-light"><tr><th>From Zone</th><th>To Zone</th><th>Fare Amount (Rs)</th><th>Action</th></tr></thead>
+                        <tbody>
+                          @for (fare of routeFares; track fare.routeFareId) {
+                            <tr>
+                              <td class="fw-bold">{{ fare.fromFareLocationName }}</td>
+                              <td class="fw-bold">{{ fare.toFareLocationName }}</td>
+                              <td class="text-success fw-bold">Rs {{ fare.fare }}</td>
+                              <td><button class="btn btn-sm btn-outline-danger py-0 px-2" (click)="deleteRouteFare(fare.routeFareId)"><i class="bi bi-trash"></i></button></td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  }
+
+                  <!-- Add Route Fare Form -->
+                  <div class="bg-light p-3 rounded border">
+                    <h6 class="fw-bold small text-muted mb-3">Add Fare Between Zones</h6>
+                    <form (ngSubmit)="addRouteFare()" #routeFareForm="ngForm">
+                      <div class="row g-2 align-items-end">
+                        <div class="col-sm-4">
+                          <label class="small text-muted mb-1">From Zone</label>
+                          <select class="form-select form-select-sm" name="fromFareLocationId" [(ngModel)]="newRouteFare.fromFareLocationId" required>
+                            <option value="">Select...</option>
+                            @for (loc of fareLocations; track loc.fareLocationId) {
+                              <option [value]="loc.fareLocationId">{{ loc.name }}</option>
+                            }
+                          </select>
+                        </div>
+                        <div class="col-sm-4">
+                          <label class="small text-muted mb-1">To Zone</label>
+                          <select class="form-select form-select-sm" name="toFareLocationId" [(ngModel)]="newRouteFare.toFareLocationId" required>
+                            <option value="">Select...</option>
+                            @for (loc of fareLocations; track loc.fareLocationId) {
+                              <option [value]="loc.fareLocationId">{{ loc.name }}</option>
+                            }
+                          </select>
+                        </div>
+                        <div class="col-sm-2">
+                          <label class="small text-muted mb-1">Fare (Rs)</label>
+                          <input type="number" class="form-control form-control-sm" name="fare" [(ngModel)]="newRouteFare.fare" min="0" required>
+                        </div>
+                        <div class="col-sm-2">
+                          <button type="submit" class="btn btn-sm btn-success w-100" [disabled]="!routeFareForm.form.valid || newRouteFare.fromFareLocationId === newRouteFare.toFareLocationId">Add</button>
+                        </div>
+                      </div>
+                      @if (newRouteFare.fromFareLocationId && newRouteFare.fromFareLocationId === newRouteFare.toFareLocationId) {
+                        <div class="text-danger small mt-2">From and To zones must be different.</div>
+                      }
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
     </div>
