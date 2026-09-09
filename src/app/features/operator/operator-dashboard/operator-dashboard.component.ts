@@ -83,6 +83,9 @@ export class OperatorDashboardComponent implements OnInit {
   };
   tripSubmitSuccess: string = '';
   tripSubmitError: string = '';
+  routeFares: any[] = [];
+  isEditingTrip: boolean = false;
+  originalTripKeys: any = null;
 
   // TICKETS
   ticketNumberToValidate: string = '';
@@ -350,6 +353,8 @@ export class OperatorDashboardComponent implements OnInit {
     this.tripSubmitError = '';
     this.tripSubmitSuccess = '';
     this.selectedBusForTrip = bus;
+    this.isEditingTrip = false;
+    this.originalTripKeys = null;
     this.routeStops = [];
     this.tripForm = {
       busRegistrationNumber: bus.registrationNumber,
@@ -360,15 +365,52 @@ export class OperatorDashboardComponent implements OnInit {
       departureTime: '',
       arrivalTime: '',
       baseFare: 0,
-      stopFares: {},
-      stopTimes: {},
-      stopDates: {}
+      segments: []
     };
     
     if (this.routes.length > 0) {
       this.fetchRouteStops(this.routes[0].source, this.routes[0].destination);
     }
     
+    this.showTripModal = true;
+  }
+
+  openEditTripModal(trip: TripDTO): void {
+    const bus = this.buses.find(b => b.registrationNumber === trip.busRegistrationNumber);
+    if (!bus) return; // Cannot edit if bus info not available
+    
+    this.tripSubmitError = '';
+    this.tripSubmitSuccess = '';
+    this.selectedBusForTrip = bus;
+    this.isEditingTrip = true;
+    this.originalTripKeys = {
+      busRegistrationNumber: trip.busRegistrationNumber,
+      source: trip.source,
+      destination: trip.destination,
+      travelDate: trip.travelDate
+    };
+    this.routeStops = [];
+    
+    // Copy trip to form
+    this.tripForm = {
+      busRegistrationNumber: trip.busRegistrationNumber,
+      source: trip.source,
+      destination: trip.destination,
+      travelDate: trip.travelDate,
+      arrivalDate: trip.arrivalDate,
+      departureTime: trip.departureTime,
+      arrivalTime: trip.arrivalTime,
+      baseFare: trip.baseFare,
+      segments: trip.segments ? trip.segments.map(seg => ({
+        boardingStopId: seg.boardingStopId,
+        droppingStopId: seg.droppingStopId,
+        departureTime: seg.departureTime ? seg.departureTime.substring(0, 5) : '',
+        arrivalTime: seg.arrivalTime ? seg.arrivalTime.substring(0, 5) : '',
+        fare: seg.fare
+      })) : []
+    };
+
+    this.fetchRouteStops(trip.source, trip.destination);
     this.showTripModal = true;
   }
 
@@ -386,18 +428,16 @@ export class OperatorDashboardComponent implements OnInit {
 
   fetchRouteStops(source: string, destination: string): void {
     this.routeStopsLoading = true;
+    
+    // Fetch stops
     this.routeService.getRouteStops(source, destination).subscribe({
       next: (stops) => {
         this.routeStops = stops.sort((a, b) => a.stopSequence - b.stopSequence);
         this.routeStopsLoading = false;
         
-        // Initialize stopFares and stopTimes
-        this.tripForm.stopFares = {};
-        this.tripForm.stopTimes = {};
-        this.routeStops.forEach(stop => {
-          this.tripForm.stopFares![stop.routeStopId] = 0;
-          this.tripForm.stopTimes![stop.routeStopId] = '';
-        });
+        if (this.tripForm.segments!.length === 0) {
+          this.addSegment();
+        }
         
         this.cdr.detectChanges();
       },
@@ -407,20 +447,90 @@ export class OperatorDashboardComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+
+    // Fetch fares
+    this.routeService.getRouteFares(source, destination).subscribe({
+      next: (fares) => {
+        this.routeFares = fares || [];
+      },
+      error: (err) => {
+        console.error('Failed to load route fares', err);
+        this.routeFares = [];
+      }
+    });
   }
 
-  onStopFareChange(routeStopId: string, event: Event): void {
-    const val = parseFloat((event.target as HTMLInputElement).value) || 0;
-    if (this.tripForm.stopFares) {
-      this.tripForm.stopFares[routeStopId] = val;
+  onSegmentStopChange(segment: import('../../../core/models/trip').TripSegmentCreateRequest): void {
+    if (segment.boardingStopId && segment.droppingStopId) {
+      const boardingStop = this.routeStops.find(s => s.routeStopId === segment.boardingStopId);
+      const droppingStop = this.routeStops.find(s => s.routeStopId === segment.droppingStopId);
+
+      if (boardingStop && droppingStop && boardingStop.fareLocationId && droppingStop.fareLocationId) {
+        const matchingFare = this.routeFares.find(rf => 
+          rf.fromFareLocationId === boardingStop.fareLocationId && 
+          rf.toFareLocationId === droppingStop.fareLocationId
+        );
+        if (matchingFare) {
+          segment.fare = matchingFare.fare;
+        }
+      }
     }
   }
 
-  onStopTimeChange(routeStopId: string, event: Event): void {
-    const val = (event.target as HTMLInputElement).value;
-    if (this.tripForm.stopTimes) {
-      this.tripForm.stopTimes[routeStopId] = val;
+  addSegment(): void {
+    if (!this.tripForm.segments) {
+      this.tripForm.segments = [];
     }
+    this.tripForm.segments.push({
+      boardingStopId: '',
+      droppingStopId: '',
+      departureTime: '',
+      arrivalTime: '',
+      fare: 0
+    });
+  }
+
+  removeSegment(index: number): void {
+    if (this.tripForm.segments) {
+      this.tripForm.segments.splice(index, 1);
+    }
+  }
+
+  getStopType(stopId: string): string {
+    const stop = this.routeStops.find(s => s.routeStopId === stopId);
+    return stop ? stop.stopType : '-';
+  }
+
+  getBoardingStops() {
+    return this.routeStops.filter(s => s.canBoard || s.stopType === 'BOARDING' || s.stopType === 'INTERMEDIATE');
+  }
+
+  getDroppingStops() {
+    return this.routeStops.filter(s => s.canDrop || s.stopType === 'DROPPING' || s.stopType === 'INTERMEDIATE');
+  }
+
+  get isSegmentsValid(): boolean {
+    if (!this.tripForm.segments || this.tripForm.segments.length === 0) return false;
+    
+    const pairs = new Set<string>();
+    
+    for (const seg of this.tripForm.segments) {
+      // Must have all fields
+      if (!seg.boardingStopId || !seg.droppingStopId || !seg.departureTime || !seg.arrivalTime || seg.fare === null || seg.fare === undefined) {
+        return false;
+      }
+      // Boarding and dropping cannot be the same
+      if (seg.boardingStopId === seg.droppingStopId) {
+        return false;
+      }
+      
+      const pairKey = `${seg.boardingStopId}-${seg.droppingStopId}`;
+      if (pairs.has(pairKey)) {
+        return false; // Duplicate pair
+      }
+      pairs.add(pairKey);
+    }
+    return true;
   }
 
   saveTrip(): void {
@@ -429,62 +539,77 @@ export class OperatorDashboardComponent implements OnInit {
 
     const payload = { ...this.tripForm };
     
-    // Auto-calculate departure/arrival and rollover dates
-    if (this.routeStops.length > 0 && payload.travelDate) {
-      const firstStop = this.routeStops[0];
-      const lastStop = this.routeStops[this.routeStops.length - 1];
-      
-      payload.departureTime = payload.stopTimes![firstStop.routeStopId] || '';
-      payload.arrivalTime = payload.stopTimes![lastStop.routeStopId] || '';
-      
-      payload.stopDates = {};
+    // Auto-calculate rollover dates for segments based on departure vs travel date
+    if (payload.travelDate && payload.segments && payload.segments.length > 0) {
       let currentDate = new Date(payload.travelDate);
-      let previousTimeStr = payload.departureTime;
-      
-      for (const stop of this.routeStops) {
-        const timeStr = payload.stopTimes![stop.routeStopId];
-        if (timeStr && previousTimeStr) {
-          if (timeStr < previousTimeStr) {
+      let previousTimeStr = '';
+
+      for (const seg of payload.segments) {
+        // Departure Date Logic
+        if (seg.departureTime && previousTimeStr) {
+          if (seg.departureTime < previousTimeStr) {
             currentDate.setDate(currentDate.getDate() + 1);
           }
         }
-        previousTimeStr = timeStr || previousTimeStr;
+        previousTimeStr = seg.departureTime || previousTimeStr;
         
-        const yyyy = currentDate.getFullYear();
-        const mm = String(currentDate.getMonth() + 1).padStart(2, '0');
-        const dd = String(currentDate.getDate()).padStart(2, '0');
-        payload.stopDates[stop.routeStopId] = `${yyyy}-${mm}-${dd}`;
+        let yyyy = currentDate.getFullYear();
+        let mm = String(currentDate.getMonth() + 1).padStart(2, '0');
+        let dd = String(currentDate.getDate()).padStart(2, '0');
+        seg.departureDate = `${yyyy}-${mm}-${dd}`;
+        
+        // Arrival Date Logic
+        if (seg.arrivalTime && seg.departureTime) {
+          if (seg.arrivalTime < seg.departureTime) {
+            currentDate.setDate(currentDate.getDate() + 1);
+          }
+        }
+        previousTimeStr = seg.arrivalTime || previousTimeStr;
+        
+        yyyy = currentDate.getFullYear();
+        mm = String(currentDate.getMonth() + 1).padStart(2, '0');
+        dd = String(currentDate.getDate()).padStart(2, '0');
+        seg.arrivalDate = `${yyyy}-${mm}-${dd}`;
+
+        // Ensure seconds
+        if (seg.departureTime.length === 5) seg.departureTime += ':00';
+        if (seg.arrivalTime.length === 5) seg.arrivalTime += ':00';
       }
       
-      payload.arrivalDate = payload.stopDates[lastStop.routeStopId];
+      // Set overall trip times from segments
+      payload.departureTime = payload.segments[0].departureTime;
+      payload.arrivalTime = payload.segments[payload.segments.length - 1].arrivalTime;
+      payload.arrivalDate = payload.segments[payload.segments.length - 1].arrivalDate || '';
     }
 
-    if (payload.departureTime && payload.departureTime.length === 5) {
-      payload.departureTime += ':00';
-    }
-    if (payload.arrivalTime && payload.arrivalTime.length === 5) {
-      payload.arrivalTime += ':00';
-    }
-    
-    if (payload.stopTimes) {
-      for (const key of Object.keys(payload.stopTimes)) {
-        if (payload.stopTimes[key] && payload.stopTimes[key].length === 5) {
-          payload.stopTimes[key] += ':00';
+    if (this.isEditingTrip) {
+      this.tripService.updateTrip(
+        this.originalTripKeys.busRegistrationNumber,
+        this.originalTripKeys.source,
+        this.originalTripKeys.destination,
+        this.originalTripKeys.travelDate,
+        payload
+      ).subscribe({
+        next: () => {
+          this.tripSubmitSuccess = 'Trip updated successfully!';
+          this.searchTrips(); // Refresh search if in Trips tab
+          setTimeout(() => this.closeTripModal(), 2000);
+        },
+        error: (err) => {
+          this.tripSubmitError = err.error?.message || 'Failed to update trip. Please check your inputs.';
         }
-      }
+      });
+    } else {
+      this.tripService.createTrip(payload).subscribe({
+        next: () => {
+          this.tripSubmitSuccess = 'Trip scheduled successfully!';
+          setTimeout(() => this.closeTripModal(), 2000);
+        },
+        error: (err) => {
+          this.tripSubmitError = err.error?.message || 'Failed to schedule trip. Please check your inputs.';
+        }
+      });
     }
-
-    this.tripService.createTrip(payload).subscribe({
-      next: () => {
-        this.tripSubmitSuccess = 'Trip scheduled successfully!';
-        setTimeout(() => this.closeTripModal(), 1600);
-        this.cdr.markForCheck();
-      },
-      error: (err) => {
-        this.tripSubmitError = err.error?.message || 'Failed to schedule trip.';
-        this.cdr.markForCheck();
-      }
-    });
   }
 
   // SEATS

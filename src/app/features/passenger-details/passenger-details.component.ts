@@ -144,16 +144,37 @@ export class PassengerDetailsComponent implements OnInit {
     ).subscribe({
       next: (tripRes) => {
         const trip = tripRes.data;
-        if (trip && trip.stopFares && trip.stopFares.length > 0) {
-          const stops = trip.stopFares.map(tsf => ({
-            routeStopId: tsf.routeStopId,
-            stopName: tsf.stopName,
-            stopSequence: tsf.stopSequence,
-            stopType: tsf.stopType as import('../../core/models/trip').StopType,
-            distanceFromSourceKm: 0,
-            source: trip.source,
-            destination: trip.destination
-          }));
+        if (trip && trip.segments && trip.segments.length > 0) {
+          const boardingMap = new Map<string, any>();
+          const droppingMap = new Map<string, any>();
+
+          trip.segments.forEach((seg, idx) => {
+            if (!boardingMap.has(seg.boardingStopId)) {
+              boardingMap.set(seg.boardingStopId, {
+                routeStopId: seg.boardingStopId,
+                stopName: seg.boardingStopName,
+                stopSequence: idx * 2,
+                stopType: 'BOARDING',
+                distanceFromSourceKm: 0,
+                source: trip.source,
+                destination: trip.destination
+              });
+            }
+            if (!droppingMap.has(seg.droppingStopId)) {
+              droppingMap.set(seg.droppingStopId, {
+                routeStopId: seg.droppingStopId,
+                stopName: seg.droppingStopName,
+                stopSequence: idx * 2 + 1,
+                stopType: 'DROPPING',
+                distanceFromSourceKm: 0,
+                source: trip.source,
+                destination: trip.destination
+              });
+            }
+          });
+
+          const stops = [...Array.from(boardingMap.values()), ...Array.from(droppingMap.values())].sort((a, b) => a.stopSequence - b.stopSequence);
+
           let fromSequence = -1;
           let toSequence = Number.MAX_SAFE_INTEGER;
           const fromStop = stops.find(s => s.stopName.toLowerCase() === from || s.source.toLowerCase() === from);

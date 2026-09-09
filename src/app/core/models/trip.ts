@@ -19,7 +19,7 @@ export interface TripDTO {
   arrivalDate: string; // YYYY-MM-DD
   arrivalTime: string; // HH:mm:ss
   baseFare: number;
-  stopFares?: TripStopFareDTO[];
+  segments?: TripSegmentDTO[];
   isCancelled: boolean;
   cancellationReason: string;
   source: string;
@@ -46,6 +46,32 @@ export interface TripStopFareDTO {
   canDrop?: boolean;
 }
 
+export interface TripSegmentDTO {
+  id: string;
+  tripId: string;
+  boardingStopId: string;
+  boardingStopName: string;
+  boardingZoneName?: string;
+  departureTime: string; // HH:mm:ss
+  departureDate?: string;
+  droppingStopId: string;
+  droppingStopName: string;
+  droppingZoneName?: string;
+  arrivalTime: string; // HH:mm:ss
+  arrivalDate?: string;
+  fare: number;
+}
+
+export interface TripSegmentCreateRequest {
+  boardingStopId: string;
+  droppingStopId: string;
+  departureTime: string; // HH:mm:ss
+  arrivalTime: string; // HH:mm:ss
+  departureDate?: string;
+  arrivalDate?: string;
+  fare: number;
+}
+
 export type StopType = 'BOARDING' | 'DROPPING' | 'INTERMEDIATE';
 
 export interface RouteStopDTO {
@@ -56,7 +82,7 @@ export interface RouteStopDTO {
   distanceFromSourceKm: number;
   source: string;
   destination: string;
-  fareLocationId?: string;
+  fareLocationId: string;
   fareLocationName?: string;
   canBoard?: boolean;
   canDrop?: boolean;
@@ -67,7 +93,7 @@ export interface RouteStopCreateRequest {
   stopSequence: number;
   stopType: StopType;
   distanceFromSourceKm: number;
-  fareLocationId?: string;
+  fareLocationId: string;
   canBoard?: boolean;
   canDrop?: boolean;
 }
@@ -81,9 +107,7 @@ export interface TripCreateRequest {
   departureTime: string; // HH:MM:SS or HH:MM
   arrivalTime: string; // HH:MM:SS or HH:MM
   baseFare: number;
-  stopFares?: { [routeStopId: string]: number };
-  stopTimes?: { [routeStopId: string]: string };
-  stopDates?: { [routeStopId: string]: string };
+  segments?: TripSegmentCreateRequest[];
 }
 
 // ── FareLocation ──────────────────────────────────────────────
