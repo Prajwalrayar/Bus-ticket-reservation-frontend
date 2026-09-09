@@ -211,19 +211,37 @@ export class BusSearchComponent implements OnInit {
     // Toggle on and load
     this.expandedTrips.set(trip.tripId, { loading: true, boarding: [], dropping: [], error: '' });
 
-    if (trip.stopFares && trip.stopFares.length > 0) {
-      // Use pre-loaded stop fares to construct stops
-      const stops = trip.stopFares.map(tsf => ({
-        routeStopId: tsf.routeStopId,
-        stopName: tsf.stopName,
-        stopSequence: tsf.stopSequence,
-        stopType: tsf.stopType as import('../../core/models/trip').StopType,
-        distanceFromSourceKm: 0, // not critical for UI
-        source: trip.source,
-        destination: trip.destination
-      }));
-      const boarding = stops.filter(s => s.stopType === 'BOARDING' || s.stopType === 'INTERMEDIATE').sort((a, b) => a.stopSequence - b.stopSequence);
-      const dropping = stops.filter(s => s.stopType === 'DROPPING' || s.stopType === 'INTERMEDIATE').sort((a, b) => a.stopSequence - b.stopSequence);
+    if (trip.segments && trip.segments.length > 0) {
+      const boardingMap = new Map<string, any>();
+      const droppingMap = new Map<string, any>();
+
+      trip.segments.forEach((seg, idx) => {
+        if (!boardingMap.has(seg.boardingStopId)) {
+          boardingMap.set(seg.boardingStopId, {
+            routeStopId: seg.boardingStopId,
+            stopName: seg.boardingStopName,
+            stopSequence: idx * 2, // approximation for sorting
+            stopType: 'BOARDING',
+            distanceFromSourceKm: 0,
+            source: trip.source,
+            destination: trip.destination
+          });
+        }
+        if (!droppingMap.has(seg.droppingStopId)) {
+          droppingMap.set(seg.droppingStopId, {
+            routeStopId: seg.droppingStopId,
+            stopName: seg.droppingStopName,
+            stopSequence: idx * 2 + 1, // approximation for sorting
+            stopType: 'DROPPING',
+            distanceFromSourceKm: 0,
+            source: trip.source,
+            destination: trip.destination
+          });
+        }
+      });
+
+      const boarding = Array.from(boardingMap.values()).sort((a, b) => a.stopSequence - b.stopSequence);
+      const dropping = Array.from(droppingMap.values()).sort((a, b) => a.stopSequence - b.stopSequence);
       this.expandedTrips.set(trip.tripId, { loading: false, boarding, dropping, error: '' });
       return;
     }

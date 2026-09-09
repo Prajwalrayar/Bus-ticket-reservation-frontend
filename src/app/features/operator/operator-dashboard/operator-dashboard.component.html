@@ -284,6 +284,9 @@
                         <i class="bi bi-stars"></i> AI Insights
                       </button>
                     @if (!trip.isCancelled && trip.operatorName === companyNameInput) {
+                      <button class="btn btn-sm btn-outline-warning me-2" (click)="openEditTripModal(trip)">
+                        <i class="bi bi-pencil"></i> Edit Trip
+                      </button>
                       <button class="btn btn-sm btn-outline-danger" (click)="cancelTrip(trip)">Cancel Trip</button>
                     }
                     @if (trip.isCancelled) { <span class="badge bg-danger ms-2">Cancelled</span> }
@@ -684,55 +687,88 @@
               }
             </div>
 
-            <!-- Stop Details (Time & Fare) -->
+            <!-- Trip Segments -->
             @if (routeStops.length > 0) {
               <div class="mb-4">
-                <h6 class="fw-bold mb-3 border-bottom pb-2">Stop Timings & Fares</h6>
+                <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                  <h6 class="fw-bold mb-0">Trip Segments (Timings & Fares)</h6>
+                  <button type="button" class="btn btn-sm btn-outline-primary" (click)="addSegment()">
+                    <i class="bi bi-plus-circle me-1"></i> Add Segment
+                  </button>
+                </div>
+                
                 @if (routeStopsLoading) {
                   <div class="text-center py-2"><div class="spinner-border spinner-border-sm text-rb-primary"></div></div>
-                } @else {
+                } @else if (tripForm.segments && tripForm.segments.length > 0) {
                   <div class="table-responsive">
                     <table class="table table-sm align-middle">
                       <thead class="table-light">
                         <tr>
-                          <th>Stop Name</th>
-                          <th>Type</th>
-                          <th style="width: 140px;">Arrival/Dep Time <span class="text-danger">*</span></th>
-                          <th style="width: 160px;">Fare (₹) <span class="text-danger">*</span></th>
+                          <th>Boarding Point <span class="text-danger">*</span></th>
+                          <th>Dropping Point <span class="text-danger">*</span></th>
+                          <th style="width: 130px;">Dep. Time <span class="text-danger">*</span></th>
+                          <th style="width: 130px;">Arr. Time <span class="text-danger">*</span></th>
+                          <th style="width: 140px;">Fare (₹) <span class="text-danger">*</span></th>
+                          <th style="width: 50px;"></th>
                         </tr>
                       </thead>
                       <tbody>
-                        @for (stop of routeStops; track stop.routeStopId) {
+                        @for (segment of tripForm.segments; track $index) {
                           <tr>
-                            <td class="fw-semibold text-secondary">
-                              {{ stop.stopName }}
-                              <div class="small text-muted">{{ stop.distanceFromSourceKm }} km from source</div>
+                            <td>
+                              <select class="form-select form-select-sm" [(ngModel)]="segment.boardingStopId" (ngModelChange)="onSegmentStopChange(segment)" name="bStop_{{$index}}" required
+                                [class.is-invalid]="segment.boardingStopId && segment.boardingStopId === segment.droppingStopId">
+                                <option value="">Select Boarding</option>
+                                @for (stop of getBoardingStops(); track stop.routeStopId) {
+                                  <option [value]="stop.routeStopId">
+                                    {{ stop.stopName }}
+                                    @if(stop.fareLocationName) { ({{ stop.fareLocationName }}) }
+                                  </option>
+                                }
+                              </select>
                             </td>
                             <td>
-                              <span class="badge bg-light text-dark border">{{ stop.stopType }}</span>
+                              <select class="form-select form-select-sm" [(ngModel)]="segment.droppingStopId" (ngModelChange)="onSegmentStopChange(segment)" name="dStop_{{$index}}" required
+                                [class.is-invalid]="segment.droppingStopId && segment.boardingStopId === segment.droppingStopId">
+                                <option value="">Select Dropping</option>
+                                @for (stop of getDroppingStops(); track stop.routeStopId) {
+                                  <option [value]="stop.routeStopId">
+                                    {{ stop.stopName }}
+                                    @if(stop.fareLocationName) { ({{ stop.fareLocationName }}) }
+                                  </option>
+                                }
+                              </select>
+                              @if (segment.boardingStopId && segment.boardingStopId === segment.droppingStopId) {
+                                <div class="text-danger small mt-1">Cannot be same as boarding</div>
+                              }
                             </td>
                             <td>
-                              <input type="time" class="form-control form-control-sm"
-                                     [value]="tripForm.stopTimes ? tripForm.stopTimes[stop.routeStopId] : ''"
-                                     (input)="onStopTimeChange(stop.routeStopId, $event)" required>
+                              <input type="time" class="form-control form-control-sm" [(ngModel)]="segment.departureTime" name="depTime_{{$index}}" required>
+                            </td>
+                            <td>
+                              <input type="time" class="form-control form-control-sm" [(ngModel)]="segment.arrivalTime" name="arrTime_{{$index}}" required>
                             </td>
                             <td>
                               <div class="input-group input-group-sm">
                                 <span class="input-group-text">₹</span>
-                                <input type="number" class="form-control"
-                                       [value]="tripForm.stopFares ? tripForm.stopFares[stop.routeStopId] : 0"
-                                       (input)="onStopFareChange(stop.routeStopId, $event)" min="0" [max]="tripForm.baseFare" required
-                                       [class.is-invalid]="tripForm.stopFares && tripForm.stopFares[stop.routeStopId] > tripForm.baseFare">
+                                <input type="number" class="form-control" [(ngModel)]="segment.fare" name="segFare_{{$index}}" min="0" required>
                               </div>
-                              @if (tripForm.stopFares && tripForm.stopFares[stop.routeStopId] > tripForm.baseFare) {
-                                <div class="text-danger small mt-1">Exceeds base fare!</div>
-                              }
+                            </td>
+                            <td>
+                              <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeSegment($index)" [disabled]="tripForm.segments.length === 1">
+                                <i class="bi bi-trash"></i>
+                              </button>
                             </td>
                           </tr>
                         }
                       </tbody>
                     </table>
                   </div>
+                  @if (!isSegmentsValid) {
+                    <div class="alert alert-danger py-2 mt-2 small">
+                      <i class="bi bi-exclamation-triangle me-1"></i> Please fill all segment fields correctly. Boarding and dropping stops must be different, and segment pairs must not repeat.
+                    </div>
+                  }
                 }
               </div>
             }
@@ -740,7 +776,7 @@
             <div class="d-flex gap-2 justify-content-end">
               <button type="button" class="btn btn-light px-4" (click)="closeTripModal()">Cancel</button>
               <button type="submit" class="btn btn-success px-4"
-                      [disabled]="!tripFormCtrl.form.valid || !!tripSubmitSuccess">
+                      [disabled]="!tripFormCtrl.form.valid || !!tripSubmitSuccess || !isSegmentsValid">
                 <i class="bi bi-calendar-check me-2"></i>Schedule Trip
               </button>
             </div>

@@ -37,7 +37,8 @@ export class AdminRoutesComponent implements OnInit {
     stopName: '',
     stopSequence: 1,
     stopType: 'BOARDING',
-    distanceFromSourceKm: 0
+    distanceFromSourceKm: 0,
+    fareLocationId: ''
   };
   stopSubmitSuccess: string = '';
   stopSubmitError: string = '';
@@ -309,8 +310,25 @@ export class AdminRoutesComponent implements OnInit {
   isDistanceValid(): boolean {
     if (this.newStop.distanceFromSourceKm == null || this.newStop.distanceFromSourceKm < 0) return false;
     if (!this.selectedRouteForStops) return false;
+    
+    if (this.newStop.distanceFromSourceKm === 0) {
+      if (this.newStop.stopType !== 'BOARDING') return false;
+      const existingZeroKm = this.routeStops.find(s => s.distanceFromSourceKm === 0 && s.routeStopId !== this.editingStopId);
+      if (existingZeroKm) return false;
+    }
+
     // distance must be <= total route distance
     return this.newStop.distanceFromSourceKm <= this.selectedRouteForStops.distance;
+  }
+
+  getDistanceErrorMsg(): string {
+    if (this.newStop.distanceFromSourceKm === 0) {
+      if (this.newStop.stopType !== 'BOARDING') return "Only a BOARDING point can have a distance of 0 km.";
+      if (this.routeStops.some(s => s.distanceFromSourceKm === 0 && s.routeStopId !== this.editingStopId)) {
+        return "Another stop with 0 km already exists. Only 1 stop can be 0 km.";
+      }
+    }
+    return `Distance must be between 0 and total route distance (${this.selectedRouteForStops?.distance || 0} km).`;
   }
 
   // ── Fare Locations & Route Fares Management ───────────────────

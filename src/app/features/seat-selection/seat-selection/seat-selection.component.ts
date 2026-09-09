@@ -95,24 +95,19 @@ export class SeatSelectionComponent implements OnInit {
               seatFare: dynamicFare
             }));
           }
-        } else if (this.bus() && this.bus()!.stopFares && this.bus()!.stopFares!.length > 0) {
-          // Fallback to recalculating (might fail if aliases are used directly)
+        } else if (this.bus() && this.bus()!.segments && this.bus()!.segments!.length > 0) {
+          // Fallback to recalculating from segments
           const fromCity = this.fromCity().toLowerCase();
           const toCity = this.toCity().toLowerCase();
           
-          let sourceFare = 0;
-          let destFare = this.bus()!.baseFare;
-          
-          for (const tsf of this.bus()!.stopFares!) {
-            if (tsf.stopName.toLowerCase() === fromCity) {
-              sourceFare = tsf.fareFromSource;
-            }
-            if (tsf.stopName.toLowerCase() === toCity) {
-              destFare = tsf.fareFromSource;
+          let segmentFare = 0;
+          for (const seg of this.bus()!.segments!) {
+            if (seg.boardingStopName.toLowerCase() === fromCity && seg.droppingStopName.toLowerCase() === toCity) {
+              segmentFare = seg.fare;
+              break;
             }
           }
           
-          const segmentFare = destFare - sourceFare;
           if (segmentFare > 0) {
             loadedSeats = loadedSeats.map(seat => ({
               ...seat,
