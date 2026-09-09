@@ -154,15 +154,37 @@ export class PassengerDetailsComponent implements OnInit {
             source: trip.source,
             destination: trip.destination
           }));
-          this.boardingPoints.set(stops.filter(s => s.stopType === 'BOARDING' || s.stopType === 'INTERMEDIATE').sort((a,b) => a.stopSequence - b.stopSequence));
-          this.droppingPoints.set(stops.filter(s => s.stopType === 'DROPPING' || s.stopType === 'INTERMEDIATE').sort((a,b) => a.stopSequence - b.stopSequence));
+          let fromSequence = -1;
+          let toSequence = Number.MAX_SAFE_INTEGER;
+          const fromStop = stops.find(s => s.stopName.toLowerCase() === from || s.source.toLowerCase() === from);
+          if (fromStop) fromSequence = fromStop.stopSequence;
+          else if (stops.length > 0 && stops[0].source.toLowerCase() === from) fromSequence = 0;
+
+          const toStop = [...stops].reverse().find(s => s.stopName.toLowerCase() === to || s.destination.toLowerCase() === to);
+          if (toStop) toSequence = toStop.stopSequence;
+          else if (stops.length > 0 && stops[stops.length - 1].destination.toLowerCase() === to) toSequence = Number.MAX_SAFE_INTEGER;
+
+          this.boardingPoints.set(stops.filter(s => (s.stopType === 'BOARDING' || s.stopType === 'INTERMEDIATE') && s.stopSequence >= fromSequence && s.stopSequence < toSequence).sort((a,b) => a.stopSequence - b.stopSequence));
+          this.droppingPoints.set(stops.filter(s => (s.stopType === 'DROPPING' || s.stopType === 'INTERMEDIATE') && s.stopSequence > fromSequence && s.stopSequence <= toSequence).sort((a,b) => a.stopSequence - b.stopSequence));
         } else {
           // Fallback to generic route stops
           this.tripService.getRouteStops(from, to).subscribe({
             next: (response) => {
               const stops = response.data || [];
-              this.boardingPoints.set(stops.filter(s => s.stopType === 'BOARDING' || s.stopType === 'INTERMEDIATE').sort((a,b) => a.stopSequence - b.stopSequence));
-              this.droppingPoints.set(stops.filter(s => s.stopType === 'DROPPING' || s.stopType === 'INTERMEDIATE').sort((a,b) => a.stopSequence - b.stopSequence));
+              
+              let fromSequence = -1;
+              let toSequence = Number.MAX_SAFE_INTEGER;
+              const fromStop = stops.find(s => s.stopName.toLowerCase() === from || s.source.toLowerCase() === from);
+              if (fromStop) fromSequence = fromStop.stopSequence;
+              else if (stops.length > 0 && stops[0].source.toLowerCase() === from) fromSequence = 0;
+
+              const toStop = [...stops].reverse().find(s => s.stopName.toLowerCase() === to || s.destination.toLowerCase() === to);
+              if (toStop) toSequence = toStop.stopSequence;
+              else if (stops.length > 0 && stops[stops.length - 1].destination.toLowerCase() === to) toSequence = Number.MAX_SAFE_INTEGER;
+
+              this.boardingPoints.set(stops.filter(s => (s.stopType === 'BOARDING' || s.stopType === 'INTERMEDIATE') && s.stopSequence >= fromSequence && s.stopSequence < toSequence).sort((a,b) => a.stopSequence - b.stopSequence));
+              this.droppingPoints.set(stops.filter(s => (s.stopType === 'DROPPING' || s.stopType === 'INTERMEDIATE') && s.stopSequence > fromSequence && s.stopSequence <= toSequence).sort((a,b) => a.stopSequence - b.stopSequence));
+
             },
             error: (err) => {
               console.error('Failed to load route stops:', err);

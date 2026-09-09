@@ -163,12 +163,34 @@ export class AdminRoutesComponent implements OnInit {
     this.selectedRouteForStops = null;
   }
 
+  isEditingStop: boolean = false;
+  editingStopId: string | null = null;
+  editingStopName: string | null = null;
+  timeFromSourceHours?: number;
+
   resetNewStop(): void {
+    this.isEditingStop = false;
+    this.editingStopId = null;
+    this.editingStopName = null;
+    this.timeFromSourceHours = undefined;
     this.newStop = {
       stopName: '',
       stopSequence: (this.routeStops.length + 1),
       stopType: 'BOARDING',
       distanceFromSourceKm: 0
+    };
+  }
+
+  editStop(stop: RouteStopDTO): void {
+    this.isEditingStop = true;
+    this.editingStopId = stop.routeStopId;
+    this.editingStopName = stop.stopName;
+    this.timeFromSourceHours = undefined;
+    this.newStop = {
+      stopName: stop.stopName,
+      stopSequence: stop.stopSequence,
+      stopType: stop.stopType,
+      distanceFromSourceKm: stop.distanceFromSourceKm
     };
   }
 
@@ -194,21 +216,39 @@ export class AdminRoutesComponent implements OnInit {
     this.stopSubmitError = '';
     this.stopSubmitSuccess = '';
     
-    this.routeService.addRouteStop(this.selectedRouteForStops.source, this.selectedRouteForStops.destination, this.newStop).subscribe({
-      next: (res) => {
-        this.stopSubmitSuccess = 'Stop added successfully!';
-        this.loadStopsForRoute(this.selectedRouteForStops!.source, this.selectedRouteForStops!.destination);
-        setTimeout(() => {
-          this.stopSubmitSuccess = '';
+    if (this.isEditingStop && this.editingStopName) {
+      this.routeService.updateRouteStop(this.selectedRouteForStops.source, this.selectedRouteForStops.destination, this.editingStopName, this.newStop).subscribe({
+        next: (res) => {
+          this.stopSubmitSuccess = 'Stop updated successfully!';
+          this.loadStopsForRoute(this.selectedRouteForStops!.source, this.selectedRouteForStops!.destination);
+          setTimeout(() => {
+            this.stopSubmitSuccess = '';
+            this.cdr.markForCheck();
+          }, 3000);
+        },
+        error: (err) => {
+          console.error('Failed to update stop', err);
+          this.stopSubmitError = err.error?.message || 'Failed to update stop.';
           this.cdr.markForCheck();
-        }, 3000);
-      },
-      error: (err) => {
-        console.error('Failed to add stop', err);
-        this.stopSubmitError = err.error?.message || 'Failed to add stop.';
-        this.cdr.markForCheck();
-      }
-    });
+        }
+      });
+    } else {
+      this.routeService.addRouteStop(this.selectedRouteForStops.source, this.selectedRouteForStops.destination, this.newStop).subscribe({
+        next: (res) => {
+          this.stopSubmitSuccess = 'Stop added successfully!';
+          this.loadStopsForRoute(this.selectedRouteForStops!.source, this.selectedRouteForStops!.destination);
+          setTimeout(() => {
+            this.stopSubmitSuccess = '';
+            this.cdr.markForCheck();
+          }, 3000);
+        },
+        error: (err) => {
+          console.error('Failed to add stop', err);
+          this.stopSubmitError = err.error?.message || 'Failed to add stop.';
+          this.cdr.markForCheck();
+        }
+      });
+    }
   }
 
   isSequenceValid(): boolean {
@@ -216,6 +256,7 @@ export class AdminRoutesComponent implements OnInit {
     // ensure sequence is unique for this route per StopType
     return !this.routeStops.some(s => 
       s.stopSequence === this.newStop.stopSequence && 
+      s.routeStopId !== this.editingStopId &&
       (s.stopType === this.newStop.stopType || s.stopType === 'INTERMEDIATE' || this.newStop.stopType === 'INTERMEDIATE')
     );
   }

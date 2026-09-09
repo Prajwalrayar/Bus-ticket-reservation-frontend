@@ -276,10 +276,13 @@
                     <div class="fw-bold">{{ trip.source }} to {{ trip.destination }}</div>
                     <div class="text-muted small">{{ trip.travelDate }} | {{ trip.departureTime }} | Bus: {{ trip.busRegistrationNumber }} | Op: {{ trip.operatorName }}</div>
                   </div>
-                  <div>
-                    <button class="btn btn-sm btn-outline-primary me-2" (click)="toggleAiInsights(trip)">
-                      <i class="bi bi-stars"></i> AI Insights
-                    </button>
+                    <div>
+                      <button class="btn btn-sm btn-outline-info me-2" (click)="openPassengersModal(trip)">
+                        <i class="bi bi-people"></i> Passengers
+                      </button>
+                      <button class="btn btn-sm btn-outline-primary me-2" (click)="toggleAiInsights(trip)">
+                        <i class="bi bi-stars"></i> AI Insights
+                      </button>
                     @if (!trip.isCancelled && trip.operatorName === companyNameInput) {
                       <button class="btn btn-sm btn-outline-danger" (click)="cancelTrip(trip)">Cancel Trip</button>
                     }
@@ -653,51 +656,15 @@
             </div>
 
             <div class="row g-3 mb-3">
-              <!-- Departure Date -->
+              <!-- Travel Date -->
               <div class="col-md-6">
-                <label class="form-label fw-semibold text-secondary small">Departure Date <span class="text-danger">*</span></label>
+                <label class="form-label fw-semibold text-secondary small">Trip Start Date <span class="text-danger">*</span></label>
                 <input type="date" class="form-control" name="travelDate"
                        [(ngModel)]="tripForm.travelDate" required
                        [min]="today" #tDate="ngModel"
                        [class.is-invalid]="tDate.invalid && (tDate.dirty || tDate.touched)">
                 @if (tDate.invalid && (tDate.dirty || tDate.touched)) {
-                  <div class="invalid-feedback">Departure date is required.</div>
-                }
-              </div>
-
-              <!-- Departure Time -->
-              <div class="col-md-6">
-                <label class="form-label fw-semibold text-secondary small">Departure Time <span class="text-danger">*</span></label>
-                <input type="time" class="form-control" name="departureTime"
-                       [(ngModel)]="tripForm.departureTime" required #dTime="ngModel"
-                       [class.is-invalid]="dTime.invalid && (dTime.dirty || dTime.touched)">
-                @if (dTime.invalid && (dTime.dirty || dTime.touched)) {
-                  <div class="invalid-feedback">Departure time is required.</div>
-                }
-              </div>
-            </div>
-
-            <div class="row g-3 mb-3">
-              <!-- Arrival Date -->
-              <div class="col-md-6">
-                <label class="form-label fw-semibold text-secondary small">Arrival Date <span class="text-danger">*</span></label>
-                <input type="date" class="form-control" name="arrivalDate"
-                       [(ngModel)]="tripForm.arrivalDate" required
-                       [min]="tripForm.travelDate || today" #aDate="ngModel"
-                       [class.is-invalid]="aDate.invalid && (aDate.dirty || aDate.touched)">
-                @if (aDate.invalid && (aDate.dirty || aDate.touched)) {
-                  <div class="invalid-feedback">Arrival date is required.</div>
-                }
-              </div>
-
-              <!-- Arrival Time -->
-              <div class="col-md-6">
-                <label class="form-label fw-semibold text-secondary small">Arrival Time <span class="text-danger">*</span></label>
-                <input type="time" class="form-control" name="arrivalTime"
-                       [(ngModel)]="tripForm.arrivalTime" required #aTime="ngModel"
-                       [class.is-invalid]="aTime.invalid && (aTime.dirty || aTime.touched)">
-                @if (aTime.invalid && (aTime.dirty || aTime.touched)) {
-                  <div class="invalid-feedback">Arrival time is required.</div>
+                  <div class="invalid-feedback">Trip Start Date is required.</div>
                 }
               </div>
             </div>
@@ -717,30 +684,54 @@
               }
             </div>
 
-            <!-- Intermediate Stop Fares -->
+            <!-- Stop Details (Time & Fare) -->
             @if (routeStops.length > 0) {
               <div class="mb-4">
-                <h6 class="fw-bold mb-3 border-bottom pb-2">Intermediate Stop Fares (From Source)</h6>
+                <h6 class="fw-bold mb-3 border-bottom pb-2">Stop Timings & Fares</h6>
                 @if (routeStopsLoading) {
                   <div class="text-center py-2"><div class="spinner-border spinner-border-sm text-rb-primary"></div></div>
                 } @else {
-                  <div class="row g-3">
-                    @for (stop of routeStops; track stop.routeStopId) {
-                      <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">
-                          {{ stop.stopType === 'BOARDING' ? 'From' : 'To' }} {{ stop.stopName }} (₹)
-                        </label>
-                        <div class="input-group input-group-sm">
-                          <span class="input-group-text">₹</span>
-                          <input type="number" class="form-control" [value]="tripForm.stopFares ? tripForm.stopFares[stop.routeStopId] : 0"
-                                 (input)="onStopFareChange(stop.routeStopId, $event)" min="0" [max]="tripForm.baseFare" required
-                                 [class.is-invalid]="tripForm.stopFares && tripForm.stopFares[stop.routeStopId] > tripForm.baseFare">
-                        </div>
-                        @if (tripForm.stopFares && tripForm.stopFares[stop.routeStopId] > tripForm.baseFare) {
-                          <div class="text-danger small mt-1">Stop fare cannot exceed base fare (₹{{ tripForm.baseFare }}).</div>
+                  <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                      <thead class="table-light">
+                        <tr>
+                          <th>Stop Name</th>
+                          <th>Type</th>
+                          <th style="width: 140px;">Arrival/Dep Time <span class="text-danger">*</span></th>
+                          <th style="width: 160px;">Fare (₹) <span class="text-danger">*</span></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (stop of routeStops; track stop.routeStopId) {
+                          <tr>
+                            <td class="fw-semibold text-secondary">
+                              {{ stop.stopName }}
+                              <div class="small text-muted">{{ stop.distanceFromSourceKm }} km from source</div>
+                            </td>
+                            <td>
+                              <span class="badge bg-light text-dark border">{{ stop.stopType }}</span>
+                            </td>
+                            <td>
+                              <input type="time" class="form-control form-control-sm"
+                                     [value]="tripForm.stopTimes ? tripForm.stopTimes[stop.routeStopId] : ''"
+                                     (input)="onStopTimeChange(stop.routeStopId, $event)" required>
+                            </td>
+                            <td>
+                              <div class="input-group input-group-sm">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" class="form-control"
+                                       [value]="tripForm.stopFares ? tripForm.stopFares[stop.routeStopId] : 0"
+                                       (input)="onStopFareChange(stop.routeStopId, $event)" min="0" [max]="tripForm.baseFare" required
+                                       [class.is-invalid]="tripForm.stopFares && tripForm.stopFares[stop.routeStopId] > tripForm.baseFare">
+                              </div>
+                              @if (tripForm.stopFares && tripForm.stopFares[stop.routeStopId] > tripForm.baseFare) {
+                                <div class="text-danger small mt-1">Exceeds base fare!</div>
+                              }
+                            </td>
+                          </tr>
                         }
-                      </div>
-                    }
+                      </tbody>
+                    </table>
                   </div>
                 }
               </div>
@@ -754,6 +745,66 @@
               </button>
             </div>
           </form>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Passengers Modal -->
+@if (showPassengersModal) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header bg-info text-white border-0">
+          <h5 class="modal-title fw-bold">
+            <i class="bi bi-people me-2"></i>
+            Passengers for Trip
+          </h5>
+          <button type="button" class="btn-close btn-close-white" (click)="closePassengersModal()"></button>
+        </div>
+        <div class="modal-body p-0">
+          @if (tripPassengersLoading) {
+            <div class="text-center py-5"><div class="spinner-border text-info" role="status"></div></div>
+          } @else if (tripPassengers.length === 0) {
+            <div class="text-center py-5 text-muted">
+              <i class="bi bi-person-x fs-1 d-block mb-3"></i>
+              <p>No passengers booked for this trip yet.</p>
+            </div>
+          } @else {
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th class="ps-4">Name</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Seat</th>
+                    <th>Boarding</th>
+                    <th>Dropping</th>
+                    <th>Booking Ref</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (p of tripPassengers; track p.seatNumber) {
+                    <tr>
+                      <td class="ps-4 fw-bold">{{ p.passengerName }}</td>
+                      <td>{{ p.age }}</td>
+                      <td>{{ p.gender }}</td>
+                      <td><span class="badge bg-secondary">{{ p.seatNumber }}</span></td>
+                      <td>{{ p.boardingPoint }}</td>
+                      <td>{{ p.droppingPoint }}</td>
+                      <td>{{ p.bookingReference }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <div class="p-3 bg-light border-top d-flex justify-content-between align-items-center">
+              <span class="fw-bold">Total Passengers Booked: <span class="badge bg-info">{{ tripPassengers.length }}</span></span>
+              <button class="btn btn-sm btn-outline-secondary" (click)="closePassengersModal()">Close</button>
+            </div>
+          }
         </div>
       </div>
     </div>
