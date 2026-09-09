@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { RouteService } from '../../../core/services/route.service';
 import { RouteDTO, RouteCreateRequest } from '../../../core/models/route';
-import { RouteStopDTO, RouteStopCreateRequest, StopType } from '../../../core/models/trip';
+import { RouteStopDTO, RouteStopCreateRequest, StopType, FareLocationDTO, FareLocationCreateRequest, RouteFareDTO, RouteFareCreateRequest } from '../../../core/models/trip';
 
 @Component({
   selector: 'app-admin-routes',
@@ -41,6 +41,28 @@ export class AdminRoutesComponent implements OnInit {
   };
   stopSubmitSuccess: string = '';
   stopSubmitError: string = '';
+
+  // Fare Locations & Fares Management
+  showFaresModal: boolean = false;
+  selectedRouteForFares: RouteDTO | null = null;
+  
+  fareLocations: FareLocationDTO[] = [];
+  routeFares: RouteFareDTO[] = [];
+  loadingFares: boolean = false;
+  
+  newFareLocation: FareLocationCreateRequest = {
+    name: '',
+    description: ''
+  };
+  
+  newRouteFare: RouteFareCreateRequest = {
+    fromFareLocationId: '',
+    toFareLocationId: '',
+    fare: 0
+  };
+
+  fareSubmitSuccess: string = '';
+  fareSubmitError: string = '';
 
   constructor(
     private routeService: RouteService,
@@ -177,7 +199,10 @@ export class AdminRoutesComponent implements OnInit {
       stopName: '',
       stopSequence: (this.routeStops.length + 1),
       stopType: 'BOARDING',
-      distanceFromSourceKm: 0
+      distanceFromSourceKm: 0,
+      fareLocationId: '',
+      canBoard: true,
+      canDrop: true
     };
   }
 
@@ -190,23 +215,43 @@ export class AdminRoutesComponent implements OnInit {
       stopName: stop.stopName,
       stopSequence: stop.stopSequence,
       stopType: stop.stopType,
-      distanceFromSourceKm: stop.distanceFromSourceKm
+      distanceFromSourceKm: stop.distanceFromSourceKm,
+      fareLocationId: stop.fareLocationId || '',
+      canBoard: stop.canBoard ?? true,
+      canDrop: stop.canDrop ?? true
     };
   }
 
   loadStopsForRoute(source: string, destination: string): void {
     this.loadingStops = true;
-    this.routeService.getRouteStops(source, destination).subscribe({
-      next: (stops) => {
-        this.routeStops = stops;
-        this.loadingStops = false;
-        this.resetNewStop();
-        this.cdr.markForCheck();
+    this.routeService.getFareLocations(source, destination).subscribe({
+      next: (locations) => {
+        this.fareLocations = locations;
+        this.routeService.getRouteStops(source, destination).subscribe({
+          next: (stops) => {
+            this.routeStops = stops;
+            this.loadingStops = false;
+            this.resetNewStop();
+            this.cdr.markForCheck();
+          },
+          error: (err) => {
+            console.error('Failed to fetch stops', err);
+            this.loadingStops = false;
+            this.cdr.markForCheck();
+          }
+        });
       },
       error: (err) => {
-        console.error('Failed to fetch stops', err);
-        this.loadingStops = false;
-        this.cdr.markForCheck();
+        console.error('Failed to load fare locations', err);
+        // Continue loading stops even if fare locations fail
+        this.routeService.getRouteStops(source, destination).subscribe({
+          next: (stops) => {
+            this.routeStops = stops;
+            this.loadingStops = false;
+            this.resetNewStop();
+            this.cdr.markForCheck();
+          }
+        });
       }
     });
   }
@@ -266,5 +311,122 @@ export class AdminRoutesComponent implements OnInit {
     if (!this.selectedRouteForStops) return false;
     // distance must be <= total route distance
     return this.newStop.distanceFromSourceKm <= this.selectedRouteForStops.distance;
+  }
+
+  // ── Fare Locations & Route Fares Management ───────────────────
+
+  openFaresModal(route: RouteDTO): void {
+    this.selectedRouteForFares = route;
+    this.showFaresModal = true;
+    this.fareSubmitSuccess = '';
+    this.fareSubmitError = '';
+    this.loadFaresData(route.source, route.destination);
+  }
+
+  closeFaresModal(): void {
+    this.showFaresModal = false;
+    this.selectedRouteForFares = null;
+  }
+
+  loadFaresData(source: string, destination: string): void {
+    this.loadingFares = true;
+    this.routeService.getFareLocations(source, destination).subscribe({
+      next: (locations) => {
+        this.fareLocations = locations;
+        this.routeService.getRouteFares(source, destination).subscribe({
+          next: (fares) => {
+            this.routeFares = fares;
+            this.loadingFares = false;
+            this.cdr.markForCheck();
+          },
+          error: (err) => {
+            console.error('Failed to load route fares', err);
+            this.loadingFares = false;
+            this.cdr.markForCheck();
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Failed to load fare locations', err);
+        this.loadingFares = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  addFareLocation(): void {
+    if (!this.selectedRouteForFares) return;
+    this.fareSubmitError = '';
+    this.fareSubmitSuccess = '';
+
+    this.routeService.createFareLocation(this.selectedRouteForFares.source, this.selectedRouteForFares.destination, this.newFareLocation).subscribe({
+      next: (res) => {
+        this.fareSubmitSuccess = 'Fare location added successfully!';
+        this.newFareLocation = { name: '', description: '' };
+        this.loadFaresData(this.selectedRouteForFares!.source, this.selectedRouteForFares!.destination);
+        setTimeout(() => { this.fareSubmitSuccess = ''; this.cdr.markForCheck(); }, 3000);
+      },
+      error: (err) => {
+        console.error('Failed to add fare location', err);
+        this.fareSubmitError = err.error?.message || 'Failed to add fare location.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  deleteFareLocation(locationId: string): void {
+    if (!this.selectedRouteForFares) return;
+    if (confirm('Are you sure you want to delete this fare location?')) {
+      this.routeService.deleteFareLocation(this.selectedRouteForFares.source, this.selectedRouteForFares.destination, locationId).subscribe({
+        next: () => {
+          this.fareSubmitSuccess = 'Fare location deleted successfully!';
+          this.loadFaresData(this.selectedRouteForFares!.source, this.selectedRouteForFares!.destination);
+          setTimeout(() => { this.fareSubmitSuccess = ''; this.cdr.markForCheck(); }, 3000);
+        },
+        error: (err) => {
+          console.error('Failed to delete fare location', err);
+          this.fareSubmitError = err.error?.message || 'Failed to delete fare location.';
+          this.cdr.markForCheck();
+        }
+      });
+    }
+  }
+
+  addRouteFare(): void {
+    if (!this.selectedRouteForFares) return;
+    this.fareSubmitError = '';
+    this.fareSubmitSuccess = '';
+
+    this.routeService.createRouteFare(this.selectedRouteForFares.source, this.selectedRouteForFares.destination, this.newRouteFare).subscribe({
+      next: (res) => {
+        this.fareSubmitSuccess = 'Route fare added successfully!';
+        this.newRouteFare = { fromFareLocationId: '', toFareLocationId: '', fare: 0 };
+        this.loadFaresData(this.selectedRouteForFares!.source, this.selectedRouteForFares!.destination);
+        setTimeout(() => { this.fareSubmitSuccess = ''; this.cdr.markForCheck(); }, 3000);
+      },
+      error: (err) => {
+        console.error('Failed to add route fare', err);
+        this.fareSubmitError = err.error?.message || 'Failed to add route fare.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  deleteRouteFare(fareId: string): void {
+    if (!this.selectedRouteForFares) return;
+    if (confirm('Are you sure you want to delete this route fare?')) {
+      this.routeService.deleteRouteFare(this.selectedRouteForFares.source, this.selectedRouteForFares.destination, fareId).subscribe({
+        next: () => {
+          this.fareSubmitSuccess = 'Route fare deleted successfully!';
+          this.loadFaresData(this.selectedRouteForFares!.source, this.selectedRouteForFares!.destination);
+          setTimeout(() => { this.fareSubmitSuccess = ''; this.cdr.markForCheck(); }, 3000);
+        },
+        error: (err) => {
+          console.error('Failed to delete route fare', err);
+          this.fareSubmitError = err.error?.message || 'Failed to delete route fare.';
+          this.cdr.markForCheck();
+        }
+      });
+    }
   }
 }
