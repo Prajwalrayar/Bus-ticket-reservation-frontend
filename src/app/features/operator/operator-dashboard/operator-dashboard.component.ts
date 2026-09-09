@@ -360,7 +360,9 @@ export class OperatorDashboardComponent implements OnInit {
       departureTime: '',
       arrivalTime: '',
       baseFare: 0,
-      stopFares: {}
+      stopFares: {},
+      stopTimes: {},
+      stopDates: {}
     };
     
     if (this.routes.length > 0) {
@@ -386,15 +388,15 @@ export class OperatorDashboardComponent implements OnInit {
     this.routeStopsLoading = true;
     this.routeService.getRouteStops(source, destination).subscribe({
       next: (stops) => {
-        // Filter out the primary source from dropping points if necessary, 
-        // usually we just want to set fares to intermediate/dropping points
-        this.routeStops = stops.filter(s => s.stopName.toLowerCase() !== source.toLowerCase());
+        this.routeStops = stops.sort((a, b) => a.stopSequence - b.stopSequence);
         this.routeStopsLoading = false;
         
-        // Initialize stopFares
+        // Initialize stopFares and stopTimes
         this.tripForm.stopFares = {};
+        this.tripForm.stopTimes = {};
         this.routeStops.forEach(stop => {
           this.tripForm.stopFares![stop.routeStopId] = 0;
+          this.tripForm.stopTimes![stop.routeStopId] = '';
         });
         
         this.cdr.detectChanges();
@@ -414,16 +416,62 @@ export class OperatorDashboardComponent implements OnInit {
     }
   }
 
+  onStopTimeChange(routeStopId: string, event: Event): void {
+    const val = (event.target as HTMLInputElement).value;
+    if (this.tripForm.stopTimes) {
+      this.tripForm.stopTimes[routeStopId] = val;
+    }
+  }
+
   saveTrip(): void {
     this.tripSubmitError = '';
     this.tripSubmitSuccess = '';
 
     const payload = { ...this.tripForm };
+    
+    // Auto-calculate departure/arrival and rollover dates
+    if (this.routeStops.length > 0 && payload.travelDate) {
+      const firstStop = this.routeStops[0];
+      const lastStop = this.routeStops[this.routeStops.length - 1];
+      
+      payload.departureTime = payload.stopTimes![firstStop.routeStopId] || '';
+      payload.arrivalTime = payload.stopTimes![lastStop.routeStopId] || '';
+      
+      payload.stopDates = {};
+      let currentDate = new Date(payload.travelDate);
+      let previousTimeStr = payload.departureTime;
+      
+      for (const stop of this.routeStops) {
+        const timeStr = payload.stopTimes![stop.routeStopId];
+        if (timeStr && previousTimeStr) {
+          if (timeStr < previousTimeStr) {
+            currentDate.setDate(currentDate.getDate() + 1);
+          }
+        }
+        previousTimeStr = timeStr || previousTimeStr;
+        
+        const yyyy = currentDate.getFullYear();
+        const mm = String(currentDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(currentDate.getDate()).padStart(2, '0');
+        payload.stopDates[stop.routeStopId] = `${yyyy}-${mm}-${dd}`;
+      }
+      
+      payload.arrivalDate = payload.stopDates[lastStop.routeStopId];
+    }
+
     if (payload.departureTime && payload.departureTime.length === 5) {
       payload.departureTime += ':00';
     }
     if (payload.arrivalTime && payload.arrivalTime.length === 5) {
       payload.arrivalTime += ':00';
+    }
+    
+    if (payload.stopTimes) {
+      for (const key of Object.keys(payload.stopTimes)) {
+        if (payload.stopTimes[key] && payload.stopTimes[key].length === 5) {
+          payload.stopTimes[key] += ':00';
+        }
+      }
     }
 
     this.tripService.createTrip(payload).subscribe({
@@ -624,6 +672,38 @@ export class OperatorDashboardComponent implements OnInit {
         }
       });
     }
+  }
+
+  // PASSENGERS MODAL
+  showPassengersModal: boolean = false;
+  tripPassengers: any[] = [];
+  tripPassengersLoading: boolean = false;
+  selectedTripForPassengers: TripDTO | null = null;
+
+  openPassengersModal(trip: TripDTO): void {
+    this.selectedTripForPassengers = trip;
+    this.showPassengersModal = true;
+    this.tripPassengersLoading = true;
+    this.tripPassengers = [];
+    
+    this.http.get<ApiResponse<any[]>>(`/api/trips/${trip.tripId}/passengers`).subscribe({
+      next: (res) => {
+        this.tripPassengers = res.data;
+        this.tripPassengersLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to load passengers', err);
+        this.tripPassengersLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  closePassengersModal(): void {
+    this.showPassengersModal = false;
+    this.selectedTripForPassengers = null;
+    this.tripPassengers = [];
   }
 
   toggleAiInsights(trip: TripDTO): void {

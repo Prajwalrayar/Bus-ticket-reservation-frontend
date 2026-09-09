@@ -38,6 +38,8 @@ export interface TripStopFareDTO {
   fareFromSource: number;
   stopSequence: number;
   stopType: string;
+  stopTime?: string; // HH:mm:ss
+  stopDate?: string; // YYYY-MM-DD
 }
 
 export type StopType = 'BOARDING' | 'DROPPING' | 'INTERMEDIATE';
@@ -69,4 +71,6 @@ export interface TripCreateRequest {
   arrivalTime: string; // HH:MM:SS or HH:MM
   baseFare: number;
   stopFares?: { [routeStopId: string]: number };
+  stopTimes?: { [routeStopId: string]: string };
+  stopDates?: { [routeStopId: string]: string };
 }

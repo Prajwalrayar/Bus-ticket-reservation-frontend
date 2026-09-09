@@ -55,4 +55,10 @@ export class RouteService {
       map(res => res.data)
     );
   }
+
+  updateRouteStop(source: string, destination: string, stopName: string, request: RouteStopCreateRequest): Observable<RouteStopDTO> {
+    return this.http.put<ApiResponse<RouteStopDTO>>(`${this.apiUrl}/${source}/${destination}/stops/${stopName}`, request).pipe(
+      map(res => res.data)
+    );
+  }
 }
