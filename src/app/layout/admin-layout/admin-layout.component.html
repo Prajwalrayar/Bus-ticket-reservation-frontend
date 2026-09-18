@@ -24,10 +24,20 @@
          [routerLink]="item.route" 
          routerLinkActive="active" 
          [routerLinkActiveOptions]="{exact: item.route === '/admin' || item.route === '/operator'}"
-         class="admin-nav-link"
+         class="admin-nav-link d-flex align-items-center"
          [title]="item.label">
         <i class="bi" [ngClass]="item.icon"></i>
         <span class="nav-label" *ngIf="!isSidebarCollapsed">{{ item.label }}</span>
+        
+        <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;"
+              *ngIf="!isSidebarCollapsed && item.label === 'Refunds' && pendingRefundsCount > 0">
+          {{ pendingRefundsCount }}
+        </span>
+        
+        <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;"
+              *ngIf="!isSidebarCollapsed && item.label === 'Customer Issues' && openTicketsCount > 0">
+          {{ openTicketsCount }}
+        </span>
       </a>
     </nav>
     

@@ -3,6 +3,8 @@ import { NgForm } from '@angular/forms';
 import { WalletService } from '../../../core/services/wallet.service';
 import { WalletDTO, WalletTransactionDTO } from '../../../core/models/wallet';
 
+declare var Razorpay: any;
+
 @Component({
   selector: 'app-wallet',
   standalone: false,
@@ -66,7 +68,22 @@ export class WalletComponent implements OnInit {
     });
   }
 
-  recharge(form: NgForm): void {
+  loadRazorpayScript(): Promise<boolean> {
+    return new Promise((resolve) => {
+      if (document.getElementById('razorpay-checkout-script')) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement('script');
+      script.id = 'razorpay-checkout-script';
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  }
+
+  async recharge(form: NgForm): Promise<void> {
     this.errorMessage = '';
     this.successMessage = '';
 
@@ -82,25 +99,78 @@ export class WalletComponent implements OnInit {
       return;
     }
 
-    const upiRegex = /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/;
-    if (!upiRegex.test(this.upiId)) {
-      this.errorMessage = 'Invalid UPI ID format';
+    this.isRecharging = true;
+    this.cdr.markForCheck();
+
+    const isScriptLoaded = await this.loadRazorpayScript();
+    if (!isScriptLoaded) {
+      this.errorMessage = 'Failed to load Razorpay SDK. Please check your connection.';
+      this.isRecharging = false;
+      this.cdr.markForCheck();
       return;
     }
 
-    this.isRecharging = true;
-    this.walletService.rechargeWallet({ amount: this.rechargeAmount, upiId: this.upiId }).subscribe({
+    this.walletService.createRechargeOrder({ amount: this.rechargeAmount, upiId: '' }).subscribe({
+      next: (orderData) => {
+        const options = {
+          key: orderData.keyId,
+          amount: orderData.amount * 100, // paise
+          currency: orderData.currency,
+          name: 'Wallet Top-up',
+          description: 'Recharging wallet by ₹' + this.rechargeAmount,
+          order_id: orderData.orderId,
+          handler: (response: any) => {
+            this.verifyRazorpayPayment(response);
+          },
+          prefill: {
+            name: 'Passenger',
+          },
+          modal: {
+            ondismiss: () => {
+              this.isRecharging = false;
+              this.errorMessage = 'Top-up was cancelled by user.';
+              this.cdr.markForCheck();
+            }
+          },
+          theme: {
+            color: '#dc3545'
+          }
+        };
+        
+        const rzp = new Razorpay(options);
+        rzp.on('payment.failed', (response: any) => {
+          this.isRecharging = false;
+          this.errorMessage = response.error.description || 'Top-up failed.';
+          this.cdr.markForCheck();
+        });
+        rzp.open();
+      },
+      error: (err) => {
+        this.errorMessage = err.error?.message || 'Failed to initiate recharge';
+        this.isRecharging = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  verifyRazorpayPayment(response: any): void {
+    const verifyReq = {
+      razorpayPaymentId: response.razorpay_payment_id,
+      razorpayOrderId: response.razorpay_order_id,
+      razorpaySignature: response.razorpay_signature
+    };
+
+    this.walletService.verifyRechargePayment(verifyReq).subscribe({
       next: (wallet) => {
         this.wallet = wallet;
         this.successMessage = 'Wallet recharged successfully';
         this.rechargeAmount = 100;
-        this.upiId = '';
         this.loadTransactions();
         this.isRecharging = false;
         this.cdr.markForCheck();
       },
       error: (err) => {
-        this.errorMessage = err.error?.message || 'Failed to recharge wallet';
+        this.errorMessage = err.error?.message || 'Failed to verify payment';
         this.isRecharging = false;
         this.cdr.markForCheck();
       }

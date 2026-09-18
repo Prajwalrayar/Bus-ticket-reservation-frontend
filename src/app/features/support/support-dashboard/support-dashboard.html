@@ -318,6 +318,122 @@
     </div>
   }
 
+  <!-- ======================== REFUNDS ======================== -->
+  @if (activeTab === 'refunds') {
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+        <div>
+          <h5 class="fw-bold mb-0"><i class="bi bi-cash-coin me-2 text-success"></i>Refunds</h5>
+          <p class="text-muted small mb-0">Process and view refunds for cancelled bookings</p>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary" (click)="loadPendingRefunds()" [disabled]="refundsLoading">
+          <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+        </button>
+      </div>
+      
+      @if (processRefundError) {
+        <div class="px-4 mt-3">
+          <div class="alert alert-danger alert-dismissible" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>{{ processRefundError }}
+            <button type="button" class="btn-close" (click)="processRefundError = ''"></button>
+          </div>
+        </div>
+      }
+
+      <div class="card-body p-4">
+        @if (refundsLoading) {
+          <div class="text-center py-5"><div class="spinner-border text-success"></div></div>
+        } @else if (refundsError) {
+          <div class="alert alert-danger">{{ refundsError }}</div>
+        } @else if (pendingRefunds.length === 0) {
+          <div class="text-center py-5 text-muted">
+            <i class="bi bi-check-circle fs-1 d-block mb-3 text-success"></i>
+            <p class="mb-0 fw-semibold">No refunds found.</p>
+          </div>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Cancellation Ref</th>
+                  <th>Booking ID</th>
+                  <th>Date</th>
+                  <th>Refund Amount</th>
+                  <th>Payment Txn ID</th>
+                  <th>Refund Ref</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (refund of pendingRefunds; track refund.cancellationId) {
+                  <tr>
+                    <td><span class="fw-semibold text-primary">{{ refund.cancellationReference }}</span></td>
+                    <td><span class="text-muted small">{{ refund.bookingId }}</span></td>
+                    <td>
+                      <div>{{ refund.cancelledAt | date:'mediumDate' }}</div>
+                      <small class="text-muted">{{ refund.cancelledAt | date:'shortTime' }}</small>
+                    </td>
+                    <td><span class="fw-bold text-success">{{ refund.refundAmount | currency:'INR' }}</span></td>
+                    <td><span class="font-monospace text-secondary small">{{ refund.paymentTransactionId || '-' }}</span></td>
+                    <td><span class="text-muted small">{{ refund.refundReference || '-' }}</span></td>
+                    <td>
+                      <span class="badge" [ngClass]="{'bg-warning text-dark': refund.refundStatus === 'INITIATED' || refund.refundStatus === 'PROCESSING', 'bg-success': refund.refundStatus === 'COMPLETED'}">
+                        {{ refund.refundStatus }}
+                      </span>
+                    </td>
+                    <td>
+                      @if (refund.refundStatus !== 'COMPLETED') {
+                        <button class="btn btn-sm btn-outline-success" (click)="openRefundModal(refund.cancellationId)">
+                          <i class="bi bi-check2-circle me-1"></i>Process Refund
+                        </button>
+                      } @else {
+                        <span class="text-success small fw-semibold"><i class="bi bi-check-circle-fill me-1"></i>Processed</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
 </div>
 
-
+<!-- Refund Modal -->
+@if (showRefundModal) {
+  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header border-bottom-0 pb-0">
+          <h5 class="modal-title fw-bold">Process Refund</h5>
+          <button type="button" class="btn-close" (click)="closeRefundModal()"></button>
+        </div>
+        <div class="modal-body py-4">
+          <p class="text-dark fw-semibold mb-3">Are you sure you want to process this refund?</p>
+          <p class="text-muted small mb-0">The system will automatically refund the calculated amount via Razorpay. This action cannot be undone.</p>
+          
+          @if (processRefundError) {
+            <div class="alert alert-danger py-2 small mt-3 mb-0">
+              <i class="bi bi-exclamation-triangle me-1"></i>{{ processRefundError }}
+            </div>
+          }
+        </div>
+        <div class="modal-footer border-top-0 pt-0">
+          <button type="button" class="btn btn-light" (click)="closeRefundModal()" [disabled]="processRefundModalLoading">Cancel</button>
+          <button type="button" class="btn btn-success px-4" (click)="confirmRefund()" [disabled]="processRefundModalLoading">
+            @if (processRefundModalLoading) {
+              <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              Processing...
+            } @else {
+              Confirm Refund
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

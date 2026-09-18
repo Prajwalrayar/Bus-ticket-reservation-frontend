@@ -7,7 +7,7 @@ import { SavedPassengerService } from '../../../core/services/saved-passenger.se
 import { ReviewService } from '../../../core/services/review.service';
 import { Booking } from '../../../core/models/booking';
 import { TripDTO } from '../../../core/models/trip';
-import { CancellationDTO } from '../../../core/models/cancellation';
+import { CancellationDTO, CancellationEstimateDTO } from '../../../core/models/cancellation';
 import { SavedPassengerDTO, SavedPassengerRequest } from '../../../core/models/saved-passenger';
 import { ReviewDTO, ReviewCreateRequest } from '../../../core/models/review';
 import { UserService } from '../../../core/services/user.service';
@@ -60,6 +60,7 @@ export class ProfileComponent implements OnInit {
   showCancelConfirmModal: boolean = false;
   showCancelResultModal: boolean = false;
   cancellationResult: CancellationDTO | null = null;
+  cancellationEstimate: CancellationEstimateDTO | null = null;
 
   // Saved Passenger State
   showPassengerModal: boolean = false;
@@ -367,7 +368,20 @@ export class ProfileComponent implements OnInit {
   cancelBooking(bookingId: string): void {
     this.selectedBookingIdToCancel = bookingId;
     this.cancelReason = '';
-    this.showCancelConfirmModal = true;
+    this.cancelError = '';
+    this.cancellationEstimate = null;
+    
+    this.cancellationService.getCancellationEstimate(bookingId).subscribe({
+      next: (estimate) => {
+        this.cancellationEstimate = estimate;
+        this.showCancelConfirmModal = true;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.cancelError = err.error?.message || 'Failed to fetch cancellation estimate. It may be too late to cancel.';
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   confirmCancelBooking(): void {
@@ -397,6 +411,7 @@ export class ProfileComponent implements OnInit {
   closeCancelConfirmModal(): void {
     this.showCancelConfirmModal = false;
     this.selectedBookingIdToCancel = null;
+    this.cancellationEstimate = null;
   }
 
   viewTicket(bookingReference: string): void {

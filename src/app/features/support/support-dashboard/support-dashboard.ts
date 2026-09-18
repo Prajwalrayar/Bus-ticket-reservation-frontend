@@ -112,18 +112,35 @@ export class SupportDashboard implements OnInit {
     });
   }
 
-  processRefund(cancellationId: string): void {
-    const ref = prompt('Enter the refund reference number (from the payment gateway):');
-    if (ref === null || ref.trim() === '') {
-      return;
-    }
+  // Modal State
+  showRefundModal = false;
+  selectedCancellationIdForRefund = '';
+  processRefundModalLoading = false;
+
+  openRefundModal(cancellationId: string): void {
+    this.selectedCancellationIdForRefund = cancellationId;
     this.processRefundError = '';
-    this.cancellationService.processRefund(cancellationId, ref.trim()).subscribe({
+    this.showRefundModal = true;
+  }
+
+  closeRefundModal(): void {
+    this.showRefundModal = false;
+    this.selectedCancellationIdForRefund = '';
+  }
+
+  confirmRefund(): void {
+    this.processRefundModalLoading = true;
+    this.processRefundError = '';
+    
+    this.cancellationService.processRefund(this.selectedCancellationIdForRefund).subscribe({
       next: () => {
+        this.processRefundModalLoading = false;
+        this.closeRefundModal();
         this.loadPendingRefunds();
       },
       error: (err) => {
         this.processRefundError = err.error?.message || 'Failed to process refund';
+        this.processRefundModalLoading = false;
         this.cdr.detectChanges();
       }
     });

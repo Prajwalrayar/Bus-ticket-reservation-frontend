@@ -148,3 +148,33 @@
     </div>
   </div>
 </nav>
+
+<!-- Refund Pop-up Modal on Login -->
+@if (showRefundModal && unreadRefundNotification) {
+  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5); z-index: 1055;">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-header border-bottom-0 pb-0">
+          <h5 class="modal-title fw-bold text-success d-flex align-items-center">
+            <i class="bi bi-check-circle-fill me-2"></i>Refund Processed
+          </h5>
+          <button type="button" class="btn-close" (click)="closeRefundModal()" aria-label="Close"></button>
+        </div>
+        <div class="modal-body py-4 text-center">
+           <div class="mb-4">
+              <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex p-4">
+                 <i class="bi bi-cash-coin text-success" style="font-size: 3.5rem; line-height: 1;"></i>
+              </div>
+           </div>
+           <p class="text-dark fw-semibold fs-5 mb-2">{{ unreadRefundNotification.message }}</p>
+           <p class="text-muted small mb-0 px-3">Your refund has been successfully credited back to your original payment method (Bank Account / Wallet).</p>
+        </div>
+        <div class="modal-footer border-top-0 pt-0 pb-4 justify-content-center">
+          <button type="button" class="btn btn-success px-5 py-2 rounded-pill fw-semibold" (click)="markRefundNotificationAsRead()">
+             Got it, Thanks!
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

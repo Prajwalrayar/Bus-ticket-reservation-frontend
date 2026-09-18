@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { NotificationService } from '../../core/services/notification.service';
 import { NotificationDTO } from '../../core/models/notification';
 
@@ -13,7 +13,10 @@ export class NotificationsComponent implements OnInit {
   loading: boolean = true;
   error: string = '';
 
-  constructor(private notificationService: NotificationService) {}
+  constructor(
+    private notificationService: NotificationService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.fetchNotifications();
@@ -25,10 +28,12 @@ export class NotificationsComponent implements OnInit {
       next: (data) => {
         this.notifications = data;
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.error = 'Failed to load notifications.';
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -45,6 +50,7 @@ export class NotificationsComponent implements OnInit {
         const index = this.notifications.findIndex(n => n.notificationId === notification.notificationId);
         if (index !== -1) {
           this.notifications[index] = updated;
+          this.cdr.detectChanges();
         }
       },
       error: (err) => console.error('Failed to mark notification as read', err)
@@ -57,6 +63,7 @@ export class NotificationsComponent implements OnInit {
         this.notifications.forEach(n => {
           n.isRead = true;
         });
+        this.cdr.detectChanges();
       },
       error: (err) => console.error('Failed to mark all as read', err)
     });

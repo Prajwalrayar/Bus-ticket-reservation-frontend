@@ -19,8 +19,14 @@ export class WalletService {
     );
   }
 
-  rechargeWallet(request: WalletRechargeRequest): Observable<WalletDTO> {
-    return this.http.post<ApiResponse<WalletDTO>>(`${this.apiUrl}/recharge`, request).pipe(
+  createRechargeOrder(request: WalletRechargeRequest): Observable<any> {
+    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/recharge/razorpay/create-order`, request).pipe(
+      map(res => res.data)
+    );
+  }
+
+  verifyRechargePayment(request: any): Observable<WalletDTO> {
+    return this.http.post<ApiResponse<WalletDTO>>(`${this.apiUrl}/recharge/razorpay/verify`, request).pipe(
       map(res => res.data!)
     );
   }

@@ -479,11 +479,42 @@
           <button type="button" class="btn-close" (click)="closeCancelConfirmModal()"></button>
         </div>
         <div class="modal-body p-4">
-          <p class="mb-4 text-secondary">Are you sure you want to cancel this booking? This action cannot be undone.</p>
+          @if (cancellationEstimate) {
+            <div class="mb-4 bg-light rounded p-3 border border-warning border-opacity-50">
+              <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-2 text-warning"></i>Cancellation Estimate</h6>
+              
+              <div class="text-secondary small mb-3">
+                <strong>Rule Applied:</strong> {{ cancellationEstimate.ruleApplied }}
+              </div>
+              
+              <div class="d-flex justify-content-between mb-2">
+                <span class="text-secondary">Total Booking Amount</span>
+                <strong class="text-dark">₹{{ cancellationEstimate.totalAmount }}</strong>
+              </div>
+              
+              <div class="d-flex justify-content-between mb-2">
+                <span class="text-secondary">Cancellation Fee ({{ cancellationEstimate.cancellationFeePercentage * 100 }}%)</span>
+                <strong class="text-danger">-₹{{ cancellationEstimate.cancellationFee }}</strong>
+              </div>
+
+              <hr class="my-2 text-secondary">
+              
+              <div class="d-flex justify-content-between align-items-center mt-3">
+                <span class="fw-bold">Estimated Refund Amount</span>
+                <h5 class="fw-bold text-success mb-0">₹{{ cancellationEstimate.refundAmount }}</h5>
+              </div>
+            </div>
+          }
+          
+          <p class="mb-3 text-dark fw-semibold">Are you sure you want to cancel this booking? This action cannot be undone and your refund will be initiated for ₹{{ cancellationEstimate?.refundAmount }}.</p>
+          
+          <div class="alert alert-info py-2 small mb-4">
+            <i class="bi bi-info-circle-fill me-1"></i> <strong>Note:</strong> Refunds are automatically processed back to your original payment method (Bank Account / Wallet).
+          </div>
           
           <div class="form-group mb-3">
             <label class="form-label text-muted small fw-semibold">Reason for Cancellation (Optional)</label>
-            <textarea class="form-control" rows="3" [(ngModel)]="cancelReason" placeholder="Tell us why you are cancelling..."></textarea>
+            <textarea class="form-control bg-light border-0" rows="3" [(ngModel)]="cancelReason" placeholder="Tell us why you are cancelling..."></textarea>
           </div>
         </div>
         <div class="modal-footer border-top-0 bg-light">
@@ -526,10 +557,14 @@
             </span>
           </div>
 
-          <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded">
+          <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded mb-3">
             <span class="fw-bold">Total Refund Amount</span>
             <h4 class="fw-bold text-success mb-0">₹{{ cancellationResult.refundAmount }}</h4>
           </div>
+
+          <p class="text-muted small text-center mb-0">
+            * Refunds are automatically processed back to your original payment method (Bank Account / Wallet).
+          </p>
 
         </div>
         <div class="modal-footer border-top-0">

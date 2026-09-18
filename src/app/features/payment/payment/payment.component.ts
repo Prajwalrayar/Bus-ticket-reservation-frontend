@@ -139,7 +139,7 @@ export class PaymentComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  rechargeWallet(): void {
+  async rechargeWallet(): Promise<void> {
     this.rechargeError = '';
     this.rechargeSuccess = '';
 
@@ -149,10 +149,74 @@ export class PaymentComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (this.rechargeAmount > 5000) {
+      this.rechargeError = 'Maximum recharge amount is ₹5000.';
+      this.cdr.markForCheck();
+      return;
+    }
+
     this.isRecharging = true;
     this.cdr.markForCheck();
 
-    this.walletService.rechargeWallet({ amount: this.rechargeAmount, upiId: 'razorpay@ybl' }).subscribe({
+    const isScriptLoaded = await this.loadRazorpayScript();
+    if (!isScriptLoaded) {
+      this.rechargeError = 'Failed to load Razorpay SDK. Please check your connection.';
+      this.isRecharging = false;
+      this.cdr.markForCheck();
+      return;
+    }
+
+    this.walletService.createRechargeOrder({ amount: this.rechargeAmount, upiId: '' }).subscribe({
+      next: (orderData) => {
+        const options = {
+          key: orderData.keyId,
+          amount: orderData.amount * 100, // paise
+          currency: orderData.currency,
+          name: 'Wallet Top-up',
+          description: 'Recharging wallet by ₹' + this.rechargeAmount,
+          order_id: orderData.orderId,
+          handler: (response: any) => {
+            this.verifyRechargeRazorpayPayment(response);
+          },
+          prefill: {
+            name: 'Passenger',
+          },
+          modal: {
+            ondismiss: () => {
+              this.isRecharging = false;
+              this.rechargeError = 'Top-up was cancelled by user.';
+              this.cdr.markForCheck();
+            }
+          },
+          theme: {
+            color: '#dc3545'
+          }
+        };
+        
+        const rzp = new Razorpay(options);
+        rzp.on('payment.failed', (response: any) => {
+          this.isRecharging = false;
+          this.rechargeError = response.error.description || 'Top-up failed.';
+          this.cdr.markForCheck();
+        });
+        rzp.open();
+      },
+      error: (err) => {
+        this.rechargeError = err.error?.message || 'Failed to initiate recharge.';
+        this.isRecharging = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  verifyRechargeRazorpayPayment(response: any): void {
+    const verifyReq = {
+      razorpayPaymentId: response.razorpay_payment_id,
+      razorpayOrderId: response.razorpay_order_id,
+      razorpaySignature: response.razorpay_signature
+    };
+
+    this.walletService.verifyRechargePayment(verifyReq).subscribe({
       next: (wallet) => {
         this.walletBalance = Number(wallet.balance);
         this.rechargeSuccess = `₹${this.rechargeAmount} added successfully! New balance: ₹${this.walletBalance}`;
@@ -165,7 +229,7 @@ export class PaymentComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       },
       error: (err) => {
-        this.rechargeError = err.error?.message || 'Recharge failed. Please try again.';
+        this.rechargeError = err.error?.message || 'Recharge verification failed.';
         this.isRecharging = false;
         this.cdr.markForCheck();
       }
