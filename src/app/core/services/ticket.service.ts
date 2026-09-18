@@ -27,4 +27,8 @@ export class TicketService {
   getTicketQrCodeUrl(ticketNumber: string): string {
     return `${this.apiUrl}/${ticketNumber}/qr`;
   }
+
+  getTicketQrCode(ticketNumber: string): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${ticketNumber}/qr`, { responseType: 'blob' });
+  }
 }

@@ -105,24 +105,28 @@ export class HomeComponent implements OnInit {
       this.fromLocationId = params['fromId'] ? Number(params['fromId']) : null;
       this.toLocationId = params['toId'] ? Number(params['toId']) : null;
       this.journeyDate = params['date'] || '';
+
+      if (this.fromCity) {
+        this.initialFromLocation = { id: this.fromLocationId || 0, name: this.fromCity };
+      }
+      if (this.toCity) {
+        this.initialToLocation = { id: this.toLocationId || 0, name: this.toCity };
+      }
     });
   }
 
-  get initialFromLocation() {
-    return this.fromCity && this.fromLocationId ? { id: this.fromLocationId, name: this.fromCity } : null;
-  }
-
-  get initialToLocation() {
-    return this.toCity && this.toLocationId ? { id: this.toLocationId, name: this.toCity } : null;
-  }
+  initialFromLocation: { id: number; name: string } | null = null;
+  initialToLocation: { id: number; name: string } | null = null;
 
   onFromSelected(location: import('../../core/models/location').LocationDTO | null) {
     if (location) {
       this.fromCity = location.displayAlias;
       this.fromLocationId = location.locationId;
+      this.initialFromLocation = { id: location.locationId, name: location.displayAlias };
     } else {
       this.fromCity = '';
       this.fromLocationId = null;
+      this.initialFromLocation = null;
     }
   }
 
@@ -130,30 +134,35 @@ export class HomeComponent implements OnInit {
     if (location) {
       this.toCity = location.displayAlias;
       this.toLocationId = location.locationId;
+      this.initialToLocation = { id: location.locationId, name: location.displayAlias };
     } else {
       this.toCity = '';
       this.toLocationId = null;
+      this.initialToLocation = null;
     }
   }
 
   swapLocations(): void {
     const tempCity = this.fromCity;
     const tempId = this.fromLocationId;
+    const tempInitial = this.initialFromLocation;
+    
     this.fromCity = this.toCity;
     this.fromLocationId = this.toLocationId;
+    this.initialFromLocation = this.initialToLocation;
+    
     this.toCity = tempCity;
     this.toLocationId = tempId;
+    this.initialToLocation = tempInitial;
   }
 
   selectPopularRoute(route: PopularRoute): void {
     this.fromCity = route.from;
     this.toCity = route.to;
-    // We do not have IDs for popular routes here, but that's okay, 
-    // the backend will fallback to string matching if IDs are missing,
-    // or we can require them to select from the dropdown. 
-    // Let's clear the IDs so the search uses the string fallback.
     this.fromLocationId = null;
     this.toLocationId = null;
+    this.initialFromLocation = { id: 0, name: route.from };
+    this.initialToLocation = { id: 0, name: route.to };
     this.errorMessage = '';
     this.scrollToSearch();
   }

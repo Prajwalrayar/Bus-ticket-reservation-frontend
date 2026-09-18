@@ -27,4 +27,14 @@ export class CancellationService {
     return this.http.get<ApiResponse<CancellationDTO>>(`${this.apiUrl}/bookings/${bookingId}/cancellation`)
       .pipe(map(res => res.data));
   }
+
+  getPendingRefunds(): Observable<CancellationDTO[]> {
+    return this.http.get<ApiResponse<CancellationDTO[]>>(`${this.apiUrl}/cancellations/pending`)
+      .pipe(map(res => res.data));
+  }
+
+  processRefund(cancellationId: string, refundReference: string): Observable<CancellationDTO> {
+    return this.http.put<ApiResponse<CancellationDTO>>(`${this.apiUrl}/cancellations/${cancellationId}/refund?refundReference=${encodeURIComponent(refundReference)}`, {})
+      .pipe(map(res => res.data));
+  }
 }

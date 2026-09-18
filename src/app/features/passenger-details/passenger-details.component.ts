@@ -189,19 +189,19 @@ export class PassengerDetailsComponent implements OnInit {
           this.droppingPoints.set(stops.filter(s => (s.stopType === 'DROPPING' || s.stopType === 'INTERMEDIATE') && s.stopSequence > fromSequence && s.stopSequence <= toSequence).sort((a,b) => a.stopSequence - b.stopSequence));
         } else {
           // Fallback to generic route stops
-          this.tripService.getRouteStops(from, to).subscribe({
+          this.tripService.getRouteStops(trip.source, trip.destination).subscribe({
             next: (response) => {
               const stops = response.data || [];
               
               let fromSequence = -1;
               let toSequence = Number.MAX_SAFE_INTEGER;
-              const fromStop = stops.find(s => s.stopName.toLowerCase() === from || s.source.toLowerCase() === from);
+              const fromStop = stops.find(s => s.stopName.toLowerCase() === from || s.source.toLowerCase() === from || s.source.toLowerCase() === trip.source.toLowerCase());
               if (fromStop) fromSequence = fromStop.stopSequence;
-              else if (stops.length > 0 && stops[0].source.toLowerCase() === from) fromSequence = 0;
+              else if (stops.length > 0 && stops[0].source.toLowerCase() === trip.source.toLowerCase()) fromSequence = 0;
 
-              const toStop = [...stops].reverse().find(s => s.stopName.toLowerCase() === to || s.destination.toLowerCase() === to);
+              const toStop = [...stops].reverse().find(s => s.stopName.toLowerCase() === to || s.destination.toLowerCase() === to || s.destination.toLowerCase() === trip.destination.toLowerCase());
               if (toStop) toSequence = toStop.stopSequence;
-              else if (stops.length > 0 && stops[stops.length - 1].destination.toLowerCase() === to) toSequence = Number.MAX_SAFE_INTEGER;
+              else if (stops.length > 0 && stops[stops.length - 1].destination.toLowerCase() === trip.destination.toLowerCase()) toSequence = Number.MAX_SAFE_INTEGER;
 
               this.boardingPoints.set(stops.filter(s => (s.stopType === 'BOARDING' || s.stopType === 'INTERMEDIATE') && s.stopSequence >= fromSequence && s.stopSequence < toSequence).sort((a,b) => a.stopSequence - b.stopSequence));
               this.droppingPoints.set(stops.filter(s => (s.stopType === 'DROPPING' || s.stopType === 'INTERMEDIATE') && s.stopSequence > fromSequence && s.stopSequence <= toSequence).sort((a,b) => a.stopSequence - b.stopSequence));

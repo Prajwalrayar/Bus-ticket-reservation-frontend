@@ -8,6 +8,8 @@ import { AuthStateService } from '../../../core/services/auth-state.service';
 import { UserDTO } from '../../../core/models/user';
 import { Booking } from '../../../core/models/booking';
 import { SupportTicketDTO, SupportTicketStatus } from '../../../core/models/support-ticket';
+import { CancellationService } from '../../../core/services/cancellation.service';
+import { CancellationDTO } from '../../../core/models/cancellation';
 
 @Component({
   selector: 'app-support-dashboard',
@@ -16,7 +18,7 @@ import { SupportTicketDTO, SupportTicketStatus } from '../../../core/models/supp
   styleUrl: './support-dashboard.css',
 })
 export class SupportDashboard implements OnInit {
-  activeTab: 'overview' | 'customer-issues' | 'tickets' | 'customer-bookings' | 'customers' = 'overview';
+  activeTab: 'overview' | 'customer-issues' | 'tickets' | 'customer-bookings' | 'customers' | 'refunds' = 'overview';
 
   userProfile: UserDTO | null = null;
 
@@ -28,6 +30,11 @@ export class SupportDashboard implements OnInit {
   supportTicketsError = '';
   supportTicketsLoading = false;
   resolveError = '';
+
+  pendingRefunds: CancellationDTO[] = [];
+  refundsError = '';
+  refundsLoading = false;
+  processRefundError = '';
 
   get openIssues(): SupportTicketDTO[] {
     return this.supportTickets.filter(t =>
@@ -45,6 +52,7 @@ export class SupportDashboard implements OnInit {
     private userService: UserService,
     private bookingService: BookingService,
     private supportTicketService: SupportTicketService,
+    private cancellationService: CancellationService,
     private authState: AuthStateService,
     private router: Router,
     private cdr: ChangeDetectorRef
@@ -67,12 +75,14 @@ export class SupportDashboard implements OnInit {
       this.setTab('customer-bookings');
     } else if (url.includes('/support/customers')) {
       this.setTab('customers');
+    } else if (url.includes('/support/refunds')) {
+      this.setTab('refunds');
     } else {
       this.setTab('overview');
     }
   }
 
-  setTab(tab: 'overview' | 'customer-issues' | 'tickets' | 'customer-bookings' | 'customers'): void {
+  setTab(tab: 'overview' | 'customer-issues' | 'tickets' | 'customer-bookings' | 'customers' | 'refunds'): void {
     this.activeTab = tab;
     if ((tab === 'customer-issues' || tab === 'tickets') && this.supportTickets.length === 0) {
       this.loadSupportTickets();
@@ -80,6 +90,43 @@ export class SupportDashboard implements OnInit {
     if ((tab === 'customer-bookings' || tab === 'customers') && this.customerBookings.length === 0) {
       this.loadCustomerBookings();
     }
+    if (tab === 'refunds' && this.pendingRefunds.length === 0) {
+      this.loadPendingRefunds();
+    }
+  }
+
+  loadPendingRefunds(): void {
+    this.refundsLoading = true;
+    this.refundsError = '';
+    this.cancellationService.getPendingRefunds().subscribe({
+      next: (refunds) => {
+        this.pendingRefunds = refunds;
+        this.refundsLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.refundsError = err.error?.message || 'Failed to load pending refunds';
+        this.refundsLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  processRefund(cancellationId: string): void {
+    const ref = prompt('Enter the refund reference number (from the payment gateway):');
+    if (ref === null || ref.trim() === '') {
+      return;
+    }
+    this.processRefundError = '';
+    this.cancellationService.processRefund(cancellationId, ref.trim()).subscribe({
+      next: () => {
+        this.loadPendingRefunds();
+      },
+      error: (err) => {
+        this.processRefundError = err.error?.message || 'Failed to process refund';
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   loadProfile(): void {

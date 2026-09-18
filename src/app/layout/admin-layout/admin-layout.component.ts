@@ -67,6 +67,7 @@ export class AdminLayoutComponent {
     { icon: 'bi-headset', label: 'Support Tickets', route: '/support/tickets', roles: [APP_CONSTANTS.ROLES.SUPPORT_AGENT] },
     { icon: 'bi-ticket-perforated', label: 'Bookings', route: '/support/bookings', roles: [APP_CONSTANTS.ROLES.SUPPORT_AGENT] },
     { icon: 'bi-person-lines-fill', label: 'Customer Information', route: '/support/customers', roles: [APP_CONSTANTS.ROLES.SUPPORT_AGENT] },
+    { icon: 'bi-cash-coin', label: 'Refunds', route: '/support/refunds', roles: [APP_CONSTANTS.ROLES.SUPPORT_AGENT] },
   ];
 
   constructor(

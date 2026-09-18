@@ -65,7 +65,14 @@ export class TicketComponent implements OnInit {
       next: (res) => {
         this.ticket = res.data;
         if (this.ticket?.ticketNumber) {
-          this.qrCodeUrl = this.ticketService.getTicketQrCodeUrl(this.ticket.ticketNumber);
+          // Fetch QR code securely with JWT token
+          this.ticketService.getTicketQrCode(this.ticket.ticketNumber).subscribe({
+            next: (blob) => {
+              this.qrCodeUrl = URL.createObjectURL(blob);
+              this.cdr.markForCheck();
+            },
+            error: () => console.error('Failed to load QR code')
+          });
         }
         this.loading = false;
         this.cdr.markForCheck();
