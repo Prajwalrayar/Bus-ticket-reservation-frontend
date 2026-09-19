@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { finalize } from 'rxjs/operators';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Passenger } from '../../core/models/passenger';
@@ -30,6 +30,32 @@ export class PassengerDetailsComponent implements OnInit {
   droppingPoints = signal<RouteStopDTO[]>([]);
   selectedBoardingPoint = signal<string>('');
   selectedDroppingPoint = signal<string>('');
+
+  zoneError = computed(() => {
+    const bpId = this.selectedBoardingPoint();
+    const dpId = this.selectedDroppingPoint();
+    if (!bpId || !dpId) return '';
+
+    if (bpId === dpId) {
+      return 'Boarding and dropping points cannot be the same.';
+    }
+
+    const bp = this.boardingPoints().find(s => s.routeStopId === bpId) as any;
+    const dp = this.droppingPoints().find(s => s.routeStopId === dpId) as any;
+
+    if (bp && dp && dp.stopSequence < bp.stopSequence) {
+      return 'Dropping point must be after the boarding point.';
+    }
+
+    const bpZone = bp?.zoneName || bp?.fareLocationId || bp?.fareLocationName;
+    const dpZone = dp?.zoneName || dp?.fareLocationId || dp?.fareLocationName;
+
+    if (bpZone && dpZone && bpZone === dpZone) {
+      return 'Boarding and dropping points must not be in the same zone.';
+    }
+
+    return '';
+  });
 
   errorMessage = signal('');
   loading = signal(false);
@@ -157,7 +183,8 @@ export class PassengerDetailsComponent implements OnInit {
                 stopType: 'BOARDING',
                 distanceFromSourceKm: 0,
                 source: trip.source,
-                destination: trip.destination
+                destination: trip.destination,
+                zoneName: seg.boardingZoneName
               });
             }
             if (!droppingMap.has(seg.droppingStopId)) {
@@ -168,7 +195,8 @@ export class PassengerDetailsComponent implements OnInit {
                 stopType: 'DROPPING',
                 distanceFromSourceKm: 0,
                 source: trip.source,
-                destination: trip.destination
+                destination: trip.destination,
+                zoneName: seg.droppingZoneName
               });
             }
           });
@@ -240,6 +268,11 @@ export class PassengerDetailsComponent implements OnInit {
 
     if (!this.selectedDroppingPoint()) {
       this.errorMessage.set('Please select a dropping point.');
+      return false;
+    }
+
+    if (this.zoneError()) {
+      this.errorMessage.set(this.zoneError());
       return false;
     }
 

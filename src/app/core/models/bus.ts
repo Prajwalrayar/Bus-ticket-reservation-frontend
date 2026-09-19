@@ -25,6 +25,8 @@ export interface BusDTO {
   amenities: string[];
   isActive: boolean;
   operatorCompanyName: string;
+  petsAllowed?: boolean;
+  baggagePolicy?: string;
 }
 
 export interface BusCreateRequest {
@@ -32,6 +34,8 @@ export interface BusCreateRequest {
   busType: string;
   amenities: string[];
   operatorCompanyName: string;
+  petsAllowed?: boolean;
+  baggagePolicy?: string;
 }
 
 export interface BusSeatDTO {

@@ -38,6 +38,8 @@ export interface Booking {
 
   expiryTime?: string;
 
+  offerCodeUsed?: string;
+
   boardingPointName: string;
 
   droppingPointName: string;
@@ -49,6 +51,16 @@ export interface Booking {
   userEmail?: string;
 
   tripId: string;
+
+  tripSource?: string;
+
+  tripDestination?: string;
+
+  tripTravelDate?: string;
+
+  tripDepartureTime?: string;
+
+  busName?: string;
 
   bookingSeats: BookingSeat[];
 

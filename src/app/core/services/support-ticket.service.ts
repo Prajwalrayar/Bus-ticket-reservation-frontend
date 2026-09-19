@@ -16,8 +16,8 @@ export class SupportTicketService {
 
   constructor(private http: HttpClient) {}
 
-  createTicket(request: SupportTicketCreateRequest): Observable<SupportTicketDTO> {
-    return this.http.post<ApiResponse<SupportTicketDTO>>(this.apiUrl, request)
+  createTicket(formData: FormData): Observable<SupportTicketDTO> {
+    return this.http.post<ApiResponse<SupportTicketDTO>>(this.apiUrl, formData)
       .pipe(map(response => response.data));
   }
 
@@ -47,12 +47,31 @@ export class SupportTicketService {
       .pipe(
         map(response => response.data),
         tap(updatedTicket => {
-          // Instead of accurately guessing the delta, we can just trigger a refresh of the count in the dashboard
-          // But a simple delta is: if it was just closed/resolved, we probably should decrement
-          if (request.status === SupportTicketStatus.RESOLVED || request.status === SupportTicketStatus.CLOSED) {
+          if (request.status === SupportTicketStatus.RESOLVED) {
              const current = this.openTicketsCountSubject.value;
              if (current > 0) this.openTicketsCountSubject.next(current - 1);
           }
+        })
+      );
+  }
+
+  getTicketWithMessages(ticketId: string): Observable<import('../models/support-ticket').SupportTicketWithMessagesDTO> {
+    return this.http.get<ApiResponse<import('../models/support-ticket').SupportTicketWithMessagesDTO>>(`${this.apiUrl}/${ticketId}`)
+      .pipe(map(response => response.data));
+  }
+
+  addMessage(ticketId: string, request: import('../models/support-ticket').SupportTicketReplyRequest): Observable<import('../models/support-ticket').SupportTicketMessageDTO> {
+    return this.http.post<ApiResponse<import('../models/support-ticket').SupportTicketMessageDTO>>(`${this.apiUrl}/${ticketId}/messages`, request)
+      .pipe(map(response => response.data));
+  }
+
+  resolveTicket(ticketId: string): Observable<SupportTicketDTO> {
+    return this.http.patch<ApiResponse<SupportTicketDTO>>(`${this.apiUrl}/${ticketId}/resolve`, {})
+      .pipe(
+        map(response => response.data),
+        tap(() => {
+           const current = this.openTicketsCountSubject.value;
+           if (current > 0) this.openTicketsCountSubject.next(current - 1);
         })
       );
   }

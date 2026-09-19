@@ -48,7 +48,7 @@
             <div class="row g-3 mb-5">
               <div class="col-md-6">
                 <label class="form-label fw-bold"><i class="bi bi-geo-alt text-primary me-2"></i>Boarding Point <span class="text-rb-primary">*</span></label>
-                <select class="form-select" [ngModel]="selectedBoardingPoint()" (ngModelChange)="selectedBoardingPoint.set($event)" name="boardingPoint" required #bp="ngModel" [class.is-invalid]="bp.invalid && (bp.dirty || bp.touched)">
+                <select class="form-select" [ngModel]="selectedBoardingPoint()" (ngModelChange)="selectedBoardingPoint.set($event)" name="boardingPoint" required #bp="ngModel" [class.is-invalid]="(bp.invalid && (bp.dirty || bp.touched)) || zoneError()">
                   <option value="">Select Boarding Point</option>
                   @for (stop of boardingPoints(); track stop.routeStopId) {
                     <option [value]="stop.routeStopId">{{ stop.stopName }} ({{ stop.stopSequence }})</option>
@@ -60,14 +60,17 @@
               </div>
               <div class="col-md-6">
                 <label class="form-label fw-bold"><i class="bi bi-geo-alt-fill text-rb-primary me-2"></i>Dropping Point <span class="text-rb-primary">*</span></label>
-                <select class="form-select" [ngModel]="selectedDroppingPoint()" (ngModelChange)="selectedDroppingPoint.set($event)" name="droppingPoint" required #dp="ngModel" [class.is-invalid]="dp.invalid && (dp.dirty || dp.touched)">
+                <select class="form-select" [ngModel]="selectedDroppingPoint()" (ngModelChange)="selectedDroppingPoint.set($event)" name="droppingPoint" required #dp="ngModel" [class.is-invalid]="(dp.invalid && (dp.dirty || dp.touched)) || zoneError()">
                   <option value="">Select Dropping Point</option>
                   @for (stop of droppingPoints(); track stop.routeStopId) {
                     <option [value]="stop.routeStopId">{{ stop.stopName }} ({{ stop.stopSequence }})</option>
                   }
                 </select>
                 @if (dp.invalid && (dp.dirty || dp.touched)) {
-                  <div class="invalid-feedback">Please select a dropping point.</div>
+                  <div class="invalid-feedback d-block">Please select a dropping point.</div>
+                }
+                @if (zoneError()) {
+                  <div class="invalid-feedback d-block">{{ zoneError() }}</div>
                 }
               </div>
             </div>

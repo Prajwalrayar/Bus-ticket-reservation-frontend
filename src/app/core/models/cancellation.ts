@@ -15,6 +15,10 @@ export interface CancellationDTO {
   bookingId: string;
   cancelledByUserId: string;
   paymentTransactionId?: string;
+  ruleApplied: string;
+  paymentMethod?: string;
+  paymentProvider?: string;
+  refundDestination?: string;
 }
 
 export interface CancellationEstimateDTO {
@@ -24,4 +28,7 @@ export interface CancellationEstimateDTO {
   cancellationFee: number;
   refundAmount: number;
   ruleApplied: string;
+  paymentMethod?: string;
+  paymentProvider?: string;
+  refundDestination?: string;
 }

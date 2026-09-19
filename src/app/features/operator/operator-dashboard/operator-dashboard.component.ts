@@ -47,7 +47,9 @@ export class OperatorDashboardComponent implements OnInit {
     registrationNumber: '',
     busType: 'SEATER',
     operatorCompanyName: '',
-    amenities: []
+    amenities: [],
+    petsAllowed: false,
+    baggagePolicy: 'Only 2 bags up to 50-80 kgs are allowed.'
   };
   busAmenitiesStr: string = '';
   busSubmitSuccess: string = '';
@@ -278,15 +280,19 @@ export class OperatorDashboardComponent implements OnInit {
         registrationNumber: bus.registrationNumber,
         busType: bus.busType,
         operatorCompanyName: bus.operatorCompanyName,
-        amenities: bus.amenities || []
+        amenities: bus.amenities || [],
+        petsAllowed: bus.petsAllowed || false,
+        baggagePolicy: bus.baggagePolicy || 'Only 2 bags up to 50-80 kgs are allowed.'
       };
     } else {
       this.isEditingBus = false;
       this.busForm = {
         registrationNumber: '',
         busType: 'SEATER',
-        operatorCompanyName: this.companyNameInput,
-        amenities: []
+        operatorCompanyName: this.operatorProfile?.companyName || '',
+        amenities: [],
+        petsAllowed: false,
+        baggagePolicy: 'Only 2 bags up to 50-80 kgs are allowed.'
       };
     }
     this.showBusModal = true;

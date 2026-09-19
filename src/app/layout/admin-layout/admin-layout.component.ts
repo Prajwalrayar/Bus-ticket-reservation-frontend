@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { AuthStateService } from '../../core/services/auth-state.service';
@@ -9,6 +9,7 @@ import { UserService } from '../../core/services/user.service';
 import { AuthService } from '../../core/services/auth.service';
 import { User } from '../../core/models/user';
 import { CancellationService } from '../../core/services/cancellation.service';
+import { SupportTicketService } from '../../core/services/support-ticket.service';
 
 interface AdminNavItem {
   icon: string;
@@ -25,7 +26,7 @@ interface AdminNavItem {
 })
 export class AdminLayoutComponent implements OnInit, OnDestroy {
   isSidebarCollapsed = false;
-  readonly currentYear = new Date().getFullYear();
+  currentYear = new Date().getFullYear();
 
   // Temporary password change
   passwordForm: FormGroup;
@@ -86,8 +87,8 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
     private userService: UserService,
     private authService: AuthService,
     private cancellationService: CancellationService,
-    private supportTicketService: import('../../core/services/support-ticket.service').SupportTicketService,
-    private cdr: import('@angular/core').ChangeDetectorRef
+    private supportTicketService: SupportTicketService,
+    private cdr: ChangeDetectorRef
   ) {
     this.passwordForm = this.fb.group({
       currentPassword: ['', Validators.required],
