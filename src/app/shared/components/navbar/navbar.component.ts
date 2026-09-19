@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener, ElementRef, effect } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, ElementRef, effect, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthStateService } from '../../../core/services/auth-state.service';
 import { TokenService } from '../../../core/services/token-service';
@@ -33,7 +33,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
     private notificationService: NotificationService,
     private themeService: ThemeService,
     private router: Router,
-    private eRef: ElementRef
+    private eRef: ElementRef,
+    private cdr: ChangeDetectorRef
   ) {
     effect(() => {
       const user = this.authStateService.currentUser();
@@ -77,13 +78,41 @@ export class NavbarComponent implements OnInit, OnDestroy {
     }
   }
 
+  unreadRefundNotification: any = null;
+  showRefundModal = false;
+
   private fetchUnreadCount(): void {
-    this.notifSub = this.notificationService.getMyUnreadNotifications().subscribe({
+    // Initial fetch to populate the Subject
+    this.notificationService.getMyUnreadNotifications().subscribe({
       next: (notifications) => {
-        this.unreadNotificationCount = notifications.length;
+        // Check for refund notification
+        const refundNotifs = notifications.filter(n => n.notificationType === 'REFUND_PROCESSED');
+        const refundNotif = refundNotifs.length > 0 ? refundNotifs[0] : null;
+        if (refundNotif) {
+           this.unreadRefundNotification = refundNotif;
+           this.showRefundModal = true;
+           this.cdr.detectChanges();
+        }
       },
       error: (err) => console.error('Failed to fetch unread notifications', err)
     });
+
+    // Subscribe to the shared state
+    this.notifSub = this.notificationService.unreadCount$.subscribe(count => {
+      this.unreadNotificationCount = count;
+      this.cdr.detectChanges();
+    });
+  }
+
+  closeRefundModal(): void {
+    this.showRefundModal = false;
+  }
+
+  markRefundNotificationAsRead(): void {
+    if (this.unreadRefundNotification) {
+      this.notificationService.markAsRead(this.unreadRefundNotification.notificationId).subscribe();
+    }
+    this.closeRefundModal();
   }
 
   get isAdmin(): boolean {
@@ -112,6 +141,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.userName = '';
     this.userRoles = [];
     this.isUserMenuOpen = false;
+    this.showRefundModal = false;
+    this.unreadRefundNotification = null;
     this.router.navigate(['/']);
   }
 

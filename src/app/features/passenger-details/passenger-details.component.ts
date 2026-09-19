@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { finalize } from 'rxjs/operators';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Passenger } from '../../core/models/passenger';
@@ -30,6 +30,32 @@ export class PassengerDetailsComponent implements OnInit {
   droppingPoints = signal<RouteStopDTO[]>([]);
   selectedBoardingPoint = signal<string>('');
   selectedDroppingPoint = signal<string>('');
+
+  zoneError = computed(() => {
+    const bpId = this.selectedBoardingPoint();
+    const dpId = this.selectedDroppingPoint();
+    if (!bpId || !dpId) return '';
+
+    if (bpId === dpId) {
+      return 'Boarding and dropping points cannot be the same.';
+    }
+
+    const bp = this.boardingPoints().find(s => s.routeStopId === bpId) as any;
+    const dp = this.droppingPoints().find(s => s.routeStopId === dpId) as any;
+
+    if (bp && dp && dp.stopSequence < bp.stopSequence) {
+      return 'Dropping point must be after the boarding point.';
+    }
+
+    const bpZone = bp?.zoneName || bp?.fareLocationId || bp?.fareLocationName;
+    const dpZone = dp?.zoneName || dp?.fareLocationId || dp?.fareLocationName;
+
+    if (bpZone && dpZone && bpZone === dpZone) {
+      return 'Boarding and dropping points must not be in the same zone.';
+    }
+
+    return '';
+  });
 
   errorMessage = signal('');
   loading = signal(false);
@@ -157,7 +183,8 @@ export class PassengerDetailsComponent implements OnInit {
                 stopType: 'BOARDING',
                 distanceFromSourceKm: 0,
                 source: trip.source,
-                destination: trip.destination
+                destination: trip.destination,
+                zoneName: seg.boardingZoneName
               });
             }
             if (!droppingMap.has(seg.droppingStopId)) {
@@ -168,7 +195,8 @@ export class PassengerDetailsComponent implements OnInit {
                 stopType: 'DROPPING',
                 distanceFromSourceKm: 0,
                 source: trip.source,
-                destination: trip.destination
+                destination: trip.destination,
+                zoneName: seg.droppingZoneName
               });
             }
           });
@@ -189,19 +217,19 @@ export class PassengerDetailsComponent implements OnInit {
           this.droppingPoints.set(stops.filter(s => (s.stopType === 'DROPPING' || s.stopType === 'INTERMEDIATE') && s.stopSequence > fromSequence && s.stopSequence <= toSequence).sort((a,b) => a.stopSequence - b.stopSequence));
         } else {
           // Fallback to generic route stops
-          this.tripService.getRouteStops(from, to).subscribe({
+          this.tripService.getRouteStops(trip.source, trip.destination).subscribe({
             next: (response) => {
               const stops = response.data || [];
               
               let fromSequence = -1;
               let toSequence = Number.MAX_SAFE_INTEGER;
-              const fromStop = stops.find(s => s.stopName.toLowerCase() === from || s.source.toLowerCase() === from);
+              const fromStop = stops.find(s => s.stopName.toLowerCase() === from || s.source.toLowerCase() === from || s.source.toLowerCase() === trip.source.toLowerCase());
               if (fromStop) fromSequence = fromStop.stopSequence;
-              else if (stops.length > 0 && stops[0].source.toLowerCase() === from) fromSequence = 0;
+              else if (stops.length > 0 && stops[0].source.toLowerCase() === trip.source.toLowerCase()) fromSequence = 0;
 
-              const toStop = [...stops].reverse().find(s => s.stopName.toLowerCase() === to || s.destination.toLowerCase() === to);
+              const toStop = [...stops].reverse().find(s => s.stopName.toLowerCase() === to || s.destination.toLowerCase() === to || s.destination.toLowerCase() === trip.destination.toLowerCase());
               if (toStop) toSequence = toStop.stopSequence;
-              else if (stops.length > 0 && stops[stops.length - 1].destination.toLowerCase() === to) toSequence = Number.MAX_SAFE_INTEGER;
+              else if (stops.length > 0 && stops[stops.length - 1].destination.toLowerCase() === trip.destination.toLowerCase()) toSequence = Number.MAX_SAFE_INTEGER;
 
               this.boardingPoints.set(stops.filter(s => (s.stopType === 'BOARDING' || s.stopType === 'INTERMEDIATE') && s.stopSequence >= fromSequence && s.stopSequence < toSequence).sort((a,b) => a.stopSequence - b.stopSequence));
               this.droppingPoints.set(stops.filter(s => (s.stopType === 'DROPPING' || s.stopType === 'INTERMEDIATE') && s.stopSequence > fromSequence && s.stopSequence <= toSequence).sort((a,b) => a.stopSequence - b.stopSequence));
@@ -240,6 +268,11 @@ export class PassengerDetailsComponent implements OnInit {
 
     if (!this.selectedDroppingPoint()) {
       this.errorMessage.set('Please select a dropping point.');
+      return false;
+    }
+
+    if (this.zoneError()) {
+      this.errorMessage.set(this.zoneError());
       return false;
     }
 

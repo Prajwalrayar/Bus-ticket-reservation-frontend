@@ -27,8 +27,13 @@
         </li>
         @if (isLoggedIn && isCustomer) {
           <li class="nav-item">
-            <a class="nav-link px-3" routerLink="/my-bookings" routerLinkActive="active">
+            <a class="nav-link px-3" routerLink="/profile" fragment="BOOKINGS" routerLinkActive="active">
               My Bookings
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link px-3" routerLink="/profile" fragment="SUPPORT">
+              Help
             </a>
           </li>
         }
@@ -89,24 +94,44 @@
               <li><hr class="dropdown-divider" /></li>
 
               <!-- Account Section -->
-              <li>
-                <a class="dropdown-item" routerLink="/profile" (click)="isUserMenuOpen = false">
-                  <i class="bi bi-person me-2"></i>Profile
-                </a>
-              </li>
               @if (isCustomer) {
                 <li>
-                  <a class="dropdown-item" routerLink="/profile/wallet" (click)="isUserMenuOpen = false">
-                    <i class="bi bi-wallet2 me-2"></i>Wallet
+                  <a class="dropdown-item" routerLink="/profile" fragment="BOOKINGS" (click)="isUserMenuOpen = false">
+                    <i class="bi bi-ticket-detailed me-2 text-primary"></i>My Bookings
                   </a>
                 </li>
+                <li>
+                  <a class="dropdown-item" routerLink="/profile" fragment="WALLET" (click)="isUserMenuOpen = false">
+                    <i class="bi bi-wallet2 me-2 text-success"></i>BusTicket Wallet
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" routerLink="/profile" fragment="PASSENGERS" (click)="isUserMenuOpen = false">
+                    <i class="bi bi-people me-2 text-info"></i>Saved Passengers
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" routerLink="/profile" fragment="OFFERS" (click)="isUserMenuOpen = false">
+                    <i class="bi bi-tag me-2 text-danger"></i>Offers
+                  </a>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
               }
-              <li><hr class="dropdown-divider" /></li>
+
+              <!-- Admin/Operator basic profile link if not customer -->
+              @if (!isCustomer) {
+                <li>
+                  <a class="dropdown-item" routerLink="/profile" fragment="BOOKINGS" (click)="isUserMenuOpen = false">
+                    <i class="bi bi-person me-2"></i>My Profile
+                  </a>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+              }
 
               <!-- Appearance Submenu -->
               <li class="dropdown-item p-0">
                 <div class="d-flex align-items-center justify-content-between px-3 py-2 cursor-pointer appearance-toggle" (click)="toggleAppearanceMenu($event)">
-                  <div><i class="bi bi-palette me-2"></i>Appearance</div>
+                  <div><i class="bi bi-palette me-2 text-dark"></i>Appearance</div>
                   <i class="bi" [class.bi-chevron-right]="!isAppearanceMenuOpen" [class.bi-chevron-down]="isAppearanceMenuOpen"></i>
                 </div>
                 
@@ -114,12 +139,12 @@
                   <ul class="list-unstyled mb-0 bg-body-tertiary border-top border-bottom py-1">
                     <li>
                       <button class="dropdown-item px-4 py-2" [class.active]="isLightTheme()" (click)="setTheme('light', $event)">
-                        <i class="bi bi-sun me-2"></i>Light
+                        <i class="bi bi-sun me-2 text-warning"></i>Light
                       </button>
                     </li>
                     <li>
                       <button class="dropdown-item px-4 py-2" [class.active]="isDarkTheme()" (click)="setTheme('dark', $event)">
-                        <i class="bi bi-moon me-2"></i>Dark
+                        <i class="bi bi-moon me-2 text-primary"></i>Dark
                       </button>
                     </li>
                   </ul>
@@ -127,10 +152,20 @@
               </li>
               <li><hr class="dropdown-divider" /></li>
 
-              <!-- Preferences Section -->
+              <!-- Preferences & Support -->
               <li>
-                <a class="dropdown-item" routerLink="/profile" [queryParams]="{tab: 'settings'}" (click)="isUserMenuOpen = false">
-                  <i class="bi bi-gear me-2"></i>Settings
+                <a class="dropdown-item" routerLink="/profile" fragment="SETTINGS" (click)="isUserMenuOpen = false">
+                  <i class="bi bi-gear me-2 text-secondary"></i>Account Settings
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item" routerLink="/profile" fragment="SUPPORT" (click)="isUserMenuOpen = false">
+                  <i class="bi bi-headset me-2 text-warning"></i>Help & Support
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item" routerLink="/profile" fragment="POLICIES" (click)="isUserMenuOpen = false">
+                  <i class="bi bi-shield-check me-2 text-primary"></i>Help & Policies
                 </a>
               </li>
               <li><hr class="dropdown-divider" /></li>
@@ -148,3 +183,61 @@
     </div>
   </div>
 </nav>
+
+<!-- Mobile Bottom Navigation (Visible only for Customers on Small Screens) -->
+@if (isLoggedIn && isCustomer) {
+  <div class="bottom-nav d-lg-none shadow-lg">
+    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="bottom-nav-item">
+      <i class="bi bi-house-door"></i>
+      <span>Home</span>
+    </a>
+    <!-- Note: Bookings routes to profile, but we omit routerLinkActive so only "My Account" highlights -->
+    <a routerLink="/profile" fragment="BOOKINGS" class="bottom-nav-item">
+      <i class="bi bi-ticket-detailed"></i>
+      <span>Bookings</span>
+    </a>
+    <a routerLink="/profile" fragment="OFFERS" class="bottom-nav-item">
+      <i class="bi bi-tag"></i>
+      <span>Offers</span>
+    </a>
+    <a routerLink="/profile" fragment="SUPPORT" class="bottom-nav-item">
+      <i class="bi bi-headset"></i>
+      <span>Help</span>
+    </a>
+    <!-- My Account item remains visually highlighted when user is inside the account/profile section -->
+    <a routerLink="/profile" routerLinkActive="active" class="bottom-nav-item">
+      <i class="bi bi-person"></i>
+      <span>My Account</span>
+    </a>
+  </div>
+}
+
+<!-- Refund Pop-up Modal on Login -->
+@if (showRefundModal && unreadRefundNotification) {
+  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5); z-index: 1055;">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-header border-bottom-0 pb-0">
+          <h5 class="modal-title fw-bold text-success d-flex align-items-center">
+            <i class="bi bi-check-circle-fill me-2"></i>Refund Processed
+          </h5>
+          <button type="button" class="btn-close" (click)="closeRefundModal()" aria-label="Close"></button>
+        </div>
+        <div class="modal-body py-4 text-center">
+           <div class="mb-4">
+              <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex p-4">
+                 <i class="bi bi-cash-coin text-success" style="font-size: 3.5rem; line-height: 1;"></i>
+              </div>
+           </div>
+           <p class="text-dark fw-semibold fs-5 mb-2">{{ unreadRefundNotification.message }}</p>
+           <p class="text-muted small mb-0 px-3">Your refund has been successfully credited back to your original payment method (Bank Account / Wallet).</p>
+        </div>
+        <div class="modal-footer border-top-0 pt-0 pb-4 justify-content-center">
+          <button type="button" class="btn btn-success px-5 py-2 rounded-pill fw-semibold" (click)="markRefundNotificationAsRead()">
+             Got it, Thanks!
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

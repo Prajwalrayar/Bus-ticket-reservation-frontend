@@ -21,4 +21,12 @@ export class PaymentService {
   getPaymentsByBooking(bookingId: string): Observable<ApiResponse<PaymentDTO[]>> {
     return this.http.get<ApiResponse<PaymentDTO[]>>(`/api/bookings/${bookingId}/payments`);
   }
+
+  createRazorpayOrder(bookingId: string, request: PaymentRequest): Observable<ApiResponse<any>> {
+    return this.http.post<ApiResponse<any>>(`/api/bookings/${bookingId}/payments/razorpay/create-order`, request);
+  }
+
+  verifyRazorpayPayment(bookingId: string, request: any): Observable<ApiResponse<PaymentDTO>> {
+    return this.http.post<ApiResponse<PaymentDTO>>(`/api/bookings/${bookingId}/payments/razorpay/verify`, request);
+  }
 }

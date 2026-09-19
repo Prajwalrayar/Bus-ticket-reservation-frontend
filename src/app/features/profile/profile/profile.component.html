@@ -1,42 +1,285 @@
 <div class="profile-page">
   <div class="container py-5">
-    <div class="row g-4">
-      
-      <!-- Sidebar Navigation -->
-      <div class="col-lg-3">
-        <div class="card border-0 shadow-sm">
+    <!-- Modern Profile Header -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card border-0 shadow-lg profile-header-card overflow-hidden">
           <div class="card-body p-0">
-            <div class="p-4 bg-rb-primary text-white rounded-top text-center">
-              <div class="avatar-circle bg-white text-rb-primary fw-bold fs-3 mx-auto mb-2">
-                {{ myProfile?.userName?.charAt(0)?.toUpperCase() || 'U' }}
+            <div class="row g-0">
+              <!-- User Info Section -->
+              <div class="col-lg-4 bg-rb-primary text-white p-4 d-flex flex-column justify-content-center align-items-center text-center">
+                <div class="avatar-circle-large bg-white text-rb-primary fw-bold mb-3 shadow">
+                  {{ myProfile?.userName?.charAt(0)?.toUpperCase() || 'U' }}
+                </div>
+                <h3 class="fw-bold mb-1">{{ myProfile?.userName || 'Loading...' }}</h3>
+                <p class="mb-1 opacity-75"><i class="bi bi-envelope me-2"></i>{{ myProfile?.userEmail || '...' }}</p>
+                <p class="mb-2 opacity-75"><i class="bi bi-telephone me-2"></i>{{ myProfile?.mobileNumber || '...' }}</p>
+                <div class="badge bg-white text-rb-primary mt-2 px-3 py-2 rounded-pill shadow-sm">
+                  Member since {{ (myProfile?.createdAt | date:'mediumDate') || '...' }}
+                </div>
               </div>
-              <h5 class="mb-0">{{ myProfile?.userName || 'Loading...' }}</h5>
-              <small>{{ myProfile?.userEmail || '...' }}</small>
-            </div>
-            
-            <div class="list-group list-group-flush profile-nav">
-              <button class="list-group-item list-group-item-action py-3"
-                      [class.active]="activeTab === 'BOOKINGS'"
-                      (click)="setTab('BOOKINGS')">
-                <i class="bi bi-ticket-detailed me-2"></i> My Bookings
-              </button>
-              <button class="list-group-item list-group-item-action py-3"
-                      [class.active]="activeTab === 'PASSENGERS'"
-                      (click)="setTab('PASSENGERS')">
-                <i class="bi bi-people me-2"></i> Saved Passengers
-              </button>
-              <button class="list-group-item list-group-item-action py-3"
-                      [class.active]="activeTab === 'SETTINGS'"
-                      (click)="setTab('SETTINGS')">
-                <i class="bi bi-gear me-2"></i> Account Settings
-              </button>
+              
+              <!-- Stats Section -->
+              <div class="col-lg-5 p-4 bg-light d-flex align-items-center">
+                <div class="w-100">
+                  <h6 class="text-uppercase text-muted fw-bold mb-3">Travel Statistics</h6>
+                  <div class="row g-3">
+                    <div class="col-4 text-center">
+                      <div class="stat-icon-wrapper text-primary mb-2 mx-auto">
+                        <i class="bi bi-signpost-split fs-4"></i>
+                      </div>
+                      <h4 class="fw-bold mb-0">{{ completedBookings.length }}</h4>
+                      <small class="text-muted">Total Trips</small>
+                    </div>
+                    <div class="col-4 text-center border-start border-end">
+                      <div class="stat-icon-wrapper text-success mb-2 mx-auto">
+                        <i class="bi bi-map fs-4"></i>
+                      </div>
+                      <h4 class="fw-bold mb-0">{{ totalDistance }}</h4>
+                      <small class="text-muted">km Travelled</small>
+                    </div>
+                    <div class="col-4 text-center">
+                      <div class="stat-icon-wrapper text-info mb-2 mx-auto">
+                        <i class="bi bi-tree fs-4"></i>
+                      </div>
+                      <h4 class="fw-bold mb-0">{{ carbonSavings | number:'1.0-1' }}</h4>
+                      <small class="text-muted">kg CO₂ Saved</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Wallet Section -->
+              <div class="col-lg-3 p-4 d-flex align-items-center bg-white border-start">
+                <div class="w-100 wallet-card rounded-4 p-3 text-white position-relative overflow-hidden shadow">
+                  <div class="wallet-bg-shape"></div>
+                  <div class="position-relative z-1">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                      <h6 class="mb-0 fw-semibold text-white-50"><i class="bi bi-wallet2 me-2"></i>Wallet Balance</h6>
+                    </div>
+                    <h2 class="fw-bold mb-3 text-white">₹{{ walletBalance !== null ? walletBalance : '---' }}</h2>
+                    <div class="pt-3 border-top border-light border-opacity-25 d-flex justify-content-between align-items-center text-white">
+                      <small class="text-white-50">Validity</small>
+                      <small class="fw-bold">Lifetime</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Main Content Area -->
-      <div class="col-lg-9">
+    <!-- Language Selection & Menus (visible when showMenu is true) -->
+    <div class="row justify-content-center" *ngIf="showMenu">
+      <div class="col-lg-8">
+        
+        <!-- The Language selection block was removed to be placed in Preferences -->
+
+        <!-- My Details -->
+        <h6 class="text-uppercase text-muted fw-bold mb-3 ms-2 mt-4">My Details</h6>
+        <div class="card border-0 shadow-sm mb-4 overflow-hidden">
+          <div class="list-group list-group-flush menu-list-group">
+            <button class="list-group-item list-group-item-action d-flex align-items-center p-3 border-bottom" (click)="setTab('BOOKINGS')">
+              <div class="menu-icon-wrapper bg-light text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width:48px; height:48px;">
+                <i class="bi bi-ticket-detailed fs-4"></i>
+              </div>
+              <div class="flex-grow-1">
+                <h6 class="mb-1 fw-bold">Bookings</h6>
+                <small class="text-muted">Navigate to your booking history</small>
+              </div>
+              <i class="bi bi-chevron-right text-muted fs-5"></i>
+            </button>
+            <button class="list-group-item list-group-item-action d-flex align-items-center p-3" (click)="setTab('SETTINGS')">
+              <div class="menu-icon-wrapper bg-light text-success rounded-circle d-flex align-items-center justify-content-center me-3" style="width:48px; height:48px;">
+                <i class="bi bi-person fs-4"></i>
+              </div>
+              <div class="flex-grow-1">
+                <h6 class="mb-1 fw-bold">Personal Information</h6>
+                <small class="text-muted">View and update permitted personal information</small>
+              </div>
+              <i class="bi bi-chevron-right text-muted fs-5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Payments -->
+        <h6 class="text-uppercase text-muted fw-bold mb-3 ms-2 mt-4">Payments</h6>
+        <div class="card border-0 shadow-sm mb-4 overflow-hidden">
+          <div class="list-group list-group-flush menu-list-group">
+            <button class="list-group-item list-group-item-action d-flex align-items-center p-3 border-bottom" (click)="setTab('WALLET')">
+              <div class="menu-icon-wrapper bg-light text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width:48px; height:48px;">
+                <i class="bi bi-wallet2 fs-4"></i>
+              </div>
+              <div class="flex-grow-1">
+                <h6 class="mb-1 fw-bold">BusTicket Wallet</h6>
+                <small class="text-muted">Display balance and transaction history</small>
+              </div>
+              <i class="bi bi-chevron-right text-muted fs-5"></i>
+            </button>
+            <button class="list-group-item list-group-item-action d-flex align-items-center p-3" (click)="setTab('PAYMENT_METHODS')">
+              <div class="menu-icon-wrapper bg-light text-success rounded-circle d-flex align-items-center justify-content-center me-3" style="width:48px; height:48px;">
+                <i class="bi bi-credit-card fs-4"></i>
+              </div>
+              <div class="flex-grow-1">
+                <h6 class="mb-1 fw-bold">Payment Methods</h6>
+                <small class="text-muted">View and manage supported payment methods</small>
+              </div>
+              <i class="bi bi-chevron-right text-muted fs-5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- More -->
+        <h6 class="text-uppercase text-muted fw-bold mb-3 ms-2 mt-4">More</h6>
+        <div class="card border-0 shadow-sm mb-4 overflow-hidden">
+          <div class="list-group list-group-flush menu-list-group">
+            <button class="list-group-item list-group-item-action d-flex align-items-center p-3 border-bottom" (click)="setTab('OFFERS')">
+              <div class="menu-icon-wrapper bg-light text-danger rounded-circle d-flex align-items-center justify-content-center me-3" style="width:48px; height:48px;">
+                <i class="bi bi-tag fs-4"></i>
+              </div>
+              <div class="flex-grow-1">
+                <h6 class="mb-1 fw-bold">Offers</h6>
+                <small class="text-muted">Available passenger offers and promotions</small>
+              </div>
+              <i class="bi bi-chevron-right text-muted fs-5"></i>
+            </button>
+            <button class="list-group-item list-group-item-action d-flex align-items-center p-3" (click)="setTab('ABOUT')">
+              <div class="menu-icon-wrapper bg-light text-info rounded-circle d-flex align-items-center justify-content-center me-3" style="width:48px; height:48px;">
+                <i class="bi bi-info-circle fs-4"></i>
+              </div>
+              <div class="flex-grow-1">
+                <h6 class="mb-1 fw-bold">About BusTicket</h6>
+                <small class="text-muted">App information and services</small>
+              </div>
+              <i class="bi bi-chevron-right text-muted fs-5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Help & Account Settings -->
+        <h6 class="text-uppercase text-muted fw-bold mb-3 ms-2 mt-4">Help & Account Settings</h6>
+        <div class="card border-0 shadow-sm mb-4 overflow-hidden">
+          <div class="list-group list-group-flush menu-list-group">
+            <button class="list-group-item list-group-item-action d-flex align-items-center p-3 border-bottom" (click)="setTab('SUPPORT')">
+              <div class="menu-icon-wrapper bg-light text-warning rounded-circle d-flex align-items-center justify-content-center me-3" style="width:48px; height:48px;">
+                <i class="bi bi-headset fs-4"></i>
+              </div>
+              <div class="flex-grow-1">
+                <h6 class="mb-1 fw-bold">Help</h6>
+                <small class="text-muted">Access application support functionality</small>
+              </div>
+              <i class="bi bi-chevron-right text-muted fs-5"></i>
+            </button>
+            <button class="list-group-item list-group-item-action d-flex align-items-center p-3 border-bottom" (click)="setTab('SETTINGS')">
+              <div class="menu-icon-wrapper bg-light text-secondary rounded-circle d-flex align-items-center justify-content-center me-3" style="width:48px; height:48px;">
+                <i class="bi bi-gear fs-4"></i>
+              </div>
+              <div class="flex-grow-1">
+                <h6 class="mb-1 fw-bold">Account Settings</h6>
+                <small class="text-muted">Manage security and existing settings</small>
+              </div>
+              <i class="bi bi-chevron-right text-muted fs-5"></i>
+            </button>
+            <button class="list-group-item list-group-item-action d-flex align-items-center p-3 border-bottom" (click)="setTab('PASSENGERS')">
+              <div class="menu-icon-wrapper bg-light text-info rounded-circle d-flex align-items-center justify-content-center me-3" style="width:48px; height:48px;">
+                <i class="bi bi-people fs-4"></i>
+              </div>
+              <div class="flex-grow-1">
+                <h6 class="mb-1 fw-bold">Saved Passengers</h6>
+                <small class="text-muted">Manage family and friends</small>
+              </div>
+              <i class="bi bi-chevron-right text-muted fs-5"></i>
+            </button>
+            <button class="list-group-item list-group-item-action d-flex align-items-center p-3" (click)="setTab('POLICIES')">
+              <div class="menu-icon-wrapper bg-light text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width:48px; height:48px;">
+                <i class="bi bi-shield-check fs-4"></i>
+              </div>
+              <div class="flex-grow-1">
+                <h6 class="mb-1 fw-bold">Help & Policies</h6>
+                <small class="text-muted">Cancellation and Baggage</small>
+              </div>
+              <i class="bi bi-chevron-right text-muted fs-5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Preferences -->
+        <h6 class="text-uppercase text-muted fw-bold mb-3 ms-2 mt-4">Preferences</h6>
+        <div class="card border-0 shadow-sm mb-4 overflow-hidden">
+          <div class="list-group list-group-flush menu-list-group">
+            <button class="list-group-item list-group-item-action d-flex align-items-center p-3 border-bottom" (click)="setTab('COUNTRY')">
+              <div class="menu-icon-wrapper bg-light text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width:48px; height:48px;">
+                <i class="bi bi-globe-americas fs-4"></i>
+              </div>
+              <div class="flex-grow-1">
+                <h6 class="mb-1 fw-bold">Country</h6>
+                <small class="text-muted">India</small>
+              </div>
+              <i class="bi bi-chevron-right text-muted fs-5"></i>
+            </button>
+            <button class="list-group-item list-group-item-action d-flex align-items-center p-3 border-bottom" (click)="setTab('CURRENCY')">
+              <div class="menu-icon-wrapper bg-light text-success rounded-circle d-flex align-items-center justify-content-center me-3" style="width:48px; height:48px;">
+                <i class="bi bi-currency-rupee fs-4"></i>
+              </div>
+              <div class="flex-grow-1">
+                <h6 class="mb-1 fw-bold">Currency</h6>
+                <small class="text-muted">INR</small>
+              </div>
+              <i class="bi bi-chevron-right text-muted fs-5"></i>
+            </button>
+            <button class="list-group-item list-group-item-action d-flex align-items-center p-3 border-bottom" (click)="setTab('LANGUAGE')">
+              <div class="menu-icon-wrapper bg-light text-danger rounded-circle d-flex align-items-center justify-content-center me-3" style="width:48px; height:48px;">
+                <i class="bi bi-translate fs-4"></i>
+              </div>
+              <div class="flex-grow-1">
+                <h6 class="mb-1 fw-bold">Language</h6>
+                <small class="text-muted">English</small>
+              </div>
+              <i class="bi bi-chevron-right text-muted fs-5"></i>
+            </button>
+            <button class="list-group-item list-group-item-action d-flex align-items-center p-3 border-bottom" (click)="setTab('APPEARANCE')">
+              <div class="menu-icon-wrapper bg-light text-dark rounded-circle d-flex align-items-center justify-content-center me-3" style="width:48px; height:48px;">
+                <i class="bi bi-palette fs-4"></i>
+              </div>
+              <div class="flex-grow-1">
+                <h6 class="mb-1 fw-bold">Appearance</h6>
+                <small class="text-muted">Light / Dark theme</small>
+              </div>
+              <i class="bi bi-chevron-right text-muted fs-5"></i>
+            </button>
+            <button class="list-group-item list-group-item-action d-flex align-items-center p-3 border-bottom" (click)="setTab('NOTIFICATIONS')">
+              <div class="menu-icon-wrapper bg-light text-warning rounded-circle d-flex align-items-center justify-content-center me-3" style="width:48px; height:48px;">
+                <i class="bi bi-bell fs-4"></i>
+              </div>
+              <div class="flex-grow-1">
+                <h6 class="mb-1 fw-bold">Notifications</h6>
+                <small class="text-muted">Email, SMS & App Alerts</small>
+              </div>
+              <i class="bi bi-chevron-right text-muted fs-5"></i>
+            </button>
+            <button class="list-group-item list-group-item-action d-flex align-items-center p-3" (click)="setTab('BOOKING_PREFS')">
+              <div class="menu-icon-wrapper bg-light text-info rounded-circle d-flex align-items-center justify-content-center me-3" style="width:48px; height:48px;">
+                <i class="bi bi-sliders fs-4"></i>
+              </div>
+              <div class="flex-grow-1">
+                <h6 class="mb-1 fw-bold">Booking Preferences</h6>
+                <small class="text-muted">Seat & Meal preferences</small>
+              </div>
+              <i class="bi bi-chevron-right text-muted fs-5"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Tab Content (visible when showMenu is false) -->
+    <div class="row justify-content-center" *ngIf="!showMenu">
+      <div class="col-lg-10">
+        <button class="btn btn-link text-decoration-none text-dark mb-4 px-0 fw-bold d-flex align-items-center" (click)="goBackToMenu()">
+          <i class="bi bi-arrow-left fs-5 me-2"></i> Back to Menu
+        </button>
         
         <!-- BOOKINGS TAB -->
         @if (activeTab === 'BOOKINGS') {
@@ -127,6 +370,69 @@
           </div>
         }
 
+
+        <!-- SUPPORT TAB -->
+        @if (activeTab === 'SUPPORT') {
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+              <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="fw-bold mb-0">My Support Tickets</h4>
+                <button class="btn btn-rb-primary btn-sm px-3" (click)="openSupportModal()">
+                  <i class="bi bi-plus-lg me-1"></i> Raise Ticket
+                </button>
+              </div>
+
+              @if (loadingTickets) {
+                <div class="text-center py-4">
+                  <div class="spinner-border text-rb-primary" role="status"></div>
+                </div>
+              } @else if (myTickets.length === 0) {
+                <div class="text-center py-5 text-secondary bg-light rounded border border-dashed">
+                  <i class="bi bi-headset fs-1 d-block mb-2 text-muted"></i>
+                  <p class="mb-0">You haven't raised any support tickets yet.</p>
+                </div>
+              } @else {
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Ticket ID</th>
+                        <th>Subject</th>
+                        <th>Status</th>
+                        <th>Last Updated</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (ticket of myTickets; track ticket.ticketId) {
+                        <tr>
+                          <td><span class="fw-semibold text-dark">{{ ticket.ticketId.substring(0,8).toUpperCase() }}</span></td>
+                          <td>
+                            <div class="fw-bold">{{ ticket.issueSubject }}</div>
+                            <small class="text-muted">{{ ticket.issueCategory }}</small>
+                          </td>
+                          <td>
+                            <span class="badge" [ngClass]="{
+                              'bg-danger': ticket.status === 'OPEN' || ticket.status === 'PASSENGER_REPLIED',
+                              'bg-warning text-dark': ticket.status === 'IN_PROGRESS' || ticket.status === 'WAITING_FOR_PASSENGER',
+                              'bg-success': ticket.status === 'RESOLVED'
+                            }">{{ ticket.status.replace('_', ' ') }}</span>
+                          </td>
+                          <td>{{ ticket.updatedAt | date:'medium' }}</td>
+                          <td>
+                            <button class="btn btn-sm btn-outline-primary" (click)="viewTicketThread(ticket.ticketId)">
+                              View
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </div>
+          </div>
+        }
         <!-- SAVED PASSENGERS TAB -->
         @if (activeTab === 'PASSENGERS') {
           <div class="card border-0 shadow-sm mb-4">
@@ -182,6 +488,218 @@
                   }
                 </div>
               }
+            </div>
+          </div>
+        }
+
+        <!-- POLICIES TAB -->
+        @if (activeTab === 'POLICIES') {
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+              <h4 class="fw-bold mb-4">Help & Policies</h4>
+              
+              <!-- Accordion for Policies -->
+              <div class="accordion" id="policiesAccordion">
+                
+                <!-- Cancellation Rules -->
+                <div class="accordion-item border-0 shadow-sm mb-3 rounded overflow-hidden">
+                  <h2 class="accordion-header" id="headingCancellation">
+                    <button class="accordion-button bg-light fw-bold text-dark" 
+                            [class.collapsed]="openPolicyTab !== 'cancellation'"
+                            type="button" 
+                            (click)="openPolicyTab = openPolicyTab === 'cancellation' ? '' : 'cancellation'">
+                      <i class="bi bi-shield-x me-2 text-danger"></i> Cancellation & Refund Rules
+                    </button>
+                  </h2>
+                  <div class="accordion-collapse collapse" [class.show]="openPolicyTab === 'cancellation'">
+                    <div class="accordion-body bg-white">
+                      <p class="mb-3 text-muted">We offer a dynamic refund policy based on how early you cancel your trip before the scheduled departure time.</p>
+                      
+                      <div class="row g-3">
+                        <div class="col-md-4">
+                          <div class="p-3 border rounded border-success text-center h-100 bg-success bg-opacity-10">
+                            <h3 class="fw-bold text-success mb-1">90%</h3>
+                            <div class="fw-semibold text-dark">Refund</div>
+                            <small class="text-muted">More than 24 hours before departure</small>
+                          </div>
+                        </div>
+                        <div class="col-md-4">
+                          <div class="p-3 border rounded border-warning text-center h-100 bg-warning bg-opacity-10">
+                            <h3 class="fw-bold text-warning mb-1" style="color: #d39e00 !important;">50%</h3>
+                            <div class="fw-semibold text-dark">Refund</div>
+                            <small class="text-muted">Between 12 to 24 hours before departure</small>
+                          </div>
+                        </div>
+                        <div class="col-md-4">
+                          <div class="p-3 border rounded border-danger text-center h-100 bg-danger bg-opacity-10">
+                            <h3 class="fw-bold text-danger mb-1">0%</h3>
+                            <div class="fw-semibold text-dark">No Refund</div>
+                            <small class="text-muted">Less than 12 hours before departure</small>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div class="alert alert-info mt-4 mb-0 d-flex align-items-center">
+                        <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+                        <small>Refunds are automatically processed to your wallet upon cancellation and can be instantly used for your next booking.</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- How to Book -->
+                <div class="accordion-item border-0 shadow-sm mb-3 rounded overflow-hidden">
+                  <h2 class="accordion-header" id="headingBooking">
+                    <button class="accordion-button bg-light fw-bold text-dark" 
+                            [class.collapsed]="openPolicyTab !== 'booking'"
+                            type="button" 
+                            (click)="openPolicyTab = openPolicyTab === 'booking' ? '' : 'booking'">
+                      <i class="bi bi-journal-check me-2 text-primary"></i> How to Book a Bus Ticket
+                    </button>
+                  </h2>
+                  <div class="accordion-collapse collapse" [class.show]="openPolicyTab === 'booking'">
+                    <div class="accordion-body bg-white">
+                      <ol class="list-group list-group-numbered list-group-flush">
+                        <li class="list-group-item border-0 px-0 py-2">
+                          <strong>Search:</strong> Enter your source city, destination city, and travel date on the home page.
+                        </li>
+                        <li class="list-group-item border-0 px-0 py-2">
+                          <strong>Select a Bus:</strong> Browse the available buses. You can filter by AC/Non-AC, Seater/Sleeper, and boarding times.
+                        </li>
+                        <li class="list-group-item border-0 px-0 py-2">
+                          <strong>Choose Seats:</strong> Click "View Seats" on your preferred bus and select available (white) seats.
+                        </li>
+                        <li class="list-group-item border-0 px-0 py-2">
+                          <strong>Provide Details:</strong> Fill in passenger details or pick from your "Saved Passengers".
+                        </li>
+                        <li class="list-group-item border-0 px-0 py-2">
+                          <strong>Pay & Confirm:</strong> Proceed to checkout and pay securely via Razorpay or your Wallet balance.
+                        </li>
+                      </ol>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Baggage Policy -->
+                <div class="accordion-item border-0 shadow-sm rounded overflow-hidden">
+                  <h2 class="accordion-header" id="headingBaggage">
+                    <button class="accordion-button bg-light fw-bold text-dark" 
+                            [class.collapsed]="openPolicyTab !== 'baggage'"
+                            type="button" 
+                            (click)="openPolicyTab = openPolicyTab === 'baggage' ? '' : 'baggage'">
+                      <i class="bi bi-briefcase me-2 text-secondary"></i> Baggage & Pets Policy
+                    </button>
+                  </h2>
+                  <div class="accordion-collapse collapse" [class.show]="openPolicyTab === 'baggage'">
+                    <div class="accordion-body bg-white">
+                      <ul class="mb-0 text-muted">
+                        <li class="mb-2">Passengers are allowed to carry one personal bag (up to 7 kg) inside the bus.</li>
+                        <li class="mb-2"><strong>Only 2 bags are allowed</strong> as standard check-in luggage (up to 50-80 kgs total) which can be placed in the luggage compartment.</li>
+                        <li class="mb-2">Excess baggage is subject to extra charges at the boarding point based on the operator's discretion.</li>
+                        <li class="mb-2 text-danger"><i class="bi bi-x-circle-fill me-1"></i><strong>Pets are not allowed</strong> on board.</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- WALLET TAB -->
+        @if (activeTab === 'WALLET') {
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+              <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="fw-bold mb-0">BusTicket Wallet</h4>
+                <div class="text-end">
+                  <h3 class="text-primary fw-bold mb-0">₹{{ walletBalance !== null ? walletBalance : '---' }}</h3>
+                  <small class="text-muted">Available Balance</small>
+                </div>
+              </div>
+              <h6 class="fw-bold mb-3">Transaction History</h6>
+              @if (loadingWalletTransactions) {
+                <div class="text-center py-4">
+                  <div class="spinner-border text-primary" role="status"></div>
+                </div>
+              } @else if (walletTransactions.length === 0) {
+                <div class="text-center py-5 bg-light rounded-3">
+                  <i class="bi bi-wallet2 text-muted mb-2" style="font-size: 3rem;"></i>
+                  <h5>No transactions yet</h5>
+                  <p class="text-muted mb-0">Your wallet transactions will appear here.</p>
+                </div>
+              } @else {
+                <div class="list-group list-group-flush">
+                  @for (txn of walletTransactions; track txn.transactionId) {
+                    <div class="list-group-item px-0 py-3 d-flex justify-content-between align-items-center">
+                      <div class="d-flex align-items-center gap-3">
+                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width:40px; height:40px;">
+                          <i class="bi" [ngClass]="txn.transactionType === 'CREDIT' ? 'bi-arrow-down-left text-success' : 'bi-arrow-up-right text-danger'"></i>
+                        </div>
+                        <div>
+                          <h6 class="mb-0 fw-bold">{{ txn.description }}</h6>
+                          <small class="text-muted">{{ txn.createdAt | date:'medium' }}</small>
+                        </div>
+                      </div>
+                      <h6 class="mb-0 fw-bold" [ngClass]="txn.transactionType === 'CREDIT' ? 'text-success' : 'text-dark'">
+                        {{ txn.transactionType === 'CREDIT' ? '+' : '-' }}₹{{ txn.amount }}
+                      </h6>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- PAYMENT METHODS TAB -->
+        @if (activeTab === 'PAYMENT_METHODS') {
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4 text-center py-5">
+              <i class="bi bi-credit-card text-muted mb-3 d-block" style="font-size: 4rem;"></i>
+              <h4 class="fw-bold mb-3">Payment Methods</h4>
+              <p class="text-muted mb-4">Manage your saved cards, UPI IDs, and net banking options for faster checkout.</p>
+              <button class="btn btn-rb-primary rounded-pill px-4">Add Payment Method</button>
+            </div>
+          </div>
+        }
+
+        <!-- OFFERS TAB -->
+        @if (activeTab === 'OFFERS') {
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4 text-center py-5">
+              <i class="bi bi-tag text-muted mb-3 d-block" style="font-size: 4rem;"></i>
+              <h4 class="fw-bold mb-3">Your Offers</h4>
+              <p class="text-muted">Currently, you don't have any active offers or promotions. Check back later!</p>
+            </div>
+          </div>
+        }
+
+        <!-- ABOUT TAB -->
+        @if (activeTab === 'ABOUT') {
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+              <h4 class="fw-bold mb-4">About BusTicket</h4>
+              <p class="text-muted">BusTicket is the world's leading bus ticketing application, designed to make your travel seamless, affordable, and comfortable.</p>
+              <ul class="list-group list-group-flush mt-4">
+                <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                  <span>Version</span>
+                  <span class="text-muted">v2.4.1</span>
+                </li>
+                <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                  <span>Terms of Service</span>
+                  <i class="bi bi-chevron-right text-muted"></i>
+                </li>
+                <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                  <span>Privacy Policy</span>
+                  <i class="bi bi-chevron-right text-muted"></i>
+                </li>
+                <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                  <span>Licenses</span>
+                  <i class="bi bi-chevron-right text-muted"></i>
+                </li>
+              </ul>
             </div>
           </div>
         }
@@ -293,36 +811,154 @@
               </div>
             </div>
 
-            <!-- Appearance / Theme -->
-            <div class="col-12">
-              <div class="card border-0 shadow-sm">
-                <div class="card-body p-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
-                  <div class="d-flex align-items-center gap-3">
-                    <div class="bg-primary bg-opacity-10 rounded-circle p-2">
-                      <i class="bi bi-palette-fill text-primary fs-5"></i>
-                    </div>
-                    <div>
-                      <h6 class="fw-bold mb-0">Appearance</h6>
-                      <p class="text-muted small mb-0">Switch between light and dark theme</p>
-                    </div>
+          </div>
+        }
+
+        <!-- COUNTRY TAB -->
+        @if (activeTab === 'COUNTRY') {
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+              <h4 class="fw-bold mb-4">Select Country</h4>
+              <p class="text-muted mb-4">Select your region to view tailored routes, pricing, and localization.</p>
+              <div class="list-group">
+                <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3" [class.bg-light]="country === 'India'" (click)="country = 'India'">
+                  <span><i class="bi bi-geo-alt me-2"></i> India</span>
+                  @if (country === 'India') { <i class="bi bi-check-circle-fill text-success fs-5"></i> }
+                </button>
+                <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3" [class.bg-light]="country === 'USA'" (click)="country = 'USA'">
+                  <span><i class="bi bi-geo-alt me-2"></i> United States</span>
+                  @if (country === 'USA') { <i class="bi bi-check-circle-fill text-success fs-5"></i> }
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- CURRENCY TAB -->
+        @if (activeTab === 'CURRENCY') {
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+              <h4 class="fw-bold mb-4">Select Currency</h4>
+              <p class="text-muted mb-4">Choose your preferred currency for display across the application.</p>
+              <div class="list-group">
+                <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3" [class.bg-light]="currency === 'INR'" (click)="currency = 'INR'">
+                  <span><i class="bi bi-currency-rupee me-2"></i> INR - Indian Rupee</span>
+                  @if (currency === 'INR') { <i class="bi bi-check-circle-fill text-success fs-5"></i> }
+                </button>
+                <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3" [class.bg-light]="currency === 'USD'" (click)="currency = 'USD'">
+                  <span><i class="bi bi-currency-dollar me-2"></i> USD - US Dollar</span>
+                  @if (currency === 'USD') { <i class="bi bi-check-circle-fill text-success fs-5"></i> }
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- LANGUAGE TAB -->
+        @if (activeTab === 'LANGUAGE') {
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+              <h4 class="fw-bold mb-4">Select Language</h4>
+              <p class="text-muted mb-4">Choose the language you prefer for the BusTicket application.</p>
+              <div class="list-group">
+                <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3" [class.bg-light]="selectedLanguage === 'en'" (click)="changeLanguage('en')">
+                  <span>English</span>
+                  @if (selectedLanguage === 'en') { <i class="bi bi-check-circle-fill text-success fs-5"></i> }
+                </button>
+                <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3" [class.bg-light]="selectedLanguage === 'hi'" (click)="changeLanguage('hi')">
+                  <span>Hindi (हिंदी)</span>
+                  @if (selectedLanguage === 'hi') { <i class="bi bi-check-circle-fill text-success fs-5"></i> }
+                </button>
+                <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3" [class.bg-light]="selectedLanguage === 'es'" (click)="changeLanguage('es')">
+                  <span>Spanish (Español)</span>
+                  @if (selectedLanguage === 'es') { <i class="bi bi-check-circle-fill text-success fs-5"></i> }
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- APPEARANCE TAB -->
+        @if (activeTab === 'APPEARANCE') {
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+              <h4 class="fw-bold mb-4">Appearance</h4>
+              <p class="text-muted mb-4">Switch between light and dark themes.</p>
+              <div class="d-flex align-items-center justify-content-between p-3 border rounded">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="bg-primary bg-opacity-10 rounded-circle p-2">
+                    <i class="bi bi-palette-fill text-primary fs-5"></i>
                   </div>
-                  <div class="d-flex align-items-center gap-3">
-                    <span class="text-muted small">
-                      <i class="bi bi-sun-fill me-1 text-warning"></i>Light
-                    </span>
-                    <div class="form-check form-switch mb-0" style="transform: scale(1.3); transform-origin: left;">
-                      <input class="form-check-input" type="checkbox" role="switch" id="themeTogglePassenger"
-                        [checked]="themeService.getCurrentTheme() === 'dark'"
-                        (change)="themeService.toggleTheme()">
-                    </div>
-                    <span class="text-muted small">
-                      <i class="bi bi-moon-stars-fill me-1 text-primary"></i>Dark
-                    </span>
+                  <h6 class="fw-bold mb-0">Theme Mode</h6>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                  <span class="text-muted small"><i class="bi bi-sun-fill me-1 text-warning"></i>Light</span>
+                  <div class="form-check form-switch mb-0" style="transform: scale(1.3); transform-origin: left;">
+                    <input class="form-check-input" type="checkbox" role="switch" id="themeTogglePassenger"
+                      [checked]="themeService.getCurrentTheme() === 'dark'"
+                      (change)="themeService.toggleTheme()">
+                  </div>
+                  <span class="text-muted small"><i class="bi bi-moon-stars-fill me-1 text-primary"></i>Dark</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- NOTIFICATIONS TAB -->
+        @if (activeTab === 'NOTIFICATIONS') {
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+              <h4 class="fw-bold mb-4">Notification Preferences</h4>
+              
+              <div class="list-group list-group-flush">
+                <div class="list-group-item px-0 py-3 d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="fw-bold mb-1">Booking Alerts</h6>
+                    <small class="text-muted">Receive alerts for upcoming trips, delays, and cancellations.</small>
+                  </div>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input fs-5" type="checkbox" role="switch" [checked]="notificationsEnabled" (change)="notificationsEnabled = !notificationsEnabled">
+                  </div>
+                </div>
+                <div class="list-group-item px-0 py-3 d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="fw-bold mb-1">Promotional Offers</h6>
+                    <small class="text-muted">Receive updates about discounts, rewards, and exclusive offers.</small>
+                  </div>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input fs-5" type="checkbox" role="switch" [checked]="promotionsEnabled" (change)="promotionsEnabled = !promotionsEnabled">
                   </div>
                 </div>
               </div>
             </div>
+          </div>
+        }
 
+        <!-- BOOKING PREFS TAB -->
+        @if (activeTab === 'BOOKING_PREFS') {
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+              <h4 class="fw-bold mb-4">Booking Preferences</h4>
+              <p class="text-muted mb-4">Set your standard preferences to speed up your booking process.</p>
+              
+              <div class="mb-4">
+                <label class="form-label fw-bold">Default Seat Preference</label>
+                <div class="d-flex flex-wrap gap-2">
+                  <button class="btn rounded-pill px-4" [class.btn-rb-primary]="seatPreference === 'Window'" [class.btn-outline-secondary]="seatPreference !== 'Window'" (click)="seatPreference = 'Window'">Window</button>
+                  <button class="btn rounded-pill px-4" [class.btn-rb-primary]="seatPreference === 'Aisle'" [class.btn-outline-secondary]="seatPreference !== 'Aisle'" (click)="seatPreference = 'Aisle'">Aisle</button>
+                  <button class="btn rounded-pill px-4" [class.btn-rb-primary]="seatPreference === 'Any'" [class.btn-outline-secondary]="seatPreference !== 'Any'" (click)="seatPreference = 'Any'">Any</button>
+                </div>
+              </div>
+              
+              <div class="mb-2">
+                <label class="form-label fw-bold">Meal Preference</label>
+                <div class="d-flex flex-wrap gap-2">
+                  <button class="btn rounded-pill px-4" [class.btn-rb-primary]="mealPreference === 'Vegetarian'" [class.btn-outline-secondary]="mealPreference !== 'Vegetarian'" (click)="mealPreference = 'Vegetarian'">Vegetarian</button>
+                  <button class="btn rounded-pill px-4" [class.btn-rb-primary]="mealPreference === 'Non-Vegetarian'" [class.btn-outline-secondary]="mealPreference !== 'Non-Vegetarian'" (click)="mealPreference = 'Non-Vegetarian'">Non-Vegetarian</button>
+                </div>
+              </div>
+            </div>
           </div>
         }
 
@@ -449,6 +1085,9 @@
         <span>Seats: <strong class="text-dark">{{ booking.seats.join(', ') }}</strong></span>
       </div>
       <div class="mt-2 mt-sm-0 d-flex gap-2">
+        <button class="btn btn-outline-secondary btn-sm" (click)="viewBookingDetails(booking.bookingId)">
+          <i class="bi bi-info-circle me-1"></i> Details
+        </button>
         @if (booking.status === 'CONFIRMED') {
           <button class="btn btn-rb-primary btn-sm px-3" (click)="viewTicket(booking.bookingReference)">
             <i class="bi bi-ticket-detailed me-1"></i> View Ticket
@@ -479,11 +1118,65 @@
           <button type="button" class="btn-close" (click)="closeCancelConfirmModal()"></button>
         </div>
         <div class="modal-body p-4">
-          <p class="mb-4 text-secondary">Are you sure you want to cancel this booking? This action cannot be undone.</p>
+          @if (cancellationEstimate) {
+            <div class="mb-4 bg-light rounded p-3 border border-warning border-opacity-50">
+              <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-2 text-warning"></i>Cancellation Estimate</h6>
+              
+              <div class="text-secondary small mb-3">
+                <strong>Rule Applied:</strong> {{ cancellationEstimate.ruleApplied }}
+              </div>
+              
+              @if (cancellationEstimate.paymentMethod) {
+                <div class="d-flex justify-content-between mb-2">
+                  <span class="text-secondary">Payment Method</span>
+                  <span class="text-dark fw-semibold">
+                    {{ cancellationEstimate.paymentMethod === 'CREDIT/DEBIT CARD' ? 'Card' : 
+                       cancellationEstimate.paymentMethod === 'NETBANKING' ? 'Netbanking' : 
+                       cancellationEstimate.paymentMethod === 'WALLET' ? 'Wallet' : 
+                       cancellationEstimate.paymentMethod === 'UPI' ? 'UPI' : 
+                       cancellationEstimate.paymentMethod }}
+                    @if (cancellationEstimate.paymentProvider) {
+                      <span class="text-muted ms-1">({{ cancellationEstimate.paymentProvider }})</span>
+                    }
+                  </span>
+                </div>
+              }
+              
+              @if (cancellationEstimate.refundDestination) {
+                <div class="d-flex justify-content-between mb-2">
+                  <span class="text-secondary">Refund Credited To</span>
+                  <span class="text-primary fw-semibold">{{ cancellationEstimate.refundDestination }}</span>
+                </div>
+              }
+              
+              <div class="d-flex justify-content-between mb-2">
+                <span class="text-secondary">Total Booking Amount</span>
+                <strong class="text-dark">₹{{ cancellationEstimate.totalAmount }}</strong>
+              </div>
+              
+              <div class="d-flex justify-content-between mb-2">
+                <span class="text-secondary">Cancellation Fee ({{ cancellationEstimate.cancellationFeePercentage * 100 }}%)</span>
+                <strong class="text-danger">-₹{{ cancellationEstimate.cancellationFee }}</strong>
+              </div>
+
+              <hr class="my-2 text-secondary">
+              
+              <div class="d-flex justify-content-between align-items-center mt-3">
+                <span class="fw-bold">Estimated Refund Amount</span>
+                <h5 class="fw-bold text-success mb-0">₹{{ cancellationEstimate.refundAmount }}</h5>
+              </div>
+            </div>
+          }
+          
+          <p class="mb-3 text-dark fw-semibold">Are you sure you want to cancel this booking? This action cannot be undone and your refund will be initiated for ₹{{ cancellationEstimate?.refundAmount }}.</p>
+          
+          <div class="alert alert-info py-2 small mb-4">
+            <i class="bi bi-info-circle-fill me-1"></i> <strong>Note:</strong> Refunds are automatically processed back to your original payment method (Bank Account / Wallet).
+          </div>
           
           <div class="form-group mb-3">
             <label class="form-label text-muted small fw-semibold">Reason for Cancellation (Optional)</label>
-            <textarea class="form-control" rows="3" [(ngModel)]="cancelReason" placeholder="Tell us why you are cancelling..."></textarea>
+            <textarea class="form-control bg-light border-0" rows="3" [(ngModel)]="cancelReason" placeholder="Tell us why you are cancelling..."></textarea>
           </div>
         </div>
         <div class="modal-footer border-top-0 bg-light">
@@ -526,10 +1219,14 @@
             </span>
           </div>
 
-          <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded">
+          <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded mb-3">
             <span class="fw-bold">Total Refund Amount</span>
             <h4 class="fw-bold text-success mb-0">₹{{ cancellationResult.refundAmount }}</h4>
           </div>
+
+          <p class="text-muted small text-center mb-0">
+            * Refunds are automatically processed back to your original payment method (Bank Account / Wallet).
+          </p>
 
         </div>
         <div class="modal-footer border-top-0">
@@ -574,6 +1271,353 @@
         <div class="modal-footer border-top-0 bg-light">
           <button type="button" class="btn btn-outline-secondary" (click)="closeReviewModal()">Cancel</button>
           <button type="button" class="btn btn-warning px-4" (click)="submitReview()">Submit Review</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+<!-- Ticket Thread Modal -->
+@if (selectedTicketThread) {
+  <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.55); z-index: 1055;">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow-lg">
+
+        <!-- Header -->
+        <div class="modal-header" style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+          <div class="flex-grow-1 me-3">
+            <h5 class="modal-title fw-bold text-dark mb-1">{{ selectedTicketThread.issueSubject }}</h5>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <span class="text-muted small">ID: <strong class="text-dark">{{ selectedTicketThread.ticketId.substring(0,10).toUpperCase() }}</strong></span>
+              <span class="badge" [ngClass]="{
+                'bg-danger': selectedTicketThread.status === 'OPEN' || selectedTicketThread.status === 'PASSENGER_REPLIED',
+                'bg-warning text-dark': selectedTicketThread.status === 'IN_PROGRESS' || selectedTicketThread.status === 'WAITING_FOR_PASSENGER' || selectedTicketThread.status === 'ASSIGNED',
+                'bg-success': selectedTicketThread.status === 'RESOLVED'
+              }">{{ selectedTicketThread.status.replace(/_/g, ' ') }}</span>
+            </div>
+          </div>
+          <button type="button" class="btn btn-light border btn-sm ms-2" (click)="closeTicketThread()" aria-label="Close">
+            <i class="bi bi-x-lg text-dark"></i>
+          </button>
+        </div>
+
+        <!-- Messages Body -->
+        <div class="modal-body p-4" style="background: #f0f2f5; min-height: 250px;">
+          @if (ticketThreadLoading) {
+            <div class="text-center py-4">
+              <div class="spinner-border text-primary"></div>
+              <p class="text-muted mt-2 small">Loading messages...</p>
+            </div>
+          } @else if (!selectedTicketThread.messages || selectedTicketThread.messages.length === 0) {
+            <div class="text-center py-5 text-muted">
+              <i class="bi bi-chat-dots fs-2 d-block mb-2"></i>
+              <p class="mb-0">No messages yet.</p>
+            </div>
+          } @else {
+            <div class="d-flex flex-column gap-3">
+              @for (msg of selectedTicketThread.messages; track msg.messageId) {
+                <div class="d-flex" [ngClass]="{'justify-content-end': msg.senderRole === 'PASSENGER'}">
+                  <div style="max-width: 78%;">
+                    <!-- Bubble -->
+                    <div class="px-3 py-2 rounded-3 shadow-sm"
+                         [ngStyle]="msg.senderRole === 'PASSENGER'
+                           ? {'background': '#0d6efd', 'color': '#fff'}
+                           : {'background': '#fff', 'color': '#212529', 'border': '1px solid #dee2e6'}">
+                      <p class="mb-0" style="white-space: pre-wrap; font-size: 0.95rem;">{{ msg.message }}</p>
+                    </div>
+                    <!-- Sender & time -->
+                    <div class="d-flex gap-2 mt-1 px-1" [ngClass]="{'justify-content-end': msg.senderRole === 'PASSENGER'}">
+                      <small class="text-muted" style="font-size: 0.75rem;">
+                        <strong>{{ msg.senderRole === 'PASSENGER' ? 'You' : msg.senderName }}</strong>
+                        &bull; {{ msg.createdAt | date:'d/M/yy, h:mm a' }}
+                      </small>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer border-top d-block p-3 bg-white">
+          @if (selectedTicketThread.status === 'RESOLVED') {
+            <div class="alert alert-success d-flex align-items-center gap-2 mb-2">
+              <i class="bi bi-check-circle-fill fs-5"></i>
+              <div>
+                <strong>Ticket Resolved.</strong> If you need further assistance, please raise a new ticket.
+              </div>
+            </div>
+            <div class="text-end">
+              <button class="btn btn-rb-primary btn-sm px-4" (click)="closeTicketThread(); openSupportModal()">
+                <i class="bi bi-plus-lg me-1"></i> Raise New Ticket
+              </button>
+              <button class="btn btn-outline-secondary btn-sm ms-2" (click)="closeTicketThread()">Close</button>
+            </div>
+          } @else {
+            <form (ngSubmit)="replyToTicket()">
+              <div class="input-group">
+                <textarea class="form-control" rows="2" [(ngModel)]="replyMessage" name="replyMessage"
+                          placeholder="Type your reply here..." required
+                          style="resize: none; border-right: 0;"></textarea>
+                <button class="btn btn-primary px-4" type="submit" [disabled]="!replyMessage.trim() || replyLoading">
+                  @if (replyLoading) {
+                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                  } @else {
+                    <i class="bi bi-send-fill"></i>
+                  }
+                </button>
+              </div>
+              <small class="text-muted mt-1 d-block">Your reply will be sent to the support agent.</small>
+            </form>
+          }
+        </div>
+
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Support Ticket Modal -->
+@if (showSupportModal) {
+  <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header border-bottom-0 bg-light">
+          <h5 class="modal-title fw-bold text-rb-primary"><i class="bi bi-headset me-2"></i>Raise Support Ticket</h5>
+          <button type="button" class="btn btn-sm text-secondary" (click)="closeSupportModal()" aria-label="Close">
+            <i class="bi bi-x-lg fs-5"></i>
+          </button>
+        </div>
+        <div class="modal-body p-4">
+          @if (supportFormError) {
+            <div class="alert alert-danger">{{ supportFormError }}</div>
+          }
+          @if (supportFormSuccess) {
+            <div class="alert alert-success">{{ supportFormSuccess }}</div>
+          }
+          <p class="text-muted mb-4">Tell us what went wrong and we'll help you.</p>
+          <form [formGroup]="supportForm" (ngSubmit)="submitSupportTicket()">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label text-muted small fw-semibold">Issue Category <span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="issueCategory">
+                  <option value="">Select Category</option>
+                  <option *ngFor="let cat of ISSUE_CATEGORIES | keyvalue" [value]="cat.key">{{ cat.key }}</option>
+                </select>
+                @if (supportForm.get('issueCategory')?.invalid && supportForm.get('issueCategory')?.touched) {
+                  <small class="text-danger mt-1 d-block">Please select a category.</small>
+                }
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-muted small fw-semibold">Issue Type <span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="issueType" [disabled]="!supportForm.get('issueCategory')?.value">
+                  <option value="">Select Specific Issue</option>
+                  <option *ngFor="let type of availableIssueTypes" [value]="type">{{ type }}</option>
+                </select>
+                @if (supportForm.get('issueType')?.invalid && supportForm.get('issueType')?.touched) {
+                  <small class="text-danger mt-1 d-block">Please select the specific issue.</small>
+                }
+              </div>
+              
+              <div class="col-12">
+                <label class="form-label text-muted small fw-semibold">Related Booking (Optional)</label>
+                <select class="form-select" formControlName="bookingReference">
+                  <option value="">-- None / General Issue --</option>
+                  
+                  @if (showUpcomingBookings && upcomingBookings.length > 0) {
+                    <optgroup label="Upcoming Bookings">
+                      <option *ngFor="let booking of upcomingBookings" [value]="booking.bookingReference">{{ booking.bookingReference }} - {{ booking.from }} to {{ booking.to }}</option>
+                    </optgroup>
+                  }
+                  
+                  @if (showCompletedBookings && completedBookings.length > 0) {
+                    <optgroup label="Completed Bookings">
+                      <option *ngFor="let booking of completedBookings" [value]="booking.bookingReference">{{ booking.bookingReference }} - {{ booking.from }} to {{ booking.to }}</option>
+                    </optgroup>
+                  }
+                  
+                  @if (showCancelledBookings && cancelledBookings.length > 0) {
+                    <optgroup label="Cancelled Bookings">
+                      <option *ngFor="let booking of cancelledBookings" [value]="booking.bookingReference">{{ booking.bookingReference }} - {{ booking.from }} to {{ booking.to }}</option>
+                    </optgroup>
+                  }
+                </select>
+                <small class="text-muted mt-1 d-block">Select a booking if this issue is related to a specific trip.</small>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label text-muted small fw-semibold">Subject <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="issueSubject" placeholder="Brief summary of the issue">
+                @if (supportForm.get('issueSubject')?.invalid && supportForm.get('issueSubject')?.touched) {
+                  <small class="text-danger mt-1 d-block">Subject is required (min 5 characters).</small>
+                }
+              </div>
+
+              <div class="col-12">
+                <label class="form-label text-muted small fw-semibold">Description <span class="text-danger">*</span></label>
+                <textarea class="form-control" rows="4" formControlName="issueDescription" placeholder="Please provide detailed information..."></textarea>
+                @if (supportForm.get('issueDescription')?.invalid && supportForm.get('issueDescription')?.touched) {
+                  <small class="text-danger mt-1 d-block">Description is required (min 20 characters).</small>
+                }
+              </div>
+            </div>
+            <div class="mt-4 pt-3 border-top text-end">
+              <button type="button" class="btn btn-outline-secondary me-2" (click)="closeSupportModal()">Cancel</button>
+              <button type="submit" class="btn btn-rb-primary px-4" [disabled]="supportForm.invalid">Submit Ticket</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Booking Details Modal -->
+@if (selectedBookingDetails || bookingDetailsLoading || bookingDetailsError) {
+  <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header border-bottom-0 bg-light">
+          <h5 class="modal-title fw-bold text-dark">Booking Details</h5>
+          <button type="button" class="btn btn-light border btn-sm" (click)="closeBookingDetails()" aria-label="Close">
+            <i class="bi bi-x-lg text-dark"></i>
+          </button>
+        </div>
+        <div class="modal-body p-4">
+          @if (bookingDetailsLoading) {
+            <div class="text-center py-4">
+              <div class="spinner-border text-primary"></div>
+            </div>
+          } @else if (bookingDetailsError) {
+            <div class="alert alert-danger">{{ bookingDetailsError }}</div>
+          } @else if (selectedBookingDetails) {
+            <div class="row g-4">
+              <div class="col-md-6">
+                <h6 class="text-muted text-uppercase small fw-bold mb-3">Journey Info</h6>
+                <div class="mb-2"><span class="text-muted me-2">Reference:</span> <span class="fw-semibold font-monospace">{{ selectedBookingDetails.bookingReference }}</span></div>
+                <div class="mb-2"><span class="text-muted me-2">Status:</span> 
+                  <span class="badge" [ngClass]="{
+                    'bg-success': selectedBookingDetails.bookingStatus === 'CONFIRMED',
+                    'bg-danger': selectedBookingDetails.bookingStatus === 'CANCELLED' || selectedBookingDetails.bookingStatus === 'FAILED',
+                    'bg-warning text-dark': selectedBookingDetails.bookingStatus === 'PENDING'
+                  }">{{ selectedBookingDetails.bookingStatus }}</span>
+                </div>
+                <div class="mb-2"><span class="text-muted me-2">Route:</span> <span class="fw-semibold">{{ selectedBookingDetails.boardingPointName }} &rarr; {{ selectedBookingDetails.droppingPointName }}</span></div>
+                <div class="mb-2"><span class="text-muted me-2">Seats:</span> <span class="fw-semibold">{{ selectedBookingDetails.totalSeats }} ({{ selectedBookingDetails.bookingSeats[0]?.seatNumber }}...)</span></div>
+                <div class="mb-2"><span class="text-muted me-2">Booked On:</span> <span class="fw-semibold">{{ selectedBookingDetails.createdAt | date:'medium' }}</span></div>
+
+                @if (selectedBookingDetails.tripSource || selectedBookingDetails.tripTravelDate) {
+                  <hr class="my-2">
+                  <h6 class="text-muted text-uppercase small fw-bold mb-3">Bus Info</h6>
+                  @if (selectedBookingDetails.busName) {
+                    <div class="mb-2"><span class="text-muted me-2">Bus:</span> <span class="fw-semibold">{{ selectedBookingDetails.busName }}</span></div>
+                  }
+                  @if (selectedBookingDetails.tripSource && selectedBookingDetails.tripDestination) {
+                    <div class="mb-2"><span class="text-muted me-2">Scheduled Route:</span> <span class="fw-semibold">{{ selectedBookingDetails.tripSource }} &rarr; {{ selectedBookingDetails.tripDestination }}</span></div>
+                  }
+                  @if (selectedBookingDetails.tripTravelDate) {
+                    <div class="mb-2"><span class="text-muted me-2">Scheduled Date:</span> <span class="fw-semibold">{{ selectedBookingDetails.tripTravelDate | date:'mediumDate' }}</span></div>
+                  }
+                  @if (selectedBookingDetails.tripDepartureTime) {
+                    <div class="mb-2"><span class="text-muted me-2">Departure Time:</span> <span class="fw-semibold">{{ selectedBookingDetails.tripTravelDate + 'T' + selectedBookingDetails.tripDepartureTime | date:'shortTime' }}</span></div>
+                  }
+                }
+              </div>
+              <div class="col-md-6">
+                <h6 class="text-muted text-uppercase small fw-bold mb-3">Payment Info</h6>
+                <div class="d-flex justify-content-between mb-1">
+                  <span class="text-muted">Base Fare</span>
+                  <span>{{ selectedBookingDetails.baseFareTotal | currency:'INR':'symbol-narrow' }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                  <span class="text-muted">Taxes & Fees</span>
+                  <span>{{ selectedBookingDetails.taxAmount | currency:'INR':'symbol-narrow' }}</span>
+                </div>
+                @if (selectedBookingDetails.insuranceAmount > 0) {
+                  <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Insurance</span>
+                    <span>{{ selectedBookingDetails.insuranceAmount | currency:'INR':'symbol-narrow' }}</span>
+                  </div>
+                }
+                @if (selectedBookingDetails.discountAmount > 0) {
+                  <div class="d-flex justify-content-between mb-1 text-success">
+                    <span>Discount</span>
+                    <span>-{{ selectedBookingDetails.discountAmount | currency:'INR':'symbol-narrow' }}</span>
+                  </div>
+                }
+                <hr class="my-2">
+                <div class="d-flex justify-content-between fw-bold mb-1">
+                  <span>Total Paid</span>
+                  <span>{{ selectedBookingDetails.totalAmount | currency:'INR':'symbol-narrow' }}</span>
+                </div>
+              </div>
+            </div>
+
+            @if (selectedBookingCancellation) {
+              <div class="mt-4 p-3 border rounded border-warning bg-warning bg-opacity-10">
+                <h6 class="text-warning-emphasis fw-bold mb-3"><i class="bi bi-info-circle me-2"></i>Cancellation Estimate</h6>
+                
+                <div class="mb-3">
+                  <span class="text-muted me-2">Cancelled On:</span> 
+                  <span class="fw-semibold">{{ selectedBookingCancellation.cancelledAt | date:'medium' }}</span>
+                </div>
+                <div class="mb-3">
+                  <span class="text-muted me-2">Refund Status:</span> 
+                  <span class="badge" [ngClass]="{
+                    'bg-success': selectedBookingCancellation.refundStatus === 'COMPLETED',
+                    'bg-warning text-dark': selectedBookingCancellation.refundStatus === 'PENDING',
+                    'bg-info text-dark': selectedBookingCancellation.refundStatus === 'INITIATED',
+                    'bg-secondary': !['COMPLETED', 'PENDING', 'INITIATED'].includes(selectedBookingCancellation.refundStatus)
+                  }">{{ selectedBookingCancellation.refundStatus }}</span>
+                </div>
+                
+                @if (selectedBookingCancellation.paymentMethod) {
+                  <div class="mb-3">
+                    <span class="text-muted me-2">Payment Method:</span> 
+                    <span class="fw-semibold">
+                      {{ selectedBookingCancellation.paymentMethod === 'CREDIT/DEBIT CARD' ? 'Card' : 
+                         selectedBookingCancellation.paymentMethod === 'NETBANKING' ? 'Netbanking' : 
+                         selectedBookingCancellation.paymentMethod === 'WALLET' ? 'Wallet' : 
+                         selectedBookingCancellation.paymentMethod === 'UPI' ? 'UPI' : 
+                         selectedBookingCancellation.paymentMethod }}
+                      @if (selectedBookingCancellation.paymentProvider) {
+                        <span class="text-secondary small ms-1">({{ selectedBookingCancellation.paymentProvider }})</span>
+                      }
+                    </span>
+                  </div>
+                }
+                
+                @if (selectedBookingCancellation.refundDestination) {
+                  <div class="mb-3">
+                    <span class="text-muted me-2">Refund Credited To:</span> 
+                    <span class="fw-semibold text-primary"><i class="bi bi-arrow-return-right me-1"></i>{{ selectedBookingCancellation.refundDestination }}</span>
+                  </div>
+                }
+
+                <div class="d-flex justify-content-between mb-1">
+                  <span class="text-muted">Total Booking Amount</span>
+                  <span class="fw-semibold">{{ selectedBookingDetails.totalAmount | currency:'INR':'symbol-narrow' }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1 text-danger">
+                  <span>Cancellation Fee</span>
+                  <span>-{{ selectedBookingCancellation.cancellationFee | currency:'INR':'symbol-narrow' }}</span>
+                </div>
+                @if (selectedBookingCancellation.ruleApplied) {
+                  <div class="text-end small text-muted fst-italic mb-2">
+                    ({{ selectedBookingCancellation.ruleApplied }})
+                  </div>
+                }
+                <hr class="my-2 border-warning">
+                <div class="d-flex justify-content-between fw-bold text-success">
+                  <span>Estimated Refund Amount</span>
+                  <span class="fs-5">{{ selectedBookingCancellation.refundAmount | currency:'INR':'symbol-narrow' }}</span>
+                </div>
+              </div>
+            }
+          }
+        </div>
+        <div class="modal-footer border-top-0 bg-light">
+          <button type="button" class="btn btn-outline-secondary" (click)="closeBookingDetails()">Close</button>
         </div>
       </div>
     </div>

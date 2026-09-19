@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { AuthStateService } from '../../core/services/auth-state.service';
 import { TokenService } from '../../core/services/token-service';
 import { APP_CONSTANTS } from '../../core/constants/app-constants';
@@ -7,6 +8,8 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { UserService } from '../../core/services/user.service';
 import { AuthService } from '../../core/services/auth.service';
 import { User } from '../../core/models/user';
+import { CancellationService } from '../../core/services/cancellation.service';
+import { SupportTicketService } from '../../core/services/support-ticket.service';
 
 interface AdminNavItem {
   icon: string;
@@ -21,9 +24,9 @@ interface AdminNavItem {
   templateUrl: './admin-layout.component.html',
   styleUrl: './admin-layout.component.css',
 })
-export class AdminLayoutComponent {
+export class AdminLayoutComponent implements OnInit, OnDestroy {
   isSidebarCollapsed = false;
-  readonly currentYear = new Date().getFullYear();
+  currentYear = new Date().getFullYear();
 
   // Temporary password change
   passwordForm: FormGroup;
@@ -35,6 +38,12 @@ export class AdminLayoutComponent {
   passengerLoginError = '';
   passengerLoginLoading = false;
   showPassengerLoginModal = false;
+
+  pendingRefundsCount: number = 0;
+  private refundSub?: Subscription;
+
+  openTicketsCount: number = 0;
+  private ticketSub?: Subscription;
 
   readonly adminNavItems: AdminNavItem[] = [
     { icon: 'bi-speedometer2', label: 'Dashboard', route: '/admin', roles: [APP_CONSTANTS.ROLES.ADMIN] },
@@ -67,6 +76,7 @@ export class AdminLayoutComponent {
     { icon: 'bi-headset', label: 'Support Tickets', route: '/support/tickets', roles: [APP_CONSTANTS.ROLES.SUPPORT_AGENT] },
     { icon: 'bi-ticket-perforated', label: 'Bookings', route: '/support/bookings', roles: [APP_CONSTANTS.ROLES.SUPPORT_AGENT] },
     { icon: 'bi-person-lines-fill', label: 'Customer Information', route: '/support/customers', roles: [APP_CONSTANTS.ROLES.SUPPORT_AGENT] },
+    { icon: 'bi-cash-coin', label: 'Refunds', route: '/support/refunds', roles: [APP_CONSTANTS.ROLES.SUPPORT_AGENT] },
   ];
 
   constructor(
@@ -75,7 +85,10 @@ export class AdminLayoutComponent {
     private router: Router,
     private fb: FormBuilder,
     private userService: UserService,
-    private authService: AuthService
+    private authService: AuthService,
+    private cancellationService: CancellationService,
+    private supportTicketService: SupportTicketService,
+    private cdr: ChangeDetectorRef
   ) {
     this.passwordForm = this.fb.group({
       currentPassword: ['', Validators.required],
@@ -87,6 +100,34 @@ export class AdminLayoutComponent {
       email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required]
     });
+  }
+
+  ngOnInit(): void {
+    if (this.isSupportAgent) {
+      // Trigger API fetch to initialize the subject
+      this.cancellationService.getPendingRefunds().subscribe({
+        error: (err) => console.error('Failed to fetch pending refunds', err)
+      });
+      
+      this.refundSub = this.cancellationService.pendingRefundsCount$.subscribe(count => {
+        this.pendingRefundsCount = count;
+        this.cdr.detectChanges();
+      });
+
+      this.supportTicketService.getTicketsByOperator().subscribe({
+        error: (err) => console.error('Failed to fetch support tickets', err)
+      });
+
+      this.ticketSub = this.supportTicketService.openTicketsCount$.subscribe(count => {
+        this.openTicketsCount = count;
+        this.cdr.detectChanges();
+      });
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.refundSub?.unsubscribe();
+    this.ticketSub?.unsubscribe();
   }
 
   passwordMatchValidator(g: FormGroup) {

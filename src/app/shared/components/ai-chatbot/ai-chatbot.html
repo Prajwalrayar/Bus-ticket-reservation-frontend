@@ -1,29 +1,67 @@
 <div class="chatbot-container">
-  <button class="chat-toggle-btn" (click)="toggleChat()">
-    <i class="bi bi-chat-dots-fill" *ngIf="!isOpen"></i>
+  <button class="chat-toggle-btn" (click)="toggleChat()" id="ai-chat-toggle">
+    <i class="bi bi-robot" *ngIf="!isOpen"></i>
     <i class="bi bi-x-lg" *ngIf="isOpen"></i>
   </button>
 
   <div class="chat-window" *ngIf="isOpen">
     <div class="chat-header">
-      <i class="bi bi-robot me-2"></i> AI Assistant
+      <i class="bi bi-robot me-2"></i> AI Travel Assistant
+      <span class="header-badge">● Online</span>
     </div>
-    <div class="chat-body" #chatBody>
-      <div *ngFor="let msg of messages" 
-           [ngClass]="{'bot-msg': msg.isBot, 'user-msg': !msg.isBot}" 
+
+    <div class="chat-body">
+      <div *ngFor="let msg of messages"
+           [ngClass]="{'bot-msg': msg.isBot, 'user-msg': !msg.isBot}"
            class="chat-msg">
-        {{ msg.text }}
+
+        <ng-container *ngFor="let seg of msg.segments">
+          <!-- Text segment with safe HTML (supports **bold**) -->
+          <span *ngIf="seg.type === 'text'" [innerHTML]="seg.safeHtml"></span>
+
+          <!-- Book Now button -->
+          <div *ngIf="seg.type === 'book_btn'" class="book-btn-wrapper">
+            <button class="book-now-btn" (click)="bookBus(seg.bookData!)">
+              <i class="bi bi-ticket-perforated-fill"></i> Book Now
+            </button>
+          </div>
+
+          <!-- Date Picker -->
+          <div *ngIf="seg.type === 'date_picker'" class="date-picker-wrapper mt-2 mb-2 p-2 rounded" style="background: var(--bg-tertiary);">
+            <label class="form-label text-muted small mb-1">Select Date:</label>
+            <input type="date" class="form-control form-control-sm border-0 shadow-none" 
+                   (input)="submitDate(seg.datePickerData!.source, seg.datePickerData!.destination, $event)">
+          </div>
+        </ng-container>
       </div>
+
+      <!-- Typing indicator -->
       <div *ngIf="isTyping" class="chat-msg bot-msg typing-indicator">
-        <i class="bi bi-three-dots"></i> Typing...
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
       </div>
     </div>
+
     <div class="chat-footer">
-      <input type="text" [(ngModel)]="currentMessage" (keyup.enter)="sendMessage()" 
-             placeholder="Type a message..." class="chat-input"/>
-      <button class="send-btn" (click)="sendMessage()">
-        <i class="bi bi-send-fill"></i>
-      </button>
+      <ng-container *ngIf="isLoggedIn; else loginPrompt">
+        <input
+          type="text"
+          [(ngModel)]="currentMessage"
+          (keyup.enter)="sendMessage()"
+          placeholder="Ask about buses, bookings..."
+          class="chat-input"
+          id="ai-chat-input"
+        />
+        <button class="send-btn" (click)="sendMessage()" id="ai-chat-send">
+          <i class="bi bi-send-fill"></i>
+        </button>
+      </ng-container>
+      <ng-template #loginPrompt>
+        <button class="login-prompt-btn" (click)="navigateToLogin()">
+          <i class="bi bi-box-arrow-in-right me-2"></i> Login to Chat
+        </button>
+      </ng-template>
     </div>
   </div>
 </div>

@@ -7,11 +7,15 @@ import { SavedPassengerService } from '../../../core/services/saved-passenger.se
 import { ReviewService } from '../../../core/services/review.service';
 import { Booking } from '../../../core/models/booking';
 import { TripDTO } from '../../../core/models/trip';
-import { CancellationDTO } from '../../../core/models/cancellation';
+import { CancellationDTO, CancellationEstimateDTO } from '../../../core/models/cancellation';
 import { SavedPassengerDTO, SavedPassengerRequest } from '../../../core/models/saved-passenger';
 import { ReviewDTO, ReviewCreateRequest } from '../../../core/models/review';
 import { UserService } from '../../../core/services/user.service';
 import { UserDTO } from '../../../core/models/user';
+import { SupportTicketService } from '../../../core/services/support-ticket.service';
+import { SupportTicketDTO, SupportTicketCreateRequest, SupportTicketWithMessagesDTO } from '../../../core/models/support-ticket';
+import { WalletService } from '../../../core/services/wallet.service';
+import { WalletTransactionDTO } from '../../../core/models/wallet';
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { CustomValidators } from '../../../core/validators/custom-validators';
 import { forkJoin, of } from 'rxjs';
@@ -39,15 +43,84 @@ export interface UIBooking {
   styleUrl: './profile.component.css'
 })
 export class ProfileComponent implements OnInit {
-  activeTab: 'BOOKINGS' | 'PASSENGERS' | 'SETTINGS' = 'BOOKINGS';
+  activeTab: 'BOOKINGS' | 'PASSENGERS' | 'SETTINGS' | 'SUPPORT' | 'POLICIES' | 'WALLET' | 'PAYMENT_METHODS' | 'OFFERS' | 'ABOUT' | 'COUNTRY' | 'CURRENCY' | 'LANGUAGE' | 'APPEARANCE' | 'NOTIFICATIONS' | 'BOOKING_PREFS' = 'BOOKINGS';
+  showMenu: boolean = true;
+  selectedLanguage: string = 'en';
+  country: string = 'India';
+  currency: string = 'INR';
+  notificationsEnabled: boolean = true;
+  promotionsEnabled: boolean = false;
+  seatPreference: string = 'Window';
+  mealPreference: string = 'Vegetarian';
   bookingTab: 'UPCOMING' | 'COMPLETED' | 'CANCELLED' = 'UPCOMING';
+  openPolicyTab: string = 'cancellation';
+
+  myTickets: SupportTicketDTO[] = [];
+  loadingTickets: boolean = false;
+  
+  // Wallet & Stats State
+  walletBalance: number | null = null;
+  walletTransactions: WalletTransactionDTO[] = [];
+  loadingWalletTransactions: boolean = false;
+  totalDistance: number = 0;
+  carbonSavings: number = 0;
+  
+  showSupportModal: boolean = false;
+  supportForm!: FormGroup;
+  supportFormError: string = '';
+  supportFormSuccess: string = '';
+  selectedFile: File | null = null;
+  fileError: string = '';
+
+  readonly ISSUE_CATEGORIES: { [key: string]: string[] } = {
+    'Booking': ['Booking Failed', 'Did not receive ticket', 'Incorrect Date/Time'],
+    'Payment': ['Payment Failed', 'Amount Deducted but Booking Failed', 'Duplicate Payment', 'Payment Pending', 'Incorrect Amount Charged'],
+    'Cancellation & Refund': ['Refund not received', 'Incorrect refund amount', 'Unable to cancel'],
+    'Seat': ['Seat number changed', 'Different seat type provided'],
+    'Trip/Bus': ['Bus delayed', 'Bus cancelled', 'Different bus provided', 'AC not working', 'Poor hygiene'],
+    'Boarding/Dropping': ['Bus did not stop at boarding point', 'Dropped at wrong point', 'Staff behavior'],
+    'Ticket/QR Code': ['Unable to download ticket', 'QR code not scannable'],
+    'Wallet': ['Cashback not received', 'Unable to use wallet balance'],
+    'Offers/Coupons': ['Coupon code invalid', 'Discount not applied'],
+    'Account': ['Unable to update profile', 'Password reset issue'],
+    'Lost & Found': ['Lost luggage', 'Left item in bus'],
+    'Other': ['General inquiry', 'Other issue']
+  };
+
+  get availableIssueTypes(): string[] {
+    const category = this.supportForm?.get('issueCategory')?.value;
+    return category ? this.ISSUE_CATEGORIES[category] || [] : [];
+  }
+
+  get showUpcomingBookings(): boolean {
+    const category = this.supportForm?.get('issueCategory')?.value;
+    if (!category) return true;
+    return ['Booking', 'Ticket/QR Code', 'Seat', 'Payment', 'Wallet', 'Offers/Coupons', 'Account', 'Other'].includes(category);
+  }
+
+  get showCompletedBookings(): boolean {
+    const category = this.supportForm?.get('issueCategory')?.value;
+    if (!category) return true;
+    return ['Trip/Bus', 'Boarding/Dropping', 'Lost & Found', 'Payment', 'Wallet', 'Offers/Coupons', 'Account', 'Other'].includes(category);
+  }
+
+  get showCancelledBookings(): boolean {
+    const category = this.supportForm?.get('issueCategory')?.value;
+    if (!category) return false;
+    return ['Cancellation & Refund', 'Payment', 'Wallet', 'Offers/Coupons', 'Account', 'Other'].includes(category);
+  }
 
   upcomingBookings: UIBooking[] = [];
   completedBookings: UIBooking[] = [];
   cancelledBookings: UIBooking[] = [];
-
-  savedPassengers: SavedPassengerDTO[] = [];
-  reviewsByBookingId: { [bookingId: string]: ReviewDTO } = {};
+  
+  myRawBookings: Booking[] = []; // Store raw bookings for detailed view
+  
+  // --- Booking Details Modal State ---
+  selectedBookingDetails: Booking | null = null;
+  selectedBookingCancellation: CancellationDTO | null = null;
+  bookingDetailsLoading: boolean = false;
+  bookingDetailsError: string = '';
 
   loadingBookings: boolean = true;
   loadingPassengers: boolean = false;
@@ -60,8 +133,10 @@ export class ProfileComponent implements OnInit {
   showCancelConfirmModal: boolean = false;
   showCancelResultModal: boolean = false;
   cancellationResult: CancellationDTO | null = null;
+  cancellationEstimate: CancellationEstimateDTO | null = null;
 
   // Saved Passenger State
+  savedPassengers: SavedPassengerDTO[] = [];
   showPassengerModal: boolean = false;
   editingPassengerId: string | null = null;
   passengerForm: SavedPassengerRequest = {
@@ -75,11 +150,16 @@ export class ProfileComponent implements OnInit {
   passengerError: string = '';
 
   // Review State
+  reviewsByBookingId: { [bookingId: string]: ReviewDTO } = {};
   showReviewModal: boolean = false;
   selectedBookingIdForReview: string | null = null;
   reviewForm: ReviewCreateRequest = { rating: 5, comment: '' };
   reviewError: string = '';
   isEditingReview: boolean = false;
+
+  // Ticket Thread State
+  selectedTicketThread: SupportTicketWithMessagesDTO | null = null;
+  ticketThreadLoading: boolean = false;
 
   // Profile Edit State
   myProfile: UserDTO | null = null;
@@ -103,7 +183,9 @@ export class ProfileComponent implements OnInit {
     private userService: UserService,
     private fb: FormBuilder,
     public themeService: ThemeService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private supportTicketService: SupportTicketService,
+    private walletService: WalletService
   ) {
     this.profileForm = this.fb.group({
       userName: ['', [Validators.required, CustomValidators.validName()]],
@@ -115,6 +197,18 @@ export class ProfileComponent implements OnInit {
       newPassword: ['', [Validators.required, CustomValidators.validPassword()]],
       confirmPassword: ['', [Validators.required]]
     }, { validators: this.passwordMatchValidator });
+
+    this.supportForm = this.fb.group({
+      issueCategory: ['', Validators.required],
+      issueType: ['', Validators.required],
+      issueSubject: ['', [Validators.required, Validators.maxLength(100)]],
+      bookingReference: [''],
+      issueDescription: ['', [Validators.required, Validators.maxLength(1000)]]
+    });
+
+    this.supportForm.get('issueCategory')?.valueChanges.subscribe(() => {
+      this.supportForm.get('issueType')?.setValue('');
+    });
   }
 
   passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
@@ -138,17 +232,290 @@ export class ProfileComponent implements OnInit {
       }
     });
 
+    this.route.fragment.subscribe(fragment => {
+      if (fragment) {
+        const validTabs = ['BOOKINGS', 'PASSENGERS', 'SETTINGS', 'SUPPORT', 'POLICIES', 'WALLET', 'PAYMENT_METHODS', 'OFFERS', 'ABOUT', 'COUNTRY', 'CURRENCY', 'LANGUAGE', 'APPEARANCE', 'NOTIFICATIONS', 'BOOKING_PREFS'];
+        const tab = fragment.toUpperCase();
+        if (validTabs.includes(tab)) {
+          this.setTab(tab as any);
+        }
+      }
+    });
+
     this.fetchMyProfile();
     this.fetchMyReviews();
     this.fetchMyBookings();
+    this.fetchMyWallet();
+    
+    const savedLang = localStorage.getItem('selectedLanguage');
+    if (savedLang) {
+      this.selectedLanguage = savedLang;
+    }
   }
 
-  setTab(tab: 'BOOKINGS' | 'PASSENGERS' | 'SETTINGS'): void {
+  fetchMyWallet(): void {
+    this.walletService.getMyWallet().subscribe({
+      next: (wallet) => {
+        this.walletBalance = wallet.balance;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Error fetching wallet balance', err);
+      }
+    });
+  }
+
+  changeLanguage(lang: string): void {
+    this.selectedLanguage = lang;
+    localStorage.setItem('selectedLanguage', lang);
+    // Future: trigger translation service update here
+  }
+
+  setTab(tab: 'BOOKINGS' | 'PASSENGERS' | 'SETTINGS' | 'SUPPORT' | 'POLICIES' | 'WALLET' | 'PAYMENT_METHODS' | 'OFFERS' | 'ABOUT' | 'COUNTRY' | 'CURRENCY' | 'LANGUAGE' | 'APPEARANCE' | 'NOTIFICATIONS' | 'BOOKING_PREFS'): void {
     this.activeTab = tab;
-    if (tab === 'PASSENGERS') {
+    this.showMenu = false;
+    
+    if (tab === 'PASSENGERS' && this.savedPassengers.length === 0) {
       this.fetchSavedPassengers();
     }
+    if (tab === 'SETTINGS' && !this.myProfile) {
+      this.fetchMyProfile();
+    }
+    if (tab === 'SUPPORT' && this.myTickets.length === 0) {
+      this.fetchMyTickets();
+    }
+    if (tab === 'WALLET' && this.walletTransactions.length === 0) {
+      this.fetchWalletTransactions();
+    }
+    
     this.cdr.markForCheck();
+  }
+  
+  fetchWalletTransactions(): void {
+    this.loadingWalletTransactions = true;
+    this.walletService.getMyTransactions().subscribe({
+      next: (txns) => {
+        this.walletTransactions = txns;
+        this.loadingWalletTransactions = false;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Error fetching wallet transactions', err);
+        this.loadingWalletTransactions = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+  
+  goBackToMenu(): void {
+    this.showMenu = true;
+    this.router.navigate([], { fragment: undefined, queryParamsHandling: 'preserve' });
+    this.cdr.markForCheck();
+  }
+
+  // --- SUPPORT TICKETS ---
+
+  fetchMyTickets(): void {
+    this.loadingTickets = true;
+    this.supportTicketService.getMyTickets().subscribe({
+      next: (tickets) => {
+        this.myTickets = tickets.sort((a, b) => {
+          const dateA = new Date(a.updatedAt || a.createdAt).getTime();
+          const dateB = new Date(b.updatedAt || b.createdAt).getTime();
+          return dateB - dateA;
+        });
+        this.loadingTickets = false;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Failed to load tickets', err);
+        this.loadingTickets = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  // --- SUPPORT TICKETS CONVERSATION STATE ---
+  selectedTicket: import('../../../core/models/support-ticket').SupportTicketWithMessagesDTO | null = null;
+  selectedTicketLoading: boolean = false;
+  selectedTicketError: string = '';
+  replyMessage: string = '';
+  replyLoading: boolean = false;
+
+  viewTicketDetail(ticketId: string): void {
+    this.selectedTicketLoading = true;
+    this.selectedTicketError = '';
+    this.selectedTicket = null;
+    this.showSupportModal = false; // Ensure create modal is closed
+
+    this.supportTicketService.getTicketWithMessages(ticketId).subscribe({
+      next: (ticket) => {
+        this.selectedTicket = ticket;
+        this.selectedTicketLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.selectedTicketError = err.error?.message || 'Failed to load ticket details';
+        this.selectedTicketLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  closeTicketView(): void {
+    this.selectedTicket = null;
+    this.replyMessage = '';
+  }
+
+  focusReplyBox(): void {
+    this.replyMessage = 'No, I still need help. ';
+    setTimeout(() => {
+      const el = document.getElementById('replyBox');
+      if (el) el.focus();
+    }, 0);
+  }
+
+  sendReply(): void {
+    if (!this.selectedTicket || !this.replyMessage.trim()) return;
+    this.replyLoading = true;
+    
+    const request = {
+      message: this.replyMessage,
+      isInternal: false
+    };
+
+    this.supportTicketService.addMessage(this.selectedTicket.ticketId, request).subscribe({
+      next: () => {
+        this.replyLoading = false;
+        this.replyMessage = '';
+        this.viewTicketDetail(this.selectedTicket!.ticketId);
+        this.fetchMyTickets();
+      },
+      error: (err) => {
+        this.selectedTicketError = err.error?.message || 'Failed to send reply';
+        this.replyLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  resolveTicket(ticketId: string): void {
+    this.supportTicketService.resolveTicket(ticketId).subscribe({
+      next: () => { 
+        this.fetchMyTickets();
+        if (this.selectedTicket && this.selectedTicket.ticketId === ticketId) {
+          this.viewTicketDetail(ticketId);
+        }
+      },
+      error: (err) => {
+        this.selectedTicketError = err.error?.message || 'Failed to resolve ticket';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  getStatusBadgeClass(status: string): string {
+    switch (status) {
+      case 'OPEN': return 'bg-primary';
+      case 'ASSIGNED': return 'bg-info text-dark';
+      case 'IN_PROGRESS': return 'bg-warning text-dark';
+      case 'WAITING_FOR_PASSENGER': return 'bg-danger'; // Requires action
+      case 'PASSENGER_REPLIED': return 'bg-success bg-opacity-75';
+      case 'RESOLVED': return 'bg-success';
+      default: return 'bg-secondary';
+    }
+  }
+
+  getPriorityBadgeClass(priority: string): string {
+    switch (priority) {
+      case 'HIGH': return 'text-danger fw-bold';
+      case 'MEDIUM': return 'text-warning fw-bold';
+      case 'LOW': return 'text-info fw-bold';
+      default: return 'text-secondary';
+    }
+  }
+
+  openSupportModal(): void {
+    this.supportFormError = '';
+    this.supportFormSuccess = '';
+    this.selectedFile = null;
+    this.fileError = '';
+    this.supportForm.reset({ issueCategory: '', issueType: '', issueSubject: '', bookingReference: '', issueDescription: '' });
+    this.showSupportModal = true;
+    this.cdr.markForCheck();
+  }
+
+  closeSupportModal(): void {
+    this.showSupportModal = false;
+    this.cdr.markForCheck();
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      
+      // Validate type
+      if (!['image/png', 'image/jpeg', 'application/pdf'].includes(file.type)) {
+        this.fileError = 'Invalid file type. Only PNG, JPG, and PDF are allowed.';
+        this.selectedFile = null;
+        input.value = '';
+        return;
+      }
+      
+      // Validate size (5 MB)
+      if (file.size > 5 * 1024 * 1024) {
+        this.fileError = 'File size exceeds 5MB limit.';
+        this.selectedFile = null;
+        input.value = '';
+        return;
+      }
+      
+      this.fileError = '';
+      this.selectedFile = file;
+    }
+  }
+
+  submitSupportTicket(): void {
+    this.supportForm.markAllAsTouched();
+    this.supportFormError = '';
+    this.supportFormSuccess = '';
+
+    if (this.supportForm.invalid) {
+      return;
+    }
+
+    const payload = this.supportForm.value;
+    
+    const formData = new FormData();
+    formData.append('issueCategory', payload.issueCategory);
+    formData.append('issueType', payload.issueType);
+    formData.append('issueSubject', payload.issueSubject);
+    formData.append('issueDescription', payload.issueDescription);
+    formData.append('operatorId', ''); 
+    if (payload.bookingReference) {
+      formData.append('bookingReference', payload.bookingReference);
+    }
+    
+    if (this.selectedFile) {
+      formData.append('attachment', this.selectedFile);
+    }
+
+    this.supportTicketService.createTicket(formData).subscribe({
+      next: (ticket) => {
+        this.supportFormSuccess = 'Ticket created successfully!';
+        this.fetchMyTickets();
+        
+        // Auto-close modal on success after a short delay so user sees the message
+        setTimeout(() => {
+          this.closeSupportModal();
+        }, 1500);
+      },
+      error: (err) => {
+        this.supportFormError = err.error?.message || 'Failed to create ticket.';
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   setBookingTab(tab: 'UPCOMING' | 'COMPLETED' | 'CANCELLED'): void {
@@ -309,7 +676,42 @@ export class ProfileComponent implements OnInit {
     });
   }
 
+  viewBookingDetails(bookingId: string): void {
+    this.bookingDetailsError = '';
+    this.selectedBookingDetails = this.myRawBookings.find(b => b.bookingId === bookingId) || null;
+    this.selectedBookingCancellation = null;
+    
+    if (this.selectedBookingDetails) {
+      if (this.selectedBookingDetails.bookingStatus === 'CANCELLED' || this.selectedBookingDetails.bookingStatus === 'FAILED') {
+        this.bookingDetailsLoading = true;
+        this.cancellationService.getCancellationByBooking(bookingId).subscribe({
+          next: (cancellation) => {
+            this.selectedBookingCancellation = cancellation;
+            this.bookingDetailsLoading = false;
+            this.cdr.markForCheck();
+          },
+          error: (err) => {
+            console.error('Error fetching cancellation details', err);
+            // It's possible a FAILED booking doesn't have a cancellation record yet.
+            this.bookingDetailsLoading = false;
+            this.cdr.markForCheck();
+          }
+        });
+      } else {
+        this.cdr.markForCheck();
+      }
+    }
+  }
+
+  closeBookingDetails(): void {
+    this.selectedBookingDetails = null;
+    this.selectedBookingCancellation = null;
+    this.cdr.markForCheck();
+  }
+
   processBookings(bookings: Booking[]): void {
+    this.myRawBookings = bookings;
+    
     if (!bookings || bookings.length === 0) {
       this.upcomingBookings = [];
       this.completedBookings = [];
@@ -354,6 +756,10 @@ export class ProfileComponent implements OnInit {
       this.completedBookings = uiBookings.filter(b => b.status === 'CONFIRMED' && b.date && b.date < today);
       this.cancelledBookings = uiBookings.filter(b => b.status === 'CANCELLED' || b.status === 'FAILED');
 
+      // Calculate travel stats (mock data based on completed bookings)
+      this.totalDistance = this.completedBookings.length * 320; // Assume 320km per trip
+      this.carbonSavings = this.totalDistance * 0.12; // Assume 0.12kg CO2 saved per km
+
       // Set isCompletedJourney flag based on the same logic used for completedBookings
       uiBookings.forEach(b => {
         b.isCompletedJourney = b.status === 'CONFIRMED' && b.date !== null && b.date < today;
@@ -367,7 +773,20 @@ export class ProfileComponent implements OnInit {
   cancelBooking(bookingId: string): void {
     this.selectedBookingIdToCancel = bookingId;
     this.cancelReason = '';
-    this.showCancelConfirmModal = true;
+    this.cancelError = '';
+    this.cancellationEstimate = null;
+    
+    this.cancellationService.getCancellationEstimate(bookingId).subscribe({
+      next: (estimate) => {
+        this.cancellationEstimate = estimate;
+        this.showCancelConfirmModal = true;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.cancelError = err.error?.message || 'Failed to fetch cancellation estimate. It may be too late to cancel.';
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   confirmCancelBooking(): void {
@@ -397,6 +816,7 @@ export class ProfileComponent implements OnInit {
   closeCancelConfirmModal(): void {
     this.showCancelConfirmModal = false;
     this.selectedBookingIdToCancel = null;
+    this.cancellationEstimate = null;
   }
 
   viewTicket(bookingReference: string): void {
@@ -536,5 +956,52 @@ export class ProfileComponent implements OnInit {
         }
       });
     }
+  }
+
+  // --- SUPPORT TICKET REPLIES ---
+  viewTicketThread(ticketId: string): void {
+    this.ticketThreadLoading = true;
+    this.selectedTicketThread = null;
+    this.supportTicketService.getTicketWithMessages(ticketId).subscribe({
+      next: (ticket) => {
+        this.selectedTicketThread = ticket;
+        this.ticketThreadLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Failed to load ticket', err);
+        this.ticketThreadLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  closeTicketThread(): void {
+    this.selectedTicketThread = null;
+    this.cdr.markForCheck();
+  }
+
+  replyToTicket(): void {
+    if (!this.selectedTicketThread || !this.replyMessage.trim()) return;
+    this.replyLoading = true;
+    
+    this.supportTicketService.addMessage(this.selectedTicketThread.ticketId, {
+      message: this.replyMessage,
+      isInternal: false
+    }).subscribe({
+      next: (msg) => {
+        if (this.selectedTicketThread) {
+          this.selectedTicketThread.messages.push(msg);
+        }
+        this.replyMessage = '';
+        this.replyLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Error replying to ticket', err);
+        this.replyLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
   }
 }

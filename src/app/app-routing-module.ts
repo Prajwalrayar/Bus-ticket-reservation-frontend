@@ -231,6 +231,11 @@ const routes: Routes = [
         data: { expectedRoles: [APP_CONSTANTS.ROLES.SUPPORT_AGENT] }
       },
       {
+        path: 'support/refunds',
+        component: SupportDashboard,
+        data: { expectedRoles: [APP_CONSTANTS.ROLES.SUPPORT_AGENT] }
+      },
+      {
         path: 'support/profile',
         component: UserProfileComponent,
         data: { expectedRoles: [APP_CONSTANTS.ROLES.SUPPORT_AGENT] }

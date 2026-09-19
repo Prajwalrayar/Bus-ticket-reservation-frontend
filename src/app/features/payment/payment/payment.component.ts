@@ -6,26 +6,9 @@ import { BookingService } from '../../../core/services/booking.service';
 import { WalletService } from '../../../core/services/wallet.service';
 import { PaymentStatus, PaymentRequest, PaymentDTO } from '../../../core/models/payment';
 
-// Valid UPI handle suffixes used by real Indian payment apps/banks
-const VALID_UPI_HANDLES = [
-  'ybl', 'upi', 'oksbi', 'okaxis', 'okicici', 'okhdfcbank', 'okbizaxis',
-  'paytm', 'paytmbank', 'naviaxis', 'axl', 'fbl', 'ibl', 'indus', 'kotak',
-  'allbank', 'andb', 'barodampay', 'boi', 'citi', 'citibanknri', 'cnrb',
-  'centralbank', 'eazypay', 'equitas', 'federal', 'finobank', 'hdfcbankjd',
-  'hsbc', 'idbi', 'idfc', 'idfcbank', 'idfcfirst', 'ikwik', 'indbank',
-  'iob', 'jkb', 'jsb', 'juspay', 'karnataka', 'kvb', 'lime', 'lvb', 'mahb',
-  'nsdl', 'obc', 'pingpay', 'pnb', 'pockets', 'psb', 'rbl', 'rmhdfcbank',
-  'sbi', 'sbiepay', 'sc', 'scb', 'shriramhfl', 'slicepay', 'superyes',
-  'tjsb', 'ubi', 'ucb', 'unionbank', 'utbi', 'vijb', 'waaxis', 'yesbankltd',
-  'airtel', 'airtelpaymentsbank', 'amazonnew', 'apl', 'bhim', 'cbp', 'dlb',
-  'dz', 'fam', 'gjsb', 'gpay', 'imobile', 'kbl', 'kmb', 'kpsc', 'laxmi',
-  'niyoicici', 'postbank', 'ratnaker', 'rns', 'rpcb', 'rupay', 'sib', 'syndicate',
-  'tapicici', 'timecosmos', 'uco', 'united', 'utiitsl', 'vijaya', 'zoicici'
-];
+declare var Razorpay: any;
 
-const UPI_REGEX = new RegExp(
-  '^[a-zA-Z0-9._-]{3,256}@(' + VALID_UPI_HANDLES.join('|') + ')$'
-);
+// Removed manual UPI handlers since we are using Razorpay checkout modal
 
 @Component({
   selector: 'app-payment',
@@ -40,10 +23,6 @@ export class PaymentComponent implements OnInit, OnDestroy {
   paymentStatus: string = 'INITIATED';
   errorMessage: string = '';
   bookingId: string = '';
-  upiError: string = '';
-
-  // Form fields
-  upiId: string = '';
 
   // Timer
   countdownTimer: any;
@@ -56,14 +35,10 @@ export class PaymentComponent implements OnInit, OnDestroy {
 
   // Inline wallet recharge
   showRechargeForm: boolean = false;
-  rechargeUpiId: string = '';
   rechargeAmount: number = 100;
-  rechargeUpiError: string = '';
   rechargeError: string = '';
   rechargeSuccess: string = '';
   isRecharging: boolean = false;
-
-  /** Amount still required after applying wallet balance */
   get remainingAmount(): number {
     if (this.useWallet && this.walletBalance > 0) {
       return Math.max(0, this.totalAmount - this.walletBalance);
@@ -143,25 +118,9 @@ export class PaymentComponent implements OnInit, OnDestroy {
 
   setPaymentMethod(method: string): void {
     this.paymentMethod = method;
-    this.upiError = '';
     this.showRechargeForm = false;
     this.rechargeError = '';
     this.rechargeSuccess = '';
-    this.cdr.markForCheck();
-  }
-
-  isValidUpi(id: string): boolean {
-    return UPI_REGEX.test(id.trim());
-  }
-
-  validateUpi(): void {
-    if (!this.upiId.trim()) {
-      this.upiError = 'UPI ID is required.';
-    } else if (!this.isValidUpi(this.upiId)) {
-      this.upiError = 'Invalid UPI ID. Use a valid format like name@ybl, name@okaxis, name@paytm etc.';
-    } else {
-      this.upiError = '';
-    }
     this.cdr.markForCheck();
   }
 
@@ -170,8 +129,6 @@ export class PaymentComponent implements OnInit, OnDestroy {
   openRechargeForm(): void {
     this.showRechargeForm = true;
     this.rechargeAmount = this.suggestedRechargeAmount;
-    this.rechargeUpiId = '';
-    this.rechargeUpiError = '';
     this.rechargeError = '';
     this.rechargeSuccess = '';
     this.cdr.markForCheck();
@@ -182,18 +139,7 @@ export class PaymentComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  validateRechargeUpi(): void {
-    if (!this.rechargeUpiId.trim()) {
-      this.rechargeUpiError = 'UPI ID is required.';
-    } else if (!this.isValidUpi(this.rechargeUpiId)) {
-      this.rechargeUpiError = 'Invalid UPI ID. Use a valid format like name@ybl, name@okaxis, name@paytm etc.';
-    } else {
-      this.rechargeUpiError = '';
-    }
-    this.cdr.markForCheck();
-  }
-
-  rechargeWallet(): void {
+  async rechargeWallet(): Promise<void> {
     this.rechargeError = '';
     this.rechargeSuccess = '';
 
@@ -202,15 +148,75 @@ export class PaymentComponent implements OnInit, OnDestroy {
       this.cdr.markForCheck();
       return;
     }
-    if (!this.rechargeUpiId.trim() || !this.isValidUpi(this.rechargeUpiId)) {
-      this.validateRechargeUpi();
+
+    if (this.rechargeAmount > 5000) {
+      this.rechargeError = 'Maximum recharge amount is ₹5000.';
+      this.cdr.markForCheck();
       return;
     }
 
     this.isRecharging = true;
     this.cdr.markForCheck();
 
-    this.walletService.rechargeWallet({ amount: this.rechargeAmount, upiId: this.rechargeUpiId }).subscribe({
+    const isScriptLoaded = await this.loadRazorpayScript();
+    if (!isScriptLoaded) {
+      this.rechargeError = 'Failed to load Razorpay SDK. Please check your connection.';
+      this.isRecharging = false;
+      this.cdr.markForCheck();
+      return;
+    }
+
+    this.walletService.createRechargeOrder({ amount: this.rechargeAmount, upiId: '' }).subscribe({
+      next: (orderData) => {
+        const options = {
+          key: orderData.keyId,
+          amount: orderData.amount * 100, // paise
+          currency: orderData.currency,
+          name: 'Wallet Top-up',
+          description: 'Recharging wallet by ₹' + this.rechargeAmount,
+          order_id: orderData.orderId,
+          handler: (response: any) => {
+            this.verifyRechargeRazorpayPayment(response);
+          },
+          prefill: {
+            name: 'Passenger',
+          },
+          modal: {
+            ondismiss: () => {
+              this.isRecharging = false;
+              this.rechargeError = 'Top-up was cancelled by user.';
+              this.cdr.markForCheck();
+            }
+          },
+          theme: {
+            color: '#dc3545'
+          }
+        };
+        
+        const rzp = new Razorpay(options);
+        rzp.on('payment.failed', (response: any) => {
+          this.isRecharging = false;
+          this.rechargeError = response.error.description || 'Top-up failed.';
+          this.cdr.markForCheck();
+        });
+        rzp.open();
+      },
+      error: (err) => {
+        this.rechargeError = err.error?.message || 'Failed to initiate recharge.';
+        this.isRecharging = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  verifyRechargeRazorpayPayment(response: any): void {
+    const verifyReq = {
+      razorpayPaymentId: response.razorpay_payment_id,
+      razorpayOrderId: response.razorpay_order_id,
+      razorpaySignature: response.razorpay_signature
+    };
+
+    this.walletService.verifyRechargePayment(verifyReq).subscribe({
       next: (wallet) => {
         this.walletBalance = Number(wallet.balance);
         this.rechargeSuccess = `₹${this.rechargeAmount} added successfully! New balance: ₹${this.walletBalance}`;
@@ -223,7 +229,7 @@ export class PaymentComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       },
       error: (err) => {
-        this.rechargeError = err.error?.message || 'Recharge failed. Please try again.';
+        this.rechargeError = err.error?.message || 'Recharge verification failed.';
         this.isRecharging = false;
         this.cdr.markForCheck();
       }
@@ -232,32 +238,120 @@ export class PaymentComponent implements OnInit, OnDestroy {
 
   // ── Payment ───────────────────────────────────────────────────────────────
 
-  processPayment(): void {
-    this.upiError = '';
-
-    if (this.remainingAmount > 0 && this.paymentMethod === 'UPI') {
-      if (!this.upiId.trim()) {
-        this.upiError = 'UPI ID is required.';
-        this.cdr.markForCheck();
+  loadRazorpayScript(): Promise<boolean> {
+    return new Promise((resolve) => {
+      if (document.getElementById('razorpay-checkout-script')) {
+        resolve(true);
         return;
       }
-      if (!this.isValidUpi(this.upiId)) {
-        this.upiError = 'Invalid UPI ID. Use a valid format like name@ybl, name@okaxis, name@paytm etc.';
-        this.cdr.markForCheck();
-        return;
-      }
-    }
+      const script = document.createElement('script');
+      script.id = 'razorpay-checkout-script';
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  }
 
+  async processPayment(): Promise<void> {
     this.paymentStatus = 'PROCESSING';
     this.errorMessage = '';
     this.cdr.markForCheck();
 
     const request: PaymentRequest = {
-      paymentMethod: this.remainingAmount === 0 ? 'WALLET' : this.paymentMethod,
+      paymentMethod: this.remainingAmount === 0 ? 'WALLET' : 'RAZORPAY',
       useWallet: this.useWallet
     };
 
-    this.paymentService.mockCheckout(this.bookingId, request).subscribe({
+    if (this.remainingAmount === 0) {
+      // Wallet completely covers the cost, fallback to mockCheckout for 0 amount
+      this.paymentService.mockCheckout(this.bookingId, request).subscribe({
+        next: (res) => {
+          const payment = res.data;
+          if (payment.paymentStatus === PaymentStatus.SUCCESS) {
+            this.paymentStatus = 'SUCCESS';
+            this.cdr.markForCheck();
+            this.completeBooking(payment);
+          } else {
+            this.paymentStatus = 'FAILED';
+            this.errorMessage = payment.failureReason || 'Payment failed. Please try again.';
+            this.cdr.markForCheck();
+          }
+        },
+        error: (err) => {
+          this.paymentStatus = 'FAILED';
+          this.errorMessage = err.error?.message || 'Payment failed due to server error. Please try again.';
+          this.cdr.markForCheck();
+        }
+      });
+      return;
+    }
+
+    // Need to pay via gateway
+    const isScriptLoaded = await this.loadRazorpayScript();
+    if (!isScriptLoaded) {
+      this.paymentStatus = 'FAILED';
+      this.errorMessage = 'Failed to load Razorpay SDK. Please check your connection.';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    this.paymentService.createRazorpayOrder(this.bookingId, request).subscribe({
+      next: (res) => {
+        const orderData = res.data;
+        
+        const options = {
+          key: orderData.keyId,
+          amount: orderData.amount * 100, // paise
+          currency: orderData.currency,
+          name: 'Bus Ticket Booking',
+          description: 'Payment for Booking ID: ' + this.bookingId,
+          order_id: orderData.orderId,
+          handler: (response: any) => {
+            this.verifyRazorpayPayment(response);
+          },
+          prefill: {
+            name: 'Passenger',
+          },
+          modal: {
+            ondismiss: () => {
+              this.paymentStatus = 'FAILED';
+              this.errorMessage = 'Payment was cancelled by user.';
+              this.cdr.markForCheck();
+            }
+          },
+          theme: {
+            color: '#dc3545'
+          }
+        };
+        
+        const rzp = new Razorpay(options);
+        rzp.on('payment.failed', (response: any) => {
+          this.paymentStatus = 'FAILED';
+          this.errorMessage = response.error.description || 'Payment failed.';
+          this.cdr.markForCheck();
+        });
+        rzp.open();
+      },
+      error: (err) => {
+        this.paymentStatus = 'FAILED';
+        this.errorMessage = err.error?.message || 'Failed to create payment order.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  verifyRazorpayPayment(response: any): void {
+    this.paymentStatus = 'PROCESSING';
+    this.cdr.markForCheck();
+
+    const verifyReq = {
+      razorpayPaymentId: response.razorpay_payment_id,
+      razorpayOrderId: response.razorpay_order_id,
+      razorpaySignature: response.razorpay_signature
+    };
+
+    this.paymentService.verifyRazorpayPayment(this.bookingId, verifyReq).subscribe({
       next: (res) => {
         const payment = res.data;
         if (payment.paymentStatus === PaymentStatus.SUCCESS) {
@@ -266,13 +360,13 @@ export class PaymentComponent implements OnInit, OnDestroy {
           this.completeBooking(payment);
         } else {
           this.paymentStatus = 'FAILED';
-          this.errorMessage = payment.failureReason || 'Payment failed. Please try again.';
+          this.errorMessage = payment.failureReason || 'Payment verification failed.';
           this.cdr.markForCheck();
         }
       },
       error: (err) => {
         this.paymentStatus = 'FAILED';
-        this.errorMessage = err.error?.message || 'Payment failed due to server error. Please try again.';
+        this.errorMessage = err.error?.message || 'Payment verification failed.';
         this.cdr.markForCheck();
       }
     });

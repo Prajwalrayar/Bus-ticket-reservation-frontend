@@ -87,42 +87,18 @@
           <i class="bi bi-arrow-clockwise me-1"></i>Refresh
         </button>
       </div>
-      <div class="card-body p-4">
+      <div class="card-body p-0">
         @if (supportTicketsLoading) {
           <div class="text-center py-5"><div class="spinner-border text-danger"></div></div>
         } @else if (supportTicketsError) {
-          <div class="alert alert-danger">{{ supportTicketsError }}</div>
+          <div class="alert alert-danger m-4">{{ supportTicketsError }}</div>
         } @else if (openIssues.length === 0) {
           <div class="text-center py-5 text-muted">
             <i class="bi bi-check-circle fs-1 d-block mb-3 text-success"></i>
             <p class="fw-semibold mb-0">No open issues. All caught up!</p>
           </div>
         } @else {
-          <div class="row g-3">
-            @for (ticket of openIssues; track ticket.ticketId) {
-              <div class="col-12">
-                <div class="card border-0 shadow-sm border-start border-danger border-3">
-                  <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                      <h6 class="fw-bold mb-0">{{ ticket.issueSubject }}</h6>
-                      <span class="badge" [ngClass]="getStatusBadgeClass(ticket.status)">{{ ticket.status }}</span>
-                    </div>
-                    <p class="small text-muted mb-3">{{ ticket.issueDescription }}</p>
-                    <div class="d-flex flex-wrap gap-2 align-items-center">
-                      <span class="badge bg-light text-dark border"><i class="bi bi-person me-1"></i>{{ ticket.customerName }}</span>
-                      @if (ticket.bookingReference) {
-                        <span class="badge bg-light text-dark border"><i class="bi bi-ticket-perforated me-1"></i>{{ ticket.bookingReference }}</span>
-                      }
-                      <span class="badge bg-light text-dark border small"><i class="bi bi-clock me-1"></i>{{ ticket.createdAt | date:'mediumDate' }}</span>
-                      <button class="btn btn-sm btn-outline-success ms-auto" (click)="resolveTicket(ticket.ticketId)">
-                        <i class="bi bi-check-circle me-1"></i>Mark Resolved
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            }
-          </div>
+          <ng-container *ngTemplateOutlet="ticketTableView; context: { ticketList: openIssues }"></ng-container>
         }
       </div>
     </div>
@@ -140,50 +116,18 @@
           <i class="bi bi-arrow-clockwise me-1"></i>Refresh
         </button>
       </div>
-      <div class="card-body p-4">
+      <div class="card-body p-0">
         @if (supportTicketsLoading) {
           <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
         } @else if (supportTicketsError) {
-          <div class="alert alert-danger">{{ supportTicketsError }}</div>
+          <div class="alert alert-danger m-4">{{ supportTicketsError }}</div>
         } @else if (supportTickets.length === 0) {
           <div class="text-center py-5 text-muted">
             <i class="bi bi-headset fs-1 d-block mb-3"></i>
             <p class="mb-0">No support tickets for your company yet.</p>
           </div>
         } @else {
-          <div class="row g-3">
-            @for (ticket of supportTickets; track ticket.ticketId) {
-              <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                  <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                      <h6 class="fw-bold mb-0">{{ ticket.issueSubject }}</h6>
-                      <span class="badge" [ngClass]="getStatusBadgeClass(ticket.status)">{{ ticket.status }}</span>
-                    </div>
-                    <p class="small text-muted mb-3">{{ ticket.issueDescription }}</p>
-                    <div class="d-flex flex-wrap gap-2 align-items-center">
-                      <span class="badge bg-light text-dark border"><i class="bi bi-person me-1"></i>{{ ticket.customerName }}</span>
-                      @if (ticket.bookingReference) {
-                        <span class="badge bg-light text-dark border"><i class="bi bi-ticket-perforated me-1"></i>{{ ticket.bookingReference }}</span>
-                      }
-                      <span class="badge bg-light text-dark border small"><i class="bi bi-clock me-1"></i>{{ ticket.createdAt | date:'mediumDate' }}</span>
-                      @if (ticket.status !== 'RESOLVED') {
-                        <button class="btn btn-sm btn-outline-success ms-auto" (click)="resolveTicket(ticket.ticketId)">
-                          <i class="bi bi-check-circle me-1"></i>Resolve
-                        </button>
-                      }
-                    </div>
-                  </div>
-                  <div class="card-footer bg-light border-0 small text-muted">
-                    Opened {{ ticket.createdAt | date:'medium' }}
-                    @if (ticket.updatedAt && ticket.updatedAt !== ticket.createdAt) {
-                      &bull; Updated {{ ticket.updatedAt | date:'medium' }}
-                    }
-                  </div>
-                </div>
-              </div>
-            }
-          </div>
+          <ng-container *ngTemplateOutlet="ticketTableView; context: { ticketList: supportTickets }"></ng-container>
         }
       </div>
     </div>
@@ -212,43 +156,79 @@
             <p class="mb-0">No customer bookings found for your company.</p>
           </div>
         } @else {
-          <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-              <thead class="table-light">
-                <tr>
-                  <th>Reference</th>
-                  <th>Customer</th>
-                  <th>Trip Date</th>
-                  <th>Route</th>
-                  <th>Seats</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (booking of customerBookings; track booking.bookingId) {
-                  <tr>
-                    <td class="fw-bold text-primary">{{ booking.bookingReference }}</td>
-                    <td>
-                      <div class="fw-semibold">{{ booking.userName }}</div>
-                      <div class="small text-muted">{{ booking.userEmail }}</div>
-                    </td>
-                    <td>{{ booking.createdAt | date:'mediumDate' }}</td>
-                    <td>{{ booking.boardingPointName }} &rarr; {{ booking.droppingPointName }}</td>
-                    <td>{{ booking.totalSeats }}</td>
-                    <td>
-                      <span class="badge"
-                            [class.bg-success]="booking.bookingStatus === 'CONFIRMED'"
-                            [class.bg-warning]="booking.bookingStatus === 'PENDING'"
-                            [class.bg-danger]="booking.bookingStatus === 'CANCELLED'"
-                            [class.bg-secondary]="booking.bookingStatus === 'FAILED'">
-                        {{ booking.bookingStatus }}
-                      </span>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+          <!-- Sort & Filter Toolbar -->
+          <div class="p-3 bg-light border-bottom d-flex flex-column flex-md-row gap-3 align-items-center">
+            
+            <div class="input-group" style="max-width: 300px;">
+              <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+              <input type="text" class="form-control border-start-0 ps-0" placeholder="Search bookings..." [(ngModel)]="bookingSearchTerm">
+            </div>
+
+            <div class="d-flex gap-2 ms-md-auto w-100 w-md-auto">
+              <select class="form-select" [(ngModel)]="bookingStatusFilter" style="max-width: 150px;">
+                <option value="">All Statuses</option>
+                <option value="CONFIRMED">Confirmed</option>
+                <option value="PENDING">Pending</option>
+                <option value="CANCELLED">Cancelled</option>
+                <option value="FAILED">Failed</option>
+              </select>
+
+              <select class="form-select" [(ngModel)]="bookingSortBy" style="max-width: 180px;">
+                <option value="dateDesc">Newest First</option>
+                <option value="dateAsc">Oldest First</option>
+                <option value="status">Status</option>
+                <option value="customer">Customer Name</option>
+                <option value="seatsDesc">Most Seats</option>
+                <option value="seatsAsc">Least Seats</option>
+              </select>
+            </div>
+            
           </div>
+
+          @if (filteredAndSortedBookings.length === 0) {
+            <div class="text-center py-5 text-muted">
+              <i class="bi bi-search fs-1 d-block mb-3"></i>
+              <p class="mb-0">No bookings match your filters.</p>
+            </div>
+          } @else {
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Reference</th>
+                    <th>Customer</th>
+                    <th>Booking Date</th>
+                    <th>Route</th>
+                    <th>Seats</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (booking of filteredAndSortedBookings; track booking.bookingId) {
+                    <tr (click)="viewBookingDetails(booking.bookingId)" style="cursor: pointer;" title="View Booking Details">
+                      <td class="fw-bold text-primary">{{ booking.bookingReference }}</td>
+                      <td>
+                        <div class="fw-semibold">{{ booking.userName }}</div>
+                        <div class="small text-muted">{{ booking.userEmail }}</div>
+                      </td>
+                      <td>{{ booking.createdAt | date:'mediumDate' }}</td>
+                      <td>{{ booking.boardingPointName }} &rarr; {{ booking.droppingPointName }}</td>
+                      <td>{{ booking.totalSeats }}</td>
+                      <td>
+                        <span class="badge"
+                              [class.bg-success]="booking.bookingStatus === 'CONFIRMED'"
+                              [class.bg-warning]="booking.bookingStatus === 'PENDING'"
+                              [class.bg-danger]="booking.bookingStatus === 'CANCELLED'"
+                              [class.bg-secondary]="booking.bookingStatus === 'FAILED'">
+                          {{ booking.bookingStatus }}
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
         }
       </div>
     </div>
@@ -294,18 +274,10 @@
                     <td class="text-muted">{{ i + 1 }}</td>
                     <td class="font-monospace small">{{ customer.userId | slice:0:8 }}...</td>
                     <td>
-                      @for (b of customerBookings; track b.bookingId) {
-                        @if (b.userId === customer.userId) {
-                          <span>{{ b.userName }}</span>
-                        }
-                      }
+                      <span>{{ customer.userName }}</span>
                     </td>
                     <td class="small text-muted">
-                      @for (b of customerBookings; track b.bookingId) {
-                        @if (b.userId === customer.userId) {
-                          <span>{{ b.userEmail }}</span>
-                        }
-                      }
+                      <span>{{ customer.userEmail }}</span>
                     </td>
                     <td><span class="badge bg-primary">{{ customer.bookingCount }}</span></td>
                   </tr>
@@ -318,6 +290,502 @@
     </div>
   }
 
+  <!-- ======================== REFUNDS ======================== -->
+  @if (activeTab === 'refunds') {
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+        <div>
+          <h5 class="fw-bold mb-0"><i class="bi bi-cash-coin me-2 text-success"></i>Refunds</h5>
+          <p class="text-muted small mb-0">Process and view refunds for cancelled bookings</p>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary" (click)="loadPendingRefunds()" [disabled]="refundsLoading">
+          <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+        </button>
+      </div>
+      
+      @if (processRefundError) {
+        <div class="px-4 mt-3">
+          <div class="alert alert-danger alert-dismissible" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>{{ processRefundError }}
+            <button type="button" class="btn-close" (click)="processRefundError = ''"></button>
+          </div>
+        </div>
+      }
+
+      <div class="card-body p-4">
+        @if (refundsLoading) {
+          <div class="text-center py-5"><div class="spinner-border text-success"></div></div>
+        } @else if (refundsError) {
+          <div class="alert alert-danger">{{ refundsError }}</div>
+        } @else if (pendingRefunds.length === 0) {
+          <div class="text-center py-5 text-muted">
+            <i class="bi bi-check-circle fs-1 d-block mb-3 text-success"></i>
+            <p class="mb-0 fw-semibold">No refunds found.</p>
+          </div>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Cancellation Ref</th>
+                  <th>Booking ID</th>
+                  <th>Date</th>
+                  <th>Refund Amount</th>
+                  <th>Payment Txn ID</th>
+                  <th>Refund Ref</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (refund of pendingRefunds; track refund.cancellationId) {
+                  <tr>
+                    <td><span class="fw-semibold text-primary">{{ refund.cancellationReference }}</span></td>
+                    <td><span class="text-muted small">{{ refund.bookingId }}</span></td>
+                    <td>
+                      <div>{{ refund.cancelledAt | date:'mediumDate' }}</div>
+                      <small class="text-muted">{{ refund.cancelledAt | date:'shortTime' }}</small>
+                    </td>
+                    <td><span class="fw-bold text-success">{{ refund.refundAmount | currency:'INR' }}</span></td>
+                    <td><span class="font-monospace text-secondary small">{{ refund.paymentTransactionId || '-' }}</span></td>
+                    <td><span class="text-muted small">{{ refund.refundReference || '-' }}</span></td>
+                    <td>
+                      <span class="badge" [ngClass]="{'bg-warning text-dark': refund.refundStatus === 'INITIATED' || refund.refundStatus === 'PROCESSING', 'bg-success': refund.refundStatus === 'COMPLETED'}">
+                        {{ refund.refundStatus }}
+                      </span>
+                    </td>
+                    <td>
+                      @if (refund.refundStatus !== 'COMPLETED') {
+                        <button class="btn btn-sm btn-outline-success" (click)="openRefundModal(refund.cancellationId)">
+                          <i class="bi bi-check2-circle me-1"></i>Process Refund
+                        </button>
+                      } @else {
+                        <span class="text-success small fw-semibold"><i class="bi bi-check-circle-fill me-1"></i>Processed</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
 </div>
 
+<!-- Refund Modal -->
+@if (showRefundModal) {
+  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header border-bottom-0 pb-0">
+          <h5 class="modal-title fw-bold">Process Refund</h5>
+          <button type="button" class="btn-close" (click)="closeRefundModal()"></button>
+        </div>
+        <div class="modal-body py-4">
+          <p class="text-dark fw-semibold mb-3">Are you sure you want to process this refund?</p>
+          <p class="text-muted small mb-0">The system will automatically refund the calculated amount via Razorpay. This action cannot be undone.</p>
+          
+          @if (processRefundError) {
+            <div class="alert alert-danger py-2 small mt-3 mb-0">
+              <i class="bi bi-exclamation-triangle me-1"></i>{{ processRefundError }}
+            </div>
+          }
+        </div>
+        <div class="modal-footer border-top-0 pt-0">
+          <button type="button" class="btn btn-light" (click)="closeRefundModal()" [disabled]="processRefundModalLoading">Cancel</button>
+          <button type="button" class="btn btn-success px-4" (click)="confirmRefund()" [disabled]="processRefundModalLoading">
+            @if (processRefundModalLoading) {
+              <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              Processing...
+            } @else {
+              Confirm Refund
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
 
+<!-- Booking Details Modal -->
+@if (selectedBookingDetails || bookingDetailsLoading || bookingDetailsError) {
+  <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5); z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header border-bottom-0 bg-light">
+          <h5 class="modal-title fw-bold text-dark">Booking Details</h5>
+          <button type="button" class="btn btn-light border btn-sm" (click)="closeBookingDetails()" aria-label="Close">
+            <i class="bi bi-x-lg text-dark"></i>
+          </button>
+        </div>
+        <div class="modal-body p-4">
+          @if (bookingDetailsLoading) {
+            <div class="text-center py-4">
+              <div class="spinner-border text-primary"></div>
+            </div>
+          } @else if (bookingDetailsError) {
+            <div class="alert alert-danger">{{ bookingDetailsError }}</div>
+          } @else if (selectedBookingDetails) {
+            <div class="row g-4">
+              <div class="col-md-6">
+                <h6 class="text-muted text-uppercase small fw-bold mb-3">Journey Info</h6>
+                <div class="mb-2"><span class="text-muted me-2">Reference:</span> <span class="fw-semibold font-monospace">{{ selectedBookingDetails.bookingReference }}</span></div>
+                <div class="mb-2"><span class="text-muted me-2">Status:</span> 
+                  <span class="badge" [ngClass]="{
+                    'bg-success': selectedBookingDetails.bookingStatus === 'CONFIRMED',
+                    'bg-danger': selectedBookingDetails.bookingStatus === 'CANCELLED' || selectedBookingDetails.bookingStatus === 'FAILED',
+                    'bg-warning text-dark': selectedBookingDetails.bookingStatus === 'PENDING'
+                  }">{{ selectedBookingDetails.bookingStatus }}</span>
+                </div>
+                <div class="mb-2"><span class="text-muted me-2">Route:</span> <span class="fw-semibold">{{ selectedBookingDetails.boardingPointName }} &rarr; {{ selectedBookingDetails.droppingPointName }}</span></div>
+                <div class="mb-2"><span class="text-muted me-2">Seats:</span> <span class="fw-semibold">{{ selectedBookingDetails.totalSeats }} ({{ selectedBookingDetails.bookingSeats[0]?.seatNumber }}...)</span></div>
+                <div class="mb-2"><span class="text-muted me-2">Booked On:</span> <span class="fw-semibold">{{ selectedBookingDetails.createdAt | date:'medium' }}</span></div>
+
+                @if (selectedBookingDetails.tripSource || selectedBookingDetails.tripTravelDate) {
+                  <hr class="my-2">
+                  <h6 class="text-muted text-uppercase small fw-bold mb-3">Bus Info</h6>
+                  @if (selectedBookingDetails.busName) {
+                    <div class="mb-2"><span class="text-muted me-2">Bus:</span> <span class="fw-semibold">{{ selectedBookingDetails.busName }}</span></div>
+                  }
+                  @if (selectedBookingDetails.tripSource && selectedBookingDetails.tripDestination) {
+                    <div class="mb-2"><span class="text-muted me-2">Scheduled Route:</span> <span class="fw-semibold">{{ selectedBookingDetails.tripSource }} &rarr; {{ selectedBookingDetails.tripDestination }}</span></div>
+                  }
+                  @if (selectedBookingDetails.tripTravelDate) {
+                    <div class="mb-2"><span class="text-muted me-2">Scheduled Date:</span> <span class="fw-semibold">{{ selectedBookingDetails.tripTravelDate | date:'mediumDate' }}</span></div>
+                  }
+                  @if (selectedBookingDetails.tripDepartureTime) {
+                    <div class="mb-2"><span class="text-muted me-2">Departure Time:</span> <span class="fw-semibold">{{ selectedBookingDetails.tripTravelDate + 'T' + selectedBookingDetails.tripDepartureTime | date:'shortTime' }}</span></div>
+                  }
+                }
+              </div>
+              <div class="col-md-6">
+                <h6 class="text-muted text-uppercase small fw-bold mb-3">Payment Info</h6>
+                <div class="d-flex justify-content-between mb-1">
+                  <span class="text-muted">Base Fare</span>
+                  <span>{{ selectedBookingDetails.baseFareTotal | currency:'INR':'symbol-narrow' }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                  <span class="text-muted">Taxes & Fees</span>
+                  <span>{{ selectedBookingDetails.taxAmount | currency:'INR':'symbol-narrow' }}</span>
+                </div>
+                @if (selectedBookingDetails.insuranceAmount > 0) {
+                  <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Insurance</span>
+                    <span>{{ selectedBookingDetails.insuranceAmount | currency:'INR':'symbol-narrow' }}</span>
+                  </div>
+                }
+                @if (selectedBookingDetails.discountAmount > 0) {
+                  <div class="d-flex justify-content-between mb-1 text-success">
+                    <span>
+                      Discount 
+                      @if (selectedBookingDetails.offerCodeUsed) {
+                        <span class="badge bg-success-subtle text-success border border-success-subtle ms-1">{{ selectedBookingDetails.offerCodeUsed }}</span>
+                      }
+                    </span>
+                    <span>-{{ selectedBookingDetails.discountAmount | currency:'INR':'symbol-narrow' }}</span>
+                  </div>
+                }
+                <hr class="my-2">
+                <div class="d-flex justify-content-between fw-bold mb-1">
+                  <span>Total Paid</span>
+                  <span>{{ selectedBookingDetails.totalAmount | currency:'INR':'symbol-narrow' }}</span>
+                </div>
+              </div>
+            </div>
+
+            @if (selectedBookingCancellation) {
+              <div class="mt-4 p-3 border rounded border-warning bg-warning bg-opacity-10">
+                <h6 class="text-warning-emphasis fw-bold mb-3"><i class="bi bi-info-circle me-2"></i>Cancellation Estimate</h6>
+                
+                <div class="mb-3">
+                  <span class="text-muted me-2">Cancelled On:</span> 
+                  <span class="fw-semibold">{{ selectedBookingCancellation.cancelledAt | date:'medium' }}</span>
+                </div>
+                <div class="mb-3">
+                  <span class="text-muted me-2">Refund Status:</span> 
+                  <span class="badge" [ngClass]="{
+                    'bg-success': selectedBookingCancellation.refundStatus === 'COMPLETED',
+                    'bg-warning text-dark': selectedBookingCancellation.refundStatus === 'PENDING',
+                    'bg-info text-dark': selectedBookingCancellation.refundStatus === 'INITIATED',
+                    'bg-secondary': !['COMPLETED', 'PENDING', 'INITIATED'].includes(selectedBookingCancellation.refundStatus)
+                  }">{{ selectedBookingCancellation.refundStatus }}</span>
+                </div>
+                
+                @if (selectedBookingCancellation.paymentMethod) {
+                  <div class="mb-3">
+                    <span class="text-muted me-2">Payment Method:</span> 
+                    <span class="fw-semibold">
+                      {{ selectedBookingCancellation.paymentMethod === 'CREDIT/DEBIT CARD' ? 'Card' : 
+                         selectedBookingCancellation.paymentMethod === 'NETBANKING' ? 'Netbanking' : 
+                         selectedBookingCancellation.paymentMethod === 'WALLET' ? 'Wallet' : 
+                         selectedBookingCancellation.paymentMethod === 'UPI' ? 'UPI' : 
+                         selectedBookingCancellation.paymentMethod }}
+                      @if (selectedBookingCancellation.paymentProvider) {
+                        <span class="text-secondary small ms-1">({{ selectedBookingCancellation.paymentProvider }})</span>
+                      }
+                    </span>
+                  </div>
+                }
+                
+                @if (selectedBookingCancellation.refundDestination) {
+                  <div class="mb-3">
+                    <span class="text-muted me-2">Refund Credited To:</span> 
+                    <span class="fw-semibold text-primary"><i class="bi bi-arrow-return-right me-1"></i>{{ selectedBookingCancellation.refundDestination }}</span>
+                  </div>
+                }
+
+                <div class="d-flex justify-content-between mb-1">
+                  <span class="text-muted">Total Booking Amount</span>
+                  <span class="fw-semibold">{{ selectedBookingDetails.totalAmount | currency:'INR':'symbol-narrow' }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1 text-danger">
+                  <span>Cancellation Fee</span>
+                  <span>-{{ selectedBookingCancellation.cancellationFee | currency:'INR':'symbol-narrow' }}</span>
+                </div>
+                @if (selectedBookingCancellation.ruleApplied) {
+                  <div class="text-end small text-muted fst-italic mb-2">
+                    ({{ selectedBookingCancellation.ruleApplied }})
+                  </div>
+                }
+                <hr class="my-2 border-warning">
+                <div class="d-flex justify-content-between fw-bold text-success">
+                  <span>Estimated Refund Amount</span>
+                  <span class="fs-5">{{ selectedBookingCancellation.refundAmount | currency:'INR':'symbol-narrow' }}</span>
+                </div>
+              </div>
+            }
+          }
+        </div>
+        <div class="modal-footer border-top-0 bg-light">
+          <button type="button" class="btn btn-outline-secondary" (click)="closeBookingDetails()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Ticket Table View Template -->
+<ng-template #ticketTableView let-ticketList="ticketList">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light text-muted small">
+        <tr>
+          <th>Subject</th>
+          <th>Reference</th>
+          <th>Customer</th>
+          <th>Priority</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (ticket of ticketList; track ticket.ticketId) {
+          <tr>
+            <td>
+              <div class="fw-semibold text-dark">{{ ticket.issueSubject }}</div>
+              <small class="text-secondary text-truncate d-inline-block" style="max-width: 250px;">{{ ticket.issueDescription }}</small>
+            </td>
+            <td>
+              @if (ticket.bookingReference) {
+                <span class="badge bg-light text-dark border font-monospace">{{ ticket.bookingReference }}</span>
+              } @else {
+                <span class="text-muted small">-</span>
+              }
+            </td>
+            <td>
+              <div class="small fw-semibold">{{ ticket.customerName }}</div>
+            </td>
+            <td>
+              <span class="small fw-semibold" [ngClass]="getPriorityBadgeClass(ticket.priority)">{{ ticket.priority }}</span>
+            </td>
+            <td>
+              <span class="badge" [ngClass]="getStatusBadgeClass(ticket.status)">{{ ticket.status }}</span>
+            </td>
+            <td>
+              <div class="small">{{ ticket.createdAt | date:'mediumDate' }}</div>
+              <div class="small text-muted">{{ ticket.createdAt | date:'shortTime' }}</div>
+            </td>
+            <td>
+              <button class="btn btn-sm btn-outline-primary" (click)="viewTicket(ticket.ticketId)">
+                <i class="bi bi-chat-text me-1"></i>View
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</ng-template>
+
+<!-- Ticket Conversation Modal -->
+@if (selectedTicket || selectedTicketLoading || selectedTicketError) {
+  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.6);">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 shadow-lg" style="max-height: 90vh;">
+        <div class="modal-header border-bottom bg-light py-3">
+          <div class="w-100">
+            @if (selectedTicket) {
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <h5 class="fw-bold mb-1 text-dark">{{ selectedTicket.issueSubject }}</h5>
+                  <div class="d-flex flex-wrap gap-2 align-items-center mt-1">
+                    <span class="badge bg-white text-dark border"><i class="bi bi-person me-1"></i>{{ selectedTicket.customerName }}</span>
+                    @if (selectedTicket.bookingReference) {
+                      <span class="badge bg-white text-primary border border-primary cursor-pointer" style="cursor: pointer;" (click)="viewBookingDetailsByRef(selectedTicket.bookingReference)" title="View Booking Details">
+                        <i class="bi bi-ticket-perforated me-1"></i>{{ selectedTicket.bookingReference }} <i class="bi bi-box-arrow-up-right ms-1"></i>
+                      </span>
+                    }
+                    <span class="badge bg-white text-dark border"><i class="bi bi-tag me-1"></i>{{ selectedTicket.issueCategory }}</span>
+                  </div>
+                </div>
+                <div class="text-end d-flex gap-2">
+                  <span class="badge align-self-center" [ngClass]="getStatusBadgeClass(selectedTicket.status)">{{ selectedTicket.status }}</span>
+                  <button type="button" class="btn btn-light border btn-sm ms-3" (click)="closeTicketView()" aria-label="Close" title="Close Ticket">
+                    <i class="bi bi-x-lg text-dark"></i>
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <div class="d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-dark">Ticket Details</h5>
+                <button type="button" class="btn btn-light border btn-sm" (click)="closeTicketView()" aria-label="Close" title="Close Ticket">
+                  <i class="bi bi-x-lg text-dark"></i>
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+        
+        <div class="modal-body p-0 d-flex flex-column" style="overflow-y: auto; background-color: #f8f9fa;">
+          @if (selectedTicketLoading) {
+            <div class="d-flex justify-content-center align-items-center py-5">
+              <div class="spinner-border text-primary"></div>
+            </div>
+          } @else if (selectedTicketError) {
+            <div class="alert alert-danger m-4">{{ selectedTicketError }}</div>
+          } @else if (selectedTicket) {
+            <div class="flex-grow-1 p-4">
+              <!-- Original Issue -->
+              <div class="d-flex mb-4">
+                <div class="flex-shrink-0">
+                  <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 40px; height: 40px;">
+                    {{ selectedTicket.customerName.charAt(0) | uppercase }}
+                  </div>
+                </div>
+                <div class="ms-3 flex-grow-1">
+                  <div class="bg-white p-3 rounded shadow-sm border">
+                    <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                      <span class="fw-bold text-dark">{{ selectedTicket.customerName }} <span class="badge bg-secondary ms-2 small">Passenger</span></span>
+                      <span class="small text-muted">{{ selectedTicket.createdAt | date:'medium' }}</span>
+                    </div>
+                    <p class="mb-0 text-break" style="white-space: pre-wrap;">{{ selectedTicket.issueDescription }}</p>
+                    @if (selectedTicket.attachmentPath) {
+                      <div class="mt-3 p-2 bg-light rounded border small">
+                        <i class="bi bi-paperclip me-1"></i><a [href]="'/api/uploads/' + selectedTicket.attachmentPath" target="_blank">View Attachment</a>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+
+              <!-- Replies -->
+              @for (msg of selectedTicket.messages; track msg.messageId) {
+                <div class="d-flex mb-4" [ngClass]="{'flex-row-reverse': msg.senderRole === 'SUPPORT_AGENT' || msg.senderRole === 'ADMIN'}">
+                  <div class="flex-shrink-0" [ngClass]="{'ms-3': msg.senderRole === 'SUPPORT_AGENT' || msg.senderRole === 'ADMIN', 'me-3': msg.senderRole === 'CUSTOMER'}">
+                    <div class="text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 40px; height: 40px;"
+                         [ngClass]="msg.senderRole === 'CUSTOMER' ? 'bg-secondary' : 'bg-primary'">
+                      {{ msg.senderName.charAt(0) | uppercase }}
+                    </div>
+                  </div>
+                  <div class="flex-grow-1" [ngStyle]="{'max-width': '85%'}">
+                    <div class="p-3 rounded shadow-sm border"
+                         [ngClass]="{
+                            'bg-white': msg.senderRole === 'CUSTOMER', 
+                            'bg-primary bg-opacity-10 border-primary': (msg.senderRole === 'SUPPORT_AGENT' || msg.senderRole === 'ADMIN') && !msg.isInternal,
+                            'bg-warning bg-opacity-10 border-warning': msg.isInternal
+                         }">
+                      <div class="d-flex justify-content-between mb-2 pb-2 border-bottom" [ngClass]="msg.isInternal ? 'border-warning' : (msg.senderRole === 'CUSTOMER' ? '' : 'border-primary')">
+                        <span class="fw-bold text-dark">
+                          {{ msg.senderName }} 
+                          @if (msg.isInternal) {
+                            <span class="badge bg-warning text-dark ms-2 small"><i class="bi bi-lock-fill me-1"></i>Internal Note</span>
+                          } @else {
+                            <span class="badge bg-secondary ms-2 small">{{ msg.senderRole === 'CUSTOMER' ? 'Passenger' : 'Support Agent' }}</span>
+                          }
+                        </span>
+                        <span class="small text-muted">{{ msg.createdAt | date:'medium' }}</span>
+                      </div>
+                      <p class="mb-0 text-break" style="white-space: pre-wrap;">{{ msg.message }}</p>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+        
+        @if (selectedTicket && selectedTicket.status !== 'RESOLVED') {
+          <!-- Inline Resolve Confirmation -->
+          @if (showResolveConfirm && resolveTicketId === selectedTicket.ticketId) {
+            <div class="modal-footer d-block bg-success bg-opacity-10 border-top border-success p-3">
+              <div class="d-flex align-items-center justify-content-between gap-3">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                  <span class="fw-semibold text-success">Mark this ticket as resolved?</span>
+                  <span class="text-muted small">This will close the ticket.</span>
+                </div>
+                <div class="d-flex gap-2">
+                  <button class="btn btn-sm btn-outline-secondary" (click)="cancelResolve()">
+                    <i class="bi bi-x me-1"></i>Cancel
+                  </button>
+                  <button class="btn btn-sm btn-success" (click)="confirmResolveTicket()">
+                    <i class="bi bi-check-circle me-1"></i>Yes, Resolve
+                  </button>
+                </div>
+              </div>
+            </div>
+          } @else {
+            <div class="modal-footer d-block bg-white border-top p-3">
+              <div class="mb-2 d-flex gap-2 flex-wrap align-items-center">
+                <span class="text-muted small fw-bold me-1"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>Quick Replies:</span>
+                <button class="btn btn-sm btn-outline-secondary rounded-pill" (click)="insertQuickReply('cancellation')" [disabled]="replyLoading">Policies Link</button>
+                <button class="btn btn-sm btn-outline-secondary rounded-pill" (click)="insertQuickReply('apology')" [disabled]="replyLoading">Apology</button>
+                <button class="btn btn-sm btn-outline-secondary rounded-pill" (click)="insertQuickReply('resolved')" [disabled]="replyLoading">Resolved</button>
+              </div>
+              <div class="mb-3">
+                <textarea class="form-control" rows="3" placeholder="Type your reply here..." [(ngModel)]="newReplyMessage" [disabled]="replyLoading"></textarea>
+              </div>
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex gap-3 align-items-center">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="internalNoteCheck" [(ngModel)]="newReplyInternal" [disabled]="replyLoading">
+                    <label class="form-check-label small fw-semibold text-warning" for="internalNoteCheck">
+                      <i class="bi bi-lock-fill me-1"></i>Internal Note (Hidden from passenger)
+                    </label>
+                  </div>
+                  <button class="btn btn-sm btn-outline-success" 
+                          (click)="promptResolveTicket(selectedTicket.ticketId)"
+                          [disabled]="selectedTicket.status === 'OPEN'"
+                          [title]="selectedTicket.status === 'OPEN' ? 'Please send a reply to the passenger before resolving.' : 'Mark as resolved'">
+                    <i class="bi bi-check-circle me-1"></i>Mark Resolved
+                  </button>
+                </div>
+                <button class="btn btn-primary px-4" (click)="sendReply()" [disabled]="replyLoading || !newReplyMessage.trim()">
+                  @if (replyLoading) {
+                    <span class="spinner-border spinner-border-sm me-2"></span>Sending...
+                  } @else {
+                    <i class="bi bi-send-fill me-1"></i>Send Reply
+                  }
+                </button>
+              </div>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </div>
+}
