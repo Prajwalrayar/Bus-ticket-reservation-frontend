@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { OperatorService } from '../../../core/services/operator.service';
 import { OperatorDTO } from '../../../core/models/operator';
+import { ConfirmService } from '../../../core/services/confirm.service';
 
 @Component({
   selector: 'app-admin-operators',
@@ -26,7 +27,8 @@ export class AdminOperatorsComponent implements OnInit {
 
   constructor(
     private operatorService: OperatorService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private confirmService: ConfirmService
   ) {}
 
   ngOnInit(): void {
@@ -84,16 +86,18 @@ export class AdminOperatorsComponent implements OnInit {
   }
 
   approveOperator(op: OperatorDTO): void {
-    if (confirm(`Are you sure you want to approve ${op.companyName}?`)) {
-      this.operatorService.approveOperator(op.companyName).subscribe({
-        next: () => {
-          this.fetchOperators();
-        },
-        error: (err) => {
-          this.error = err.error?.message || 'Failed to approve operator.';
-          this.cdr.markForCheck();
-        }
-      });
-    }
+    this.confirmService.confirm(`Are you sure you want to approve ${op.companyName}?`).subscribe(confirmed => {
+      if (confirmed) {
+        this.operatorService.approveOperator(op.companyName).subscribe({
+          next: () => {
+            this.fetchOperators();
+          },
+          error: (err) => {
+            this.error = err.error?.message || 'Failed to approve operator.';
+            this.cdr.markForCheck();
+          }
+        });
+      }
+    });
   }
 }

@@ -13,6 +13,9 @@ import { AiChatbotComponent } from './components/ai-chatbot/ai-chatbot';
 import { UserProfileComponent } from './components/user-profile/user-profile.component';
 import { LocationAutocompleteComponent } from './components/location-autocomplete/location-autocomplete';
 
+import { ToastContainerComponent } from './components/toast-container/toast-container.component';
+import { ConfirmModalComponent } from './components/confirm-modal/confirm-modal.component';
+
 const SHARED_COMPONENTS = [
   NavbarComponent,
   FooterComponent,
@@ -25,7 +28,7 @@ const SHARED_COMPONENTS = [
 
 @NgModule({
   declarations: [...SHARED_COMPONENTS],
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, AiChatbotComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, AiChatbotComponent, ToastContainerComponent, ConfirmModalComponent],
   exports: [
     CommonModule,
     FormsModule,
@@ -33,6 +36,8 @@ const SHARED_COMPONENTS = [
     RouterModule,
     ...SHARED_COMPONENTS,
     AiChatbotComponent,
+    ToastContainerComponent,
+    ConfirmModalComponent
   ],
 })
 export class SharedModule {}

@@ -51,10 +51,35 @@
           <div class="alert alert-danger py-2 small">{{ filterError }}</div>
         }
 
-        @if (filterMode !== 'ALL') {
+        <!-- STATUS FILTER -->
+        <div class="mt-4">
+          <h6 class="fw-bold mb-3"><i class="bi bi-tag me-2"></i>Status Filter</h6>
+          <select class="form-select mb-3" [(ngModel)]="filterStatus" (change)="applyFilters()">
+            <option value="ALL">All Statuses</option>
+            <option value="CONFIRMED">Confirmed</option>
+            <option value="PENDING">Pending</option>
+            <option value="CANCELLED">Cancelled</option>
+            <option value="FAILED">Failed</option>
+          </select>
+        </div>
+
+        <!-- SORT OPTIONS -->
+        <div class="mt-4 mb-4">
+          <h6 class="fw-bold mb-3"><i class="bi bi-sort-down me-2"></i>Sort By</h6>
+          <select class="form-select mb-3" [(ngModel)]="sortOption" (change)="applyFilters()">
+            <option value="RECENT">Recent Bookings</option>
+            <option value="OLDEST">Oldest Bookings</option>
+            <option value="BOOKING_ID_ASC">Booking ID (A-Z)</option>
+            <option value="BOOKING_ID_DESC">Booking ID (Z-A)</option>
+            <option value="AMOUNT_ASC">Amount (Low to High)</option>
+            <option value="AMOUNT_DESC">Amount (High to Low)</option>
+          </select>
+        </div>
+
+        @if (filterMode !== 'ALL' || filterStatus !== 'ALL' || sortOption !== 'RECENT') {
           <div class="d-grid gap-2">
-            <button class="btn btn-primary" (click)="applyFilters()">Apply Filter</button>
-            <button class="btn btn-outline-secondary" (click)="clearFilters()">Clear</button>
+            <button class="btn btn-primary" (click)="applyFilters()">Apply Filters</button>
+            <button class="btn btn-outline-secondary" (click)="clearFilters()">Clear All</button>
           </div>
         }
       </div>

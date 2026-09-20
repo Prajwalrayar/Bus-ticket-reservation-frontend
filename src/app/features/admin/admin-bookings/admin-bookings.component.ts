@@ -18,6 +18,8 @@ export class AdminBookingsComponent implements OnInit {
   specificDate: string = '';
   fromDate: string = '';
   toDate: string = '';
+  filterStatus: string = 'ALL';
+  sortOption: string = 'RECENT';
   filterError: string = '';
 
   constructor(
@@ -61,36 +63,49 @@ export class AdminBookingsComponent implements OnInit {
 
   applyFilters(): void {
     this.filterError = '';
-    if (this.filterMode === 'ALL') {
-      this.filteredBookings = [...this.bookings];
-    } else if (this.filterMode === 'SPECIFIC') {
-      if (!this.specificDate) {
-        this.filteredBookings = [...this.bookings];
-      } else {
-        const targetDateStr = this.specificDate;
-        this.filteredBookings = this.bookings.filter(b => {
-          const date = b.createdAt ? b.createdAt.substring(0, 10) : '';
-          return date === targetDateStr;
-        });
+    let temp = [...this.bookings];
+
+    if (this.filterMode === 'SPECIFIC') {
+      if (this.specificDate) {
+        temp = temp.filter(b => (b.createdAt || '').substring(0, 10) === this.specificDate);
       }
     } else if (this.filterMode === 'RANGE') {
       if (this.fromDate && this.toDate && this.fromDate > this.toDate) {
         this.filterError = 'From date cannot be after To date.';
-        this.filteredBookings = [];
+        temp = [];
       } else if (this.fromDate && this.toDate) {
-        this.filteredBookings = this.bookings.filter(b => {
-          const date = b.createdAt ? b.createdAt.substring(0, 10) : '';
-          if (!date) return false;
+        temp = temp.filter(b => {
+          const date = (b.createdAt || '').substring(0, 10);
           return date >= this.fromDate && date <= this.toDate;
         });
-      } else {
-        this.filteredBookings = [...this.bookings];
       }
     }
+
+    if (this.filterStatus !== 'ALL') {
+      temp = temp.filter(b => b.bookingStatus === this.filterStatus);
+    }
+
+    if (this.sortOption === 'RECENT') {
+      temp.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    } else if (this.sortOption === 'OLDEST') {
+      temp.sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
+    } else if (this.sortOption === 'BOOKING_ID_ASC') {
+      temp.sort((a, b) => (a.bookingReference || '').localeCompare(b.bookingReference || ''));
+    } else if (this.sortOption === 'BOOKING_ID_DESC') {
+      temp.sort((a, b) => (b.bookingReference || '').localeCompare(a.bookingReference || ''));
+    } else if (this.sortOption === 'AMOUNT_ASC') {
+      temp.sort((a, b) => (a.totalAmount || 0) - (b.totalAmount || 0));
+    } else if (this.sortOption === 'AMOUNT_DESC') {
+      temp.sort((a, b) => (b.totalAmount || 0) - (a.totalAmount || 0));
+    }
+
+    this.filteredBookings = temp;
     this.cdr.markForCheck();
   }
 
   clearFilters(): void {
+    this.filterStatus = 'ALL';
+    this.sortOption = 'RECENT';
     this.setFilterMode('ALL');
   }
 }

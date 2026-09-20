@@ -119,10 +119,38 @@ export class BusService {
     );
   }
 
-  deactivateBus(registrationNumber: string): Observable<any> {
-    return this.http.patch<any>(`${this.apiUrl}/buses/${registrationNumber}/deactivate`, {}).pipe(
+  // ==========================================================
+  // ACTIVATION REQUEST WORKFLOW
+  // ==========================================================
+
+  requestActivation(registrationNumber: string, reason: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/buses/${registrationNumber}/request-activation`, { reason });
+  }
+
+  getPendingActivationRequests(): Observable<any[]> {
+    return this.http.get<any>(`${this.apiUrl}/buses/pending-activation`).pipe(
       map(res => res.data)
     );
+  }
+
+  approveActivationRequest(registrationNumber: string, compensationAmount: number, adminNote?: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/buses/${registrationNumber}/approve-activation`, { compensationAmount, adminNote });
+  }
+
+  rejectActivationRequest(registrationNumber: string, adminNote?: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/buses/${registrationNumber}/reject-activation`, { adminNote });
+  }
+
+  createCompensationRazorpayOrder(registrationNumber: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/buses/${registrationNumber}/pay-compensation/razorpay/create-order`, {}).pipe(
+      map(res => res.data)
+    );
+  }
+
+  verifyCompensationAndActivate(registrationNumber: string, razorpayOrderId: string, razorpayPaymentId: string, razorpaySignature: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/buses/${registrationNumber}/pay-compensation/razorpay/verify`, {
+      razorpayOrderId, razorpayPaymentId, razorpaySignature
+    });
   }
 
   // ==========================================================

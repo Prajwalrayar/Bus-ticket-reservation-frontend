@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { RouteService } from '../../../core/services/route.service';
 import { RouteDTO, RouteCreateRequest } from '../../../core/models/route';
 import { RouteStopDTO, RouteStopCreateRequest, StopType, FareLocationDTO, FareLocationCreateRequest, RouteFareDTO, RouteFareCreateRequest } from '../../../core/models/trip';
+import { ConfirmService } from '../../../core/services/confirm.service';
 
 @Component({
   selector: 'app-admin-routes',
@@ -67,7 +68,8 @@ export class AdminRoutesComponent implements OnInit {
 
   constructor(
     private routeService: RouteService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private confirmService: ConfirmService
   ) {}
 
   ngOnInit(): void {
@@ -163,12 +165,19 @@ export class AdminRoutesComponent implements OnInit {
   }
 
   deactivateRoute(source: string, destination: string): void {
-    if (confirm(`Are you sure you want to deactivate route from ${source} to ${destination}?`)) {
-      this.routeService.deactivateRoute(source, destination).subscribe({
-        next: () => this.fetchAllRoutes(),
-        error: (err: any) => console.error('Error deactivating route', err)
-      });
-    }
+    this.confirmService.confirm(`Are you sure you want to deactivate route from ${source} to ${destination}?`).subscribe(confirmed => {
+      if (confirmed) {
+        this.routeService.deactivateRoute(source, destination).subscribe({
+          next: () => {
+            this.fetchAllRoutes();
+          },
+          error: (err: any) => {
+            this.error = err.error?.message || 'Failed to deactivate route.';
+            this.cdr.markForCheck();
+          }
+        });
+      }
+    });
   }
 
   // Stops management methods
@@ -307,6 +316,19 @@ export class AdminRoutesComponent implements OnInit {
     );
   }
 
+  onStopTypeChange(): void {
+    if (this.newStop.stopType === 'BOARDING') {
+      this.newStop.canBoard = true;
+      this.newStop.canDrop = false;
+    } else if (this.newStop.stopType === 'DROPPING') {
+      this.newStop.canBoard = false;
+      this.newStop.canDrop = true;
+    } else if (this.newStop.stopType === 'INTERMEDIATE') {
+      this.newStop.canBoard = true;
+      this.newStop.canDrop = true;
+    }
+  }
+
   isDistanceValid(): boolean {
     if (this.newStop.distanceFromSourceKm == null || this.newStop.distanceFromSourceKm < 0) return false;
     if (!this.selectedRouteForStops) return false;
@@ -394,20 +416,22 @@ export class AdminRoutesComponent implements OnInit {
 
   deleteFareLocation(locationId: string): void {
     if (!this.selectedRouteForFares) return;
-    if (confirm('Are you sure you want to delete this fare location?')) {
-      this.routeService.deleteFareLocation(this.selectedRouteForFares.source, this.selectedRouteForFares.destination, locationId).subscribe({
-        next: () => {
-          this.fareSubmitSuccess = 'Fare location deleted successfully!';
-          this.loadFaresData(this.selectedRouteForFares!.source, this.selectedRouteForFares!.destination);
-          setTimeout(() => { this.fareSubmitSuccess = ''; this.cdr.markForCheck(); }, 3000);
-        },
-        error: (err) => {
-          console.error('Failed to delete fare location', err);
-          this.fareSubmitError = err.error?.message || 'Failed to delete fare location.';
-          this.cdr.markForCheck();
-        }
-      });
-    }
+    this.confirmService.confirm('Are you sure you want to delete this fare location?').subscribe(confirmed => {
+      if (confirmed) {
+        this.routeService.deleteFareLocation(this.selectedRouteForFares!.source, this.selectedRouteForFares!.destination, locationId).subscribe({
+          next: () => {
+            this.fareSubmitSuccess = 'Fare location deleted successfully!';
+            this.loadFaresData(this.selectedRouteForFares!.source, this.selectedRouteForFares!.destination);
+            setTimeout(() => { this.fareSubmitSuccess = ''; this.cdr.markForCheck(); }, 3000);
+          },
+          error: (err: any) => {
+            console.error('Failed to delete fare location', err);
+            this.fareSubmitError = err.error?.message || 'Failed to delete fare location.';
+            this.cdr.markForCheck();
+          }
+        });
+      }
+    });
   }
 
   addRouteFare(): void {
@@ -432,19 +456,21 @@ export class AdminRoutesComponent implements OnInit {
 
   deleteRouteFare(fareId: string): void {
     if (!this.selectedRouteForFares) return;
-    if (confirm('Are you sure you want to delete this route fare?')) {
-      this.routeService.deleteRouteFare(this.selectedRouteForFares.source, this.selectedRouteForFares.destination, fareId).subscribe({
-        next: () => {
-          this.fareSubmitSuccess = 'Route fare deleted successfully!';
-          this.loadFaresData(this.selectedRouteForFares!.source, this.selectedRouteForFares!.destination);
-          setTimeout(() => { this.fareSubmitSuccess = ''; this.cdr.markForCheck(); }, 3000);
-        },
-        error: (err) => {
-          console.error('Failed to delete route fare', err);
-          this.fareSubmitError = err.error?.message || 'Failed to delete route fare.';
-          this.cdr.markForCheck();
-        }
-      });
-    }
+    this.confirmService.confirm('Are you sure you want to delete this route fare?').subscribe(confirmed => {
+      if (confirmed) {
+        this.routeService.deleteRouteFare(this.selectedRouteForFares!.source, this.selectedRouteForFares!.destination, fareId).subscribe({
+          next: () => {
+            this.fareSubmitSuccess = 'Route fare deleted successfully!';
+            this.loadFaresData(this.selectedRouteForFares!.source, this.selectedRouteForFares!.destination);
+            setTimeout(() => { this.fareSubmitSuccess = ''; this.cdr.markForCheck(); }, 3000);
+          },
+          error: (err) => {
+            console.error('Failed to delete route fare', err);
+            this.fareSubmitError = err.error?.message || 'Failed to delete route fare.';
+            this.cdr.markForCheck();
+          }
+        });
+      }
+    });
   }
 }

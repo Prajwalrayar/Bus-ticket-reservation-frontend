@@ -27,6 +27,13 @@ export interface BusDTO {
   operatorCompanyName: string;
   petsAllowed?: boolean;
   baggagePolicy?: string;
+  lastTripDate?: string;
+  activationRequestStatus?: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
+  activationRequestNote?: string;
+  compensationAmount?: number;
+  adminRejectionNote?: string;
+  activationRequestedAt?: string;
+  activationApprovedAt?: string;
 }
 
 export interface BusCreateRequest {

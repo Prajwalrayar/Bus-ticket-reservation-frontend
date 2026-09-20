@@ -168,10 +168,43 @@
                       <button class="btn btn-sm btn-outline-secondary flex-fill" (click)="manageSeats(bus)">Configure Seats</button>
                       <button class="btn btn-sm btn-outline-success w-100 mt-1"
                               (click)="openTripModal(bus)"
-                              [disabled]="routes.length === 0 || !bus.isActive"
-                              [title]="routes.length === 0 ? 'No routes available — ask Admin to create a route first' : 'Assign this bus to a route and date'">
+                              [disabled]="routes.length === 0 || !bus.isActive || isBusBusy(bus.registrationNumber)"
+                              [title]="routes.length === 0 ? 'No routes available — ask Admin to create a route first' : (isBusBusy(bus.registrationNumber) ? 'Bus is currently scheduled for an active trip' : 'Assign this bus to a route and date')">
                         <i class="bi bi-calendar-plus me-1"></i> Assign to Route
                       </button>
+                      @if (isBusBusy(bus.registrationNumber)) {
+                        <button class="btn btn-sm btn-outline-warning w-100 mt-1"
+                                (click)="openEditTripModal(getActiveTripForBus(bus.registrationNumber)!)">
+                          <i class="bi bi-pencil me-1"></i> Edit Active Trip
+                        </button>
+                      }
+                      <!-- Inactive bus: show activation workflow buttons -->
+                      @if (!bus.isActive) {
+                        @if (!bus.activationRequestStatus || bus.activationRequestStatus === 'NONE' || bus.activationRequestStatus === 'REJECTED') {
+                          @if (bus.activationRequestStatus === 'REJECTED') {
+                            <div class="alert alert-danger py-1 px-2 mb-1 small w-100">
+                              <i class="bi bi-x-circle me-1"></i> Request rejected.
+                              @if (bus.adminRejectionNote) { <em>{{ bus.adminRejectionNote }}</em> }
+                            </div>
+                          }
+                          <button class="btn btn-sm btn-outline-warning w-100 mt-1"
+                                  (click)="openActivationRequestModal(bus)">
+                            <i class="bi bi-send me-1"></i> Request Activation
+                          </button>
+                        } @else if (bus.activationRequestStatus === 'PENDING') {
+                          <button class="btn btn-sm btn-secondary w-100 mt-1" disabled>
+                            <i class="bi bi-hourglass-split me-1"></i> Pending Admin Approval
+                          </button>
+                        } @else if (bus.activationRequestStatus === 'APPROVED') {
+                          <div class="alert alert-success py-1 px-2 mb-1 small w-100">
+                            <i class="bi bi-check-circle me-1"></i> Approved! Pay ₹{{ bus.compensationAmount }} to activate.
+                          </div>
+                          <button class="btn btn-sm btn-success w-100 mt-1"
+                                  (click)="payCompensationAndActivate(bus)">
+                            <i class="bi bi-credit-card me-1"></i> Pay & Activate (₹{{ bus.compensationAmount }})
+                          </button>
+                        }
+                      }
                     </div>
                   </div>
                 </div>
@@ -440,12 +473,60 @@
 
       } @else if (activeTab === 'SUPPORT_AGENTS') {
 
-        <div class="card border-0 shadow-sm col-md-8 mx-auto mt-4">
-          <div class="card-header bg-white border-0 pt-4 pb-0">
-            <h5 class="fw-bold"><i class="bi bi-headset me-2 text-primary"></i> Create Support Agent</h5>
-            <p class="text-muted small">Create a new support agent for your operating company.</p>
+        <!-- Support Agents List -->
+          <div class="card border-0 shadow-sm col-md-10 mx-auto mb-4">
+            <div class="card-header bg-white border-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+              <h5 class="fw-bold"><i class="bi bi-people me-2 text-primary"></i> Support Agents</h5>
+              <span class="badge bg-primary rounded-pill">{{ supportAgents.length }} Total</span>
+            </div>
+            <div class="card-body p-4">
+              @if (supportAgentsLoading) {
+                <div class="text-center py-4">
+                  <div class="spinner-border text-primary" role="status"></div>
+                </div>
+              } @else if (supportAgents.length === 0) {
+                <div class="text-center text-muted py-4">
+                  <i class="bi bi-headset fs-1 d-block mb-3 opacity-25"></i>
+                  <p class="mb-0">No support agents found. Create one below.</p>
+                </div>
+              } @else {
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Mobile Number</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (agent of supportAgents; track agent.email) {
+                        <tr>
+                          <td class="fw-semibold">{{ agent.userName }}</td>
+                          <td>{{ agent.userEmail }}</td>
+                          <td>{{ agent.mobileNumber }}</td>
+                          <td>
+                            <span class="badge" [class.bg-success]="agent.isActive" [class.bg-danger]="!agent.isActive">
+                              {{ agent.isActive ? 'Active' : 'Inactive' }}
+                            </span>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </div>
           </div>
-          <div class="card-body p-4">
+
+          <!-- Create Agent Form -->
+          <div class="card border-0 shadow-sm col-md-10 mx-auto">
+            <div class="card-header bg-white border-0 pt-4 pb-0">
+              <h5 class="fw-bold"><i class="bi bi-person-plus me-2 text-primary"></i> Create Support Agent</h5>
+              <p class="text-muted small">Create a new support agent for your operating company.</p>
+            </div>
+            <div class="card-body p-4">
             @if (supportAgentSubmitSuccess) {
               <div class="alert alert-success"><i class="bi bi-check-circle me-2"></i>{{ supportAgentSubmitSuccess }}</div>
             }
@@ -504,6 +585,47 @@
 
     </div>
   </div>
+
+<!-- Activation Request Modal -->
+@if (showActivationRequestModal && activationRequestBus) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header bg-warning text-dark border-0">
+          <h5 class="modal-title fw-bold">
+            <i class="bi bi-send me-2"></i> Request Bus Reactivation
+          </h5>
+          <button type="button" class="btn-close" (click)="closeActivationRequestModal()"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted small mb-3">
+            Bus <strong>{{ activationRequestBus.registrationNumber }}</strong> is currently inactive.
+            Submit a request to the admin explaining why this bus should be reactivated.
+            The admin will review and set a compensation fee if applicable.
+          </p>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Reason for Reactivation <span class="text-danger">*</span></label>
+            <textarea class="form-control" rows="4" [(ngModel)]="activationRequestReason"
+                      placeholder="e.g., Bus has been serviced and is ready for operation. Requesting reactivation for upcoming routes."></textarea>
+          </div>
+          @if (activationRequestError) {
+            <div class="alert alert-danger py-2 small">{{ activationRequestError }}</div>
+          }
+        </div>
+        <div class="modal-footer border-0">
+          <button class="btn btn-secondary" (click)="closeActivationRequestModal()">Cancel</button>
+          <button class="btn btn-warning fw-semibold" (click)="submitActivationRequest()"
+                  [disabled]="activationRequestLoading || !activationRequestReason.trim()">
+            @if (activationRequestLoading) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            <i class="bi bi-send me-1"></i> Submit Request
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
 
 <!-- Bus Modal -->
 @if (showBusModal) {
@@ -666,7 +788,9 @@
             <div class="mb-3">
               <label class="form-label fw-semibold text-secondary small">Route <span class="text-danger">*</span></label>
               <select class="form-select" name="routeSelect" required
-                      (change)="onRouteChange(routes[$any($event.target).selectedIndex])">
+                      [(ngModel)]="selectedRouteId"
+                      (change)="onRouteIdChange()"
+                      [disabled]="isEditingTrip">
                 @for (route of routes; track route.routeId) {
                   <option [value]="route.routeId">{{ route.source }} → {{ route.destination }} ({{ route.distance }} km)</option>
                 }
@@ -676,15 +800,28 @@
 
             <div class="row g-3 mb-3">
               <!-- Travel Date -->
-              <div class="col-md-6">
+              <div class="col-md-4">
                 <label class="form-label fw-semibold text-secondary small">Trip Start Date <span class="text-danger">*</span></label>
                 <input type="date" class="form-control" name="travelDate"
                        [(ngModel)]="tripForm.travelDate" required
-                       [min]="today" #tDate="ngModel"
-                       [class.is-invalid]="tDate.invalid && (tDate.dirty || tDate.touched)">
+                       [min]="minTripDate" [max]="maxTripDate" #tDate="ngModel"
+                       [class.is-invalid]="tDate.invalid && (tDate.dirty || tDate.touched)"
+                       [disabled]="isEditingTrip">
                 @if (tDate.invalid && (tDate.dirty || tDate.touched)) {
-                  <div class="invalid-feedback">Trip Start Date is required.</div>
+                  <div class="invalid-feedback">Required.</div>
                 }
+              </div>
+              <!-- Overall Departure Time -->
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-secondary small">Trip Start Time * — Day</label>
+                <input type="text" class="form-control bg-light text-muted"
+                       [value]="derivedTripStartTime" readonly style="cursor: not-allowed;">
+              </div>
+              <!-- Overall Arrival Time -->
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-secondary small">Trip End Time * — Day</label>
+                <input type="text" class="form-control bg-light text-muted"
+                       [value]="derivedTripEndTime" readonly style="cursor: not-allowed;">
               </div>
             </div>
 
@@ -722,9 +859,11 @@
                         <tr>
                           <th>Boarding Point <span class="text-danger">*</span></th>
                           <th>Dropping Point <span class="text-danger">*</span></th>
-                          <th style="width: 130px;">Dep. Time <span class="text-danger">*</span></th>
-                          <th style="width: 130px;">Arr. Time <span class="text-danger">*</span></th>
-                          <th style="width: 140px;">Fare (₹) <span class="text-danger">*</span></th>
+                          <th style="width: 170px;">Dep. Time & Day <span class="text-danger">*</span></th>
+                          <th style="width: 170px;">Arr. Time & Day <span class="text-danger">*</span></th>
+                          <th style="width: 140px; cursor: pointer;" (click)="sortSegmentsByFare()" title="Click to sort by fare">
+                            Fare (₹) <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 0.8rem;"></i> <span class="text-danger">*</span>
+                          </th>
                           <th style="width: 50px;"></th>
                         </tr>
                       </thead>
@@ -759,10 +898,26 @@
                               }
                             </td>
                             <td>
-                              <input type="time" class="form-control form-control-sm" [(ngModel)]="segment.departureTime" name="depTime_{{$index}}" required>
+                              <div class="input-group input-group-sm">
+                                <input type="time" class="form-control" [(ngModel)]="segment.departureTime" (ngModelChange)="onTimeChange(segment)" name="depTime_{{$index}}" required
+                                       [class.is-invalid]="!segment.departureTime">
+                                <select class="form-select form-select-sm px-1" [(ngModel)]="segment.departureDayOffset" (ngModelChange)="onTimeChange(segment)" name="depDay_{{$index}}">
+                                  @for (day of dayOptions; track day) {
+                                    <option [ngValue]="day">Day {{ day + 1 }}</option>
+                                  }
+                                </select>
+                              </div>
                             </td>
                             <td>
-                              <input type="time" class="form-control form-control-sm" [(ngModel)]="segment.arrivalTime" name="arrTime_{{$index}}" required>
+                              <div class="input-group input-group-sm">
+                                <input type="time" class="form-control" [(ngModel)]="segment.arrivalTime" (ngModelChange)="onTimeChange(segment)" name="arrTime_{{$index}}" required
+                                       [class.is-invalid]="!segment.arrivalTime">
+                                <select class="form-select form-select-sm px-1" [(ngModel)]="segment.arrivalDayOffset" (ngModelChange)="onTimeChange(segment)" name="arrDay_{{$index}}">
+                                  @for (day of dayOptions; track day) {
+                                    <option [ngValue]="day">Day {{ day + 1 }}</option>
+                                  }
+                                </select>
+                              </div>
                             </td>
                             <td>
                               <div class="input-group input-group-sm">
@@ -782,7 +937,7 @@
                   </div>
                   @if (!isSegmentsValid) {
                     <div class="alert alert-danger py-2 mt-2 small">
-                      <i class="bi bi-exclamation-triangle me-1"></i> Please fill all segment fields correctly. Boarding and dropping stops must be different, and segment pairs must not repeat.
+                      <i class="bi bi-exclamation-triangle me-1"></i> {{ segmentValidationError }}
                     </div>
                   }
                 }
@@ -792,8 +947,13 @@
             <div class="d-flex gap-2 justify-content-end">
               <button type="button" class="btn btn-light px-4" (click)="closeTripModal()">Cancel</button>
               <button type="submit" class="btn btn-success px-4"
-                      [disabled]="!tripFormCtrl.form.valid || !!tripSubmitSuccess || !isSegmentsValid">
-                <i class="bi bi-calendar-check me-2"></i>Schedule Trip
+                      [disabled]="!tripFormCtrl.form.valid || !!tripSubmitSuccess || !isSegmentsValid || tripSubmitLoading">
+                @if (tripSubmitLoading) {
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                  {{ isEditingTrip ? 'Updating...' : 'Scheduling...' }}
+                } @else {
+                  <i class="bi bi-calendar-check me-2"></i>{{ isEditingTrip ? 'Update Trip' : 'Schedule Trip' }}
+                }
               </button>
             </div>
           </form>
