@@ -28,59 +28,185 @@
   <!-- Main Content -->
   <div class="col-md-9">
     <div class="p-4 bg-white rounded shadow-sm">
-      <div class="d-flex justify-content-between align-items-center mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="mb-0 fw-bold">Fleet Management</h4>
-      </div>
-
-      @if (loading) {
-      <div class="text-center py-5">
-        <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-2 text-secondary">Loading buses...</p>
-      </div>
-      } @else if (error) {
-      <div class="alert alert-danger">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
-      </div>
-      } @else if (filteredBuses.length === 0) {
-      <div class="alert alert-info text-center py-4">
-        <i class="bi bi-info-circle fs-3 d-block mb-2"></i>
-        No buses match the current filters.
-      </div>
-      } @else {
-      <div class="table-responsive">
-        <table class="table table-hover align-middle border">
-          <thead class="table-light">
-            <tr>
-              <th>Registration No.</th>
-              <th>Company</th>
-              <th>Type</th>
-              <th>Amenities</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (bus of filteredBuses; track bus.registrationNumber) {
-            <tr>
-              <td class="fw-bold">{{ bus.registrationNumber }}</td>
-              <td>{{ bus.operatorCompanyName }}</td>
-              <td><span class="badge bg-secondary">{{ bus.busType }}</span></td>
-              <td>{{ bus.amenities.length || 0 }}</td>
-              <td>
-
-                @if (bus.isActive) {
-                <span class="badge bg-success">Active</span>
-                } @else {
-                <span class="badge bg-danger">Inactive</span>
-                }
-              </td>
-            </tr>
+        <!-- Tab switcher -->
+        <div class="btn-group">
+          <button class="btn btn-sm" [class.btn-primary]="activeTab === 'all'" [class.btn-outline-primary]="activeTab !== 'all'"
+                  (click)="switchTab('all')">
+            <i class="bi bi-list-ul me-1"></i> All Buses
+          </button>
+          <button class="btn btn-sm" [class.btn-warning]="activeTab === 'pending'" [class.btn-outline-warning]="activeTab !== 'pending'"
+                  (click)="switchTab('pending')">
+            <i class="bi bi-clock me-1"></i> Pending Activations
+            @if (pendingActivations.length > 0) {
+              <span class="badge bg-danger ms-1">{{ pendingActivations.length }}</span>
             }
-          </tbody>
-        </table>
+          </button>
+        </div>
       </div>
+
+      <!-- ALL BUSES TAB -->
+      @if (activeTab === 'all') {
+        @if (loading) {
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 text-secondary">Loading buses...</p>
+          </div>
+        } @else if (error) {
+          <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+          </div>
+        } @else if (filteredBuses.length === 0) {
+          <div class="alert alert-info text-center py-4">
+            <i class="bi bi-info-circle fs-3 d-block mb-2"></i>
+            No buses match the current filters.
+          </div>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-hover align-middle border">
+              <thead class="table-light">
+                <tr>
+                  <th>Registration No.</th>
+                  <th>Company</th>
+                  <th>Type</th>
+                  <th>Amenities</th>
+                  <th>Status</th>
+                  <th>Activation</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (bus of filteredBuses; track bus.registrationNumber) {
+                <tr>
+                  <td class="fw-bold">{{ bus.registrationNumber }}</td>
+                  <td>{{ bus.operatorCompanyName }}</td>
+                  <td><span class="badge bg-secondary">{{ bus.busType }}</span></td>
+                  <td>{{ bus.amenities.length || 0 }}</td>
+                  <td>
+                    @if (bus.isActive) {
+                      <span class="badge bg-success">Active</span>
+                    } @else {
+                      <span class="badge bg-danger">Inactive</span>
+                    }
+                  </td>
+                  <td>
+                    @if (!bus.isActive) {
+                      @if (bus.activationRequestStatus === 'PENDING') {
+                        <span class="badge bg-warning text-dark">Pending Review</span>
+                      } @else if (bus.activationRequestStatus === 'APPROVED') {
+                        <span class="badge bg-info">Awaiting Payment</span>
+                      } @else if (bus.activationRequestStatus === 'REJECTED') {
+                        <span class="badge bg-secondary">Rejected</span>
+                      } @else {
+                        <span class="text-muted small">—</span>
+                      }
+                    } @else {
+                      <span class="text-muted small">—</span>
+                    }
+                  </td>
+                </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+
+      <!-- PENDING ACTIVATIONS TAB -->
+      @if (activeTab === 'pending') {
+        @if (pendingActivationsLoading) {
+          <div class="text-center py-5">
+            <div class="spinner-border text-warning" role="status"></div>
+            <p class="mt-2 text-secondary">Loading pending requests...</p>
+          </div>
+        } @else if (pendingActivations.length === 0) {
+          <div class="alert alert-success text-center py-4">
+            <i class="bi bi-check-circle fs-3 d-block mb-2"></i>
+            No pending activation requests.
+          </div>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-hover align-middle border">
+              <thead class="table-light">
+                <tr>
+                  <th>Registration No.</th>
+                  <th>Company</th>
+                  <th>Reason</th>
+                  <th>Requested At</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (bus of pendingActivations; track bus.registrationNumber) {
+                <tr>
+                  <td class="fw-bold">{{ bus.registrationNumber }}</td>
+                  <td>{{ bus.operatorCompanyName }}</td>
+                  <td class="small text-muted" style="max-width:200px;">{{ bus.activationRequestNote }}</td>
+                  <td class="small">{{ bus.activationRequestedAt | date:'dd MMM y, h:mm a' }}</td>
+                  <td class="d-flex gap-2 flex-wrap">
+                    <button class="btn btn-sm btn-success" (click)="openApprovalModal(bus)">
+                      <i class="bi bi-check-circle me-1"></i> Approve
+                    </button>
+                    <button class="btn btn-sm btn-danger" (click)="rejectActivation(bus)">
+                      <i class="bi bi-x-circle me-1"></i> Reject
+                    </button>
+                  </td>
+                </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
       }
     </div>
   </div>
 </div>
 
-<!-- Modal removed -->
+<!-- Approval Modal -->
+@if (showApprovalModal && approvalBus) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header bg-success text-white border-0">
+          <h5 class="modal-title fw-bold">
+            <i class="bi bi-check-circle me-2"></i> Approve Bus Activation
+          </h5>
+          <button type="button" class="btn-close btn-close-white" (click)="closeApprovalModal()"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted small mb-3">
+            Approving activation for bus <strong>{{ approvalBus.registrationNumber }}</strong>
+            ({{ approvalBus.operatorCompanyName }}).
+          </p>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Compensation Fee (₹) <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" min="0" [(ngModel)]="approvalCompensationAmount"
+                   placeholder="0 for no compensation">
+            <div class="form-text">Set 0 to activate immediately without payment.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Admin Note (Optional)</label>
+            <textarea class="form-control" rows="2" [(ngModel)]="approvalAdminNote"
+                      placeholder="Any note for the operator..."></textarea>
+          </div>
+          @if (approvalError) {
+            <div class="alert alert-danger py-2 small">{{ approvalError }}</div>
+          }
+          @if (approvalSuccess) {
+            <div class="alert alert-success py-2 small">{{ approvalSuccess }}</div>
+          }
+        </div>
+        <div class="modal-footer border-0">
+          <button class="btn btn-secondary" (click)="closeApprovalModal()">Cancel</button>
+          <button class="btn btn-success fw-semibold" (click)="approveActivation()"
+                  [disabled]="approvalLoading || approvalCompensationAmount < 0">
+            @if (approvalLoading) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            <i class="bi bi-check-circle me-1"></i> Approve
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

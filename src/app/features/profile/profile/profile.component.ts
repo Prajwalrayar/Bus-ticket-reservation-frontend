@@ -21,6 +21,7 @@ import { CustomValidators } from '../../../core/validators/custom-validators';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { ThemeService } from '../../../core/services/theme.service';
+import { ConfirmService } from '../../../core/services/confirm.service';
 
 export interface UIBooking {
   bookingId: string;
@@ -34,6 +35,9 @@ export interface UIBooking {
   time: string;
   seats: string[];
   isCompletedJourney: boolean;
+  canCancel: boolean;
+  isStarted: boolean;
+  segments?: any[];
 }
 
 @Component({
@@ -135,6 +139,10 @@ export class ProfileComponent implements OnInit {
   cancellationResult: CancellationDTO | null = null;
   cancellationEstimate: CancellationEstimateDTO | null = null;
 
+  // Tracking State
+  showTrackingModal: boolean = false;
+  trackingBooking: UIBooking | null = null;
+
   // Saved Passenger State
   savedPassengers: SavedPassengerDTO[] = [];
   showPassengerModal: boolean = false;
@@ -185,7 +193,8 @@ export class ProfileComponent implements OnInit {
     public themeService: ThemeService,
     private cdr: ChangeDetectorRef,
     private supportTicketService: SupportTicketService,
-    private walletService: WalletService
+    private walletService: WalletService,
+    private confirmService: ConfirmService
   ) {
     this.profileForm = this.fb.group({
       userName: ['', [Validators.required, CustomValidators.validName()]],
@@ -734,6 +743,21 @@ export class ProfileComponent implements OnInit {
 
         const travelDate = trip?.travelDate ? new Date(trip.travelDate) : null;
         
+        let canCancel = false;
+        if (b.bookingStatus === 'CONFIRMED' || b.bookingStatus === 'PENDING') {
+          if (travelDate && trip?.departureTime) {
+            const [hours, minutes] = trip.departureTime.split(':').map(Number);
+            const departureDateTime = new Date(travelDate);
+            departureDateTime.setHours(hours, minutes, 0, 0);
+            
+            const now = new Date();
+            const diffHours = (departureDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+            canCancel = diffHours > 2;
+          } else {
+            canCancel = true;
+          }
+        }
+        
         return {
           bookingId: b.bookingId,
           bookingReference: b.bookingReference,
@@ -745,25 +769,63 @@ export class ProfileComponent implements OnInit {
           date: travelDate,
           time: trip?.departureTime || '',
           seats: b.bookingSeats?.map(s => s.seatNumber) || [],
-          isCompletedJourney: false
+          isCompletedJourney: false,
+          canCancel: canCancel,
+          isStarted: false,
+          segments: trip?.segments || []
         };
       });
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const now = new Date();
 
-      this.upcomingBookings = uiBookings.filter(b => b.status === 'CONFIRMED' && b.date && b.date >= today);
-      this.completedBookings = uiBookings.filter(b => b.status === 'CONFIRMED' && b.date && b.date < today);
+      uiBookings.forEach(b => {
+        let isCompleted = false;
+        
+        // Find the trip data for this booking
+        const tripIndex = bookings.findIndex(bk => bk.bookingId === b.bookingId);
+        const tripRes = tripIndex !== -1 ? tripResponses[tripIndex] : null;
+        const trip: TripDTO | null = tripRes ? tripRes.data : null;
+
+        let isStarted = false;
+
+        if (trip?.arrivalDate && trip?.arrivalTime) {
+          const [arrHours, arrMinutes] = trip.arrivalTime.split(':').map(Number);
+          const arrivalDateTime = new Date(trip.arrivalDate);
+          arrivalDateTime.setHours(arrHours, arrMinutes, 0, 0);
+          isCompleted = arrivalDateTime < now;
+        } else if (trip?.travelDate && trip?.departureTime) {
+          // Fallback to departure time if arrival time is missing
+          const [depHours, depMinutes] = trip.departureTime.split(':').map(Number);
+          const departureDateTime = new Date(trip.travelDate);
+          departureDateTime.setHours(depHours, depMinutes, 0, 0);
+          // Add a generous 12 hours buffer for trip duration if arrival is unknown
+          departureDateTime.setHours(departureDateTime.getHours() + 12);
+          isCompleted = departureDateTime < now;
+        } else if (b.date) {
+          // Ultimate fallback to just the date (end of day)
+          const fallbackDate = new Date(b.date);
+          fallbackDate.setHours(23, 59, 59, 999);
+          isCompleted = fallbackDate < now;
+        }
+
+        if (trip?.travelDate && trip?.departureTime) {
+          const [depHours, depMinutes] = trip.departureTime.split(':').map(Number);
+          const departureDateTime = new Date(trip.travelDate);
+          departureDateTime.setHours(depHours, depMinutes, 0, 0);
+          isStarted = departureDateTime <= now;
+        }
+
+        b.isCompletedJourney = b.status === 'CONFIRMED' && isCompleted;
+        b.isStarted = b.status === 'CONFIRMED' && isStarted;
+      });
+
+      this.upcomingBookings = uiBookings.filter(b => b.status === 'CONFIRMED' && !b.isCompletedJourney);
+      this.completedBookings = uiBookings.filter(b => b.status === 'CONFIRMED' && b.isCompletedJourney);
       this.cancelledBookings = uiBookings.filter(b => b.status === 'CANCELLED' || b.status === 'FAILED');
 
       // Calculate travel stats (mock data based on completed bookings)
       this.totalDistance = this.completedBookings.length * 320; // Assume 320km per trip
       this.carbonSavings = this.totalDistance * 0.12; // Assume 0.12kg CO2 saved per km
-
-      // Set isCompletedJourney flag based on the same logic used for completedBookings
-      uiBookings.forEach(b => {
-        b.isCompletedJourney = b.status === 'CONFIRMED' && b.date !== null && b.date < today;
-      });
 
       this.loadingBookings = false;
       this.cdr.markForCheck();
@@ -817,6 +879,20 @@ export class ProfileComponent implements OnInit {
     this.showCancelConfirmModal = false;
     this.selectedBookingIdToCancel = null;
     this.cancellationEstimate = null;
+  }
+
+  // --- TRACKING ---
+  
+  openTrackingModal(booking: UIBooking): void {
+    this.trackingBooking = booking;
+    this.showTrackingModal = true;
+    this.cdr.markForCheck();
+  }
+  
+  closeTrackingModal(): void {
+    this.showTrackingModal = false;
+    this.trackingBooking = null;
+    this.cdr.markForCheck();
   }
 
   viewTicket(bookingReference: string): void {
@@ -944,18 +1020,20 @@ export class ProfileComponent implements OnInit {
   }
 
   deletePassenger(savedPassengerId: string): void {
-    if (confirm('Are you sure you want to remove this saved passenger?')) {
-      this.savedPassengerService.deactivateSavedPassenger(savedPassengerId).subscribe({
-        next: () => {
-          this.fetchSavedPassengers();
-          this.cdr.markForCheck();
-        },
-        error: (err) => {
-          console.error('Failed to delete passenger', err);
-          this.cdr.markForCheck();
-        }
-      });
-    }
+    this.confirmService.confirm('Are you sure you want to remove this saved passenger?').subscribe(confirmed => {
+      if (confirmed) {
+        this.savedPassengerService.deactivateSavedPassenger(savedPassengerId).subscribe({
+          next: () => {
+            this.fetchSavedPassengers();
+            this.cdr.markForCheck();
+          },
+          error: (err) => {
+            console.error('Failed to delete passenger', err);
+            this.cdr.markForCheck();
+          }
+        });
+      }
+    });
   }
 
   // --- SUPPORT TICKET REPLIES ---

@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { AiService } from '../../core/services/ai.service';
 import { AuthStateService } from '../../core/services/auth-state.service';
 import { PersonalizedOfferResponse } from '../../core/models/ai.model';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-home-search',
@@ -19,7 +20,8 @@ export class HomeSearch implements OnInit {
   constructor(
     private router: Router, 
     private aiService: AiService,
-    private authStateService: AuthStateService
+    private authStateService: AuthStateService,
+    private toastService: ToastService
   ) {}
 
   ngOnInit() {
@@ -54,7 +56,7 @@ export class HomeSearch implements OnInit {
       },
       error: () => {
         this.isLoading = false;
-        alert('Failed to perform smart search. Please try again.');
+        this.toastService.error('Failed to perform smart search. Please try again.');
       }
     });
   }

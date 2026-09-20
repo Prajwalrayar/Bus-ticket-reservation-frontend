@@ -46,6 +46,9 @@
               </td>
               <td>
                 <div class="d-flex gap-2">
+                  <button class="btn btn-sm btn-outline-warning" (click)="openRouteModal(route)">
+                    <i class="bi bi-pencil me-1"></i> Edit
+                  </button>
                   <button class="btn btn-sm btn-outline-primary" (click)="openStopsModal(route)">
                     <i class="bi bi-geo-alt me-1"></i> Stops
                   </button>
@@ -203,7 +206,7 @@
               </div>
               <div class="col-md-6">
                 <label class="form-label text-muted small fw-semibold">Stop Type <span class="text-primary">*</span></label>
-                <select class="form-select" name="stopType" [(ngModel)]="newStop.stopType" required>
+                <select class="form-select" name="stopType" [(ngModel)]="newStop.stopType" (change)="onStopTypeChange()" required>
                   <option value="BOARDING">Boarding</option>
                   <option value="DROPPING">Dropping</option>
                   <option value="INTERMEDIATE">Intermediate</option>
@@ -247,11 +250,11 @@
 
               <div class="col-md-6 d-flex align-items-center">
                 <div class="form-check form-switch me-4 mt-4">
-                  <input class="form-check-input" type="checkbox" role="switch" id="canBoardSwitch" name="canBoard" [(ngModel)]="newStop.canBoard">
+                  <input class="form-check-input" type="checkbox" role="switch" id="canBoardSwitch" name="canBoard" [(ngModel)]="newStop.canBoard" [disabled]="newStop.stopType !== 'INTERMEDIATE'">
                   <label class="form-check-label text-muted small fw-semibold" for="canBoardSwitch">Allow Boarding</label>
                 </div>
                 <div class="form-check form-switch mt-4">
-                  <input class="form-check-input" type="checkbox" role="switch" id="canDropSwitch" name="canDrop" [(ngModel)]="newStop.canDrop">
+                  <input class="form-check-input" type="checkbox" role="switch" id="canDropSwitch" name="canDrop" [(ngModel)]="newStop.canDrop" [disabled]="newStop.stopType !== 'INTERMEDIATE'">
                   <label class="form-check-label text-muted small fw-semibold" for="canDropSwitch">Allow Dropping</label>
                 </div>
               </div>

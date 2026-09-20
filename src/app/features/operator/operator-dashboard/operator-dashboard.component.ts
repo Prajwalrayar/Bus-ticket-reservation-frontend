@@ -13,6 +13,8 @@ import { HttpClient } from '@angular/common/http';
 import { ApiResponse } from '../../../core/models/api-response';
 import { AiService } from '../../../core/services/ai.service';
 import { UserService } from '../../../core/services/user.service';
+import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmService } from '../../../core/services/confirm.service';
 
 @Component({
   selector: 'app-operator-dashboard',
@@ -29,9 +31,23 @@ export class OperatorDashboardComponent implements OnInit {
   operatorProfile: OperatorDTO | null = null;
   profileError: string = '';
 
-  // Utility — today's date in YYYY-MM-DD for date input [min]
-  today: string = new Date().toISOString().split('T')[0];
+  // Utility — dates for [min] and [max]
+  today = new Date().toISOString().split('T')[0];
+  maxDate = new Date(new Date().setDate(new Date().getDate() + 45)).toISOString().split('T')[0];
 
+  get minTripDate(): string {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    return d.toISOString().split('T')[0];
+  }
+
+  get maxTripDate(): string {
+    const d = new Date();
+    d.setDate(d.getDate() + 45);
+    return d.toISOString().split('T')[0];
+  }
+
+  dayOptions: number[] = [0, 1, 2, 3, 4, 5, 6];
 
   // ROUTES
   routes: RouteDTO[] = [];
@@ -85,9 +101,14 @@ export class OperatorDashboardComponent implements OnInit {
   };
   tripSubmitSuccess: string = '';
   tripSubmitError: string = '';
+  tripSubmitLoading: boolean = false;
   routeFares: any[] = [];
   isEditingTrip: boolean = false;
   originalTripKeys: any = null;
+  selectedRouteId: string = '';
+
+  // ALL TRIPS for operator
+  operatorTrips: TripDTO[] = [];
 
   // TICKETS
   ticketNumberToValidate: string = '';
@@ -121,6 +142,8 @@ export class OperatorDashboardComponent implements OnInit {
   supportAgentSubmitSuccess: string = '';
   supportAgentSubmitError: string = '';
   supportAgentLoading: boolean = false;
+  supportAgents: any[] = [];
+  supportAgentsLoading: boolean = false;
 
   constructor(
     private operatorService: OperatorService,
@@ -131,7 +154,9 @@ export class OperatorDashboardComponent implements OnInit {
     private aiService: AiService,
     private router: Router,
     private userService: UserService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private toastService: ToastService,
+    private confirmService: ConfirmService
   ) {}
 
   ngOnInit(): void {
@@ -185,6 +210,7 @@ export class OperatorDashboardComponent implements OnInit {
         this.isSetupComplete = true;
         this.determineTabFromUrl();
         this.fetchDashboardStats();
+        this.fetchAllOperatorTrips();
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -215,13 +241,29 @@ export class OperatorDashboardComponent implements OnInit {
     if (this.companyNameInput) {
       this.busService.getBusesByOperator(this.companyNameInput).subscribe(res => {
         this.dashboardBusesCount = res.length;
-        this.cdr.detectChanges();
       });
       this.routeService.getAllRoutes().subscribe(res => {
         this.dashboardRoutesCount = res.filter(r => r.isActive).length;
         this.cdr.detectChanges();
       });
+      this.fetchSupportAgents();
     }
+  }
+
+  fetchSupportAgents(): void {
+    this.supportAgentsLoading = true;
+    this.http.get<ApiResponse<any[]>>('/api/operators/support-agents').subscribe({
+      next: (res) => {
+        this.supportAgents = res.data;
+        this.dashboardSupportAgentsCount = this.supportAgents.length;
+        this.supportAgentsLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.supportAgentsLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   // PROFILE
@@ -230,11 +272,11 @@ export class OperatorDashboardComponent implements OnInit {
     this.operatorService.updateOperator(this.companyNameInput, this.operatorProfile).subscribe({
       next: (res) => {
         this.operatorProfile = res;
-        alert('Profile updated successfully!');
+        this.toastService.success('Profile updated successfully!');
         this.cdr.detectChanges();
       },
       error: (err) => {
-        alert('Failed to update profile.');
+        this.toastService.error('Failed to update profile.');
         this.cdr.detectChanges();
       }
     });
@@ -269,6 +311,41 @@ export class OperatorDashboardComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  fetchAllOperatorTrips(): void {
+    if (!this.companyNameInput) return;
+    this.http.get<ApiResponse<TripDTO[]>>(`/api/trips/operator`).subscribe({
+      next: (res) => {
+        this.operatorTrips = res.data || [];
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to fetch operator trips for busy check', err);
+      }
+    });
+  }
+
+  isBusBusy(registrationNumber: string): boolean {
+    return !!this.getActiveTripForBus(registrationNumber);
+  }
+
+  getActiveTripForBus(registrationNumber: string): TripDTO | undefined {
+    if (!this.operatorTrips) return undefined;
+    const now = new Date();
+    const activeTrips = this.operatorTrips.filter(trip => 
+      !trip.isCancelled &&
+      trip.busRegistrationNumber === registrationNumber &&
+      new Date(`${trip.arrivalDate || trip.travelDate}T${trip.arrivalTime}`) > now
+    );
+    if (activeTrips.length === 0) return undefined;
+    
+    // Sort by departure time ascending to get the earliest upcoming trip
+    activeTrips.sort((a, b) => {
+      return new Date(`${a.travelDate}T${a.departureTime}`).getTime() - new Date(`${b.travelDate}T${b.departureTime}`).getTime();
+    });
+    
+    return activeTrips[0];
   }
 
   openBusModal(bus?: BusDTO): void {
@@ -336,6 +413,99 @@ export class OperatorDashboardComponent implements OnInit {
     }
   }
 
+  // Activation request state
+  showActivationRequestModal: boolean = false;
+  activationRequestBus: BusDTO | null = null;
+  activationRequestReason: string = '';
+  activationRequestLoading: boolean = false;
+  activationRequestError: string = '';
+
+  openActivationRequestModal(bus: BusDTO): void {
+    this.activationRequestBus = bus;
+    this.activationRequestReason = '';
+    this.activationRequestError = '';
+    this.showActivationRequestModal = true;
+    this.cdr.markForCheck();
+  }
+
+  closeActivationRequestModal(): void {
+    this.showActivationRequestModal = false;
+    this.activationRequestBus = null;
+    this.activationRequestReason = '';
+    this.activationRequestError = '';
+    this.cdr.markForCheck();
+  }
+
+  submitActivationRequest(): void {
+    if (!this.activationRequestBus || !this.activationRequestReason.trim()) {
+      this.activationRequestError = 'Please provide a reason for reactivation.';
+      this.cdr.markForCheck();
+      return;
+    }
+    this.activationRequestLoading = true;
+    this.activationRequestError = '';
+    this.busService.requestActivation(this.activationRequestBus.registrationNumber, this.activationRequestReason).subscribe({
+      next: () => {
+        this.activationRequestLoading = false;
+        this.closeActivationRequestModal();
+        this.toastService.success('Activation request submitted! Awaiting admin approval.');
+        this.fetchAllBuses();
+        this.cdr.markForCheck();
+      },
+      error: (err: any) => {
+        this.activationRequestLoading = false;
+        this.activationRequestError = err.error?.message || 'Failed to submit request.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  payCompensationAndActivate(bus: BusDTO): void {
+    this.busService.createCompensationRazorpayOrder(bus.registrationNumber).subscribe({
+      next: (order: any) => {
+        // If compensation is 0, bus is already activated
+        if (!order.orderId) {
+          this.toastService.success('Bus reactivated successfully (no compensation required)!');
+          this.fetchAllBuses();
+          return;
+        }
+        const options: any = {
+          key: order.keyId,
+          amount: order.amount * 100,
+          currency: order.currency || 'INR',
+          name: 'Bus Reactivation Compensation',
+          description: `Compensation for bus ${bus.registrationNumber}`,
+          order_id: order.orderId,
+          handler: (response: any) => {
+            this.busService.verifyCompensationAndActivate(
+              bus.registrationNumber,
+              response.razorpay_order_id,
+              response.razorpay_payment_id,
+              response.razorpay_signature
+            ).subscribe({
+              next: () => {
+                this.toastService.success('Payment successful! Bus has been reactivated.');
+                this.fetchAllBuses();
+                this.cdr.markForCheck();
+              },
+              error: (err: any) => {
+                this.toastService.error(err.error?.message || 'Payment verification failed.');
+                this.cdr.markForCheck();
+              }
+            });
+          },
+          theme: { color: '#5c6bc0' }
+        };
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+      },
+      error: (err: any) => {
+        this.toastService.error(err.error?.message || 'Failed to initiate compensation payment.');
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
   hasAmenity(amenity: string): boolean {
     return this.busForm.amenities?.includes(amenity) || false;
   }
@@ -375,19 +545,27 @@ export class OperatorDashboardComponent implements OnInit {
     };
     
     if (this.routes.length > 0) {
+      this.selectedRouteId = this.routes[0].routeId;
       this.fetchRouteStops(this.routes[0].source, this.routes[0].destination);
+    } else {
+      this.selectedRouteId = '';
     }
     
     this.showTripModal = true;
   }
 
   openEditTripModal(trip: TripDTO): void {
-    const bus = this.buses.find(b => b.registrationNumber === trip.busRegistrationNumber);
-    if (!bus) return; // Cannot edit if bus info not available
+    // Construct a minimal bus object since full buses array might not be loaded
+    const bus: Partial<BusDTO> = {
+      registrationNumber: trip.busRegistrationNumber,
+      busType: trip.busType,
+      operatorCompanyName: trip.operatorName
+    };
+    
     
     this.tripSubmitError = '';
     this.tripSubmitSuccess = '';
-    this.selectedBusForTrip = bus;
+    this.selectedBusForTrip = bus as BusDTO;
     this.isEditingTrip = true;
     this.originalTripKeys = {
       busRegistrationNumber: trip.busRegistrationNumber,
@@ -407,14 +585,38 @@ export class OperatorDashboardComponent implements OnInit {
       departureTime: trip.departureTime,
       arrivalTime: trip.arrivalTime,
       baseFare: trip.baseFare,
-      segments: trip.segments ? trip.segments.map(seg => ({
-        boardingStopId: seg.boardingStopId,
-        droppingStopId: seg.droppingStopId,
-        departureTime: seg.departureTime ? seg.departureTime.substring(0, 5) : '',
-        arrivalTime: seg.arrivalTime ? seg.arrivalTime.substring(0, 5) : '',
-        fare: seg.fare
-      })) : []
+      segments: trip.segments ? trip.segments.map(seg => {
+        let depDayOffset = 0;
+        let arrDayOffset = 0;
+        if (trip.travelDate) {
+          const tripDate = new Date(trip.travelDate + 'T00:00:00Z');
+          if (seg.departureDate) {
+            const depDate = new Date(seg.departureDate + 'T00:00:00Z');
+            depDayOffset = Math.round((depDate.getTime() - tripDate.getTime()) / (1000 * 60 * 60 * 24));
+          }
+          if (seg.arrivalDate) {
+            const arrDate = new Date(seg.arrivalDate + 'T00:00:00Z');
+            arrDayOffset = Math.round((arrDate.getTime() - tripDate.getTime()) / (1000 * 60 * 60 * 24));
+          }
+        }
+        return {
+          boardingStopId: seg.boardingStopId,
+          droppingStopId: seg.droppingStopId,
+          departureTime: seg.departureTime ? seg.departureTime.substring(0, 5) : '',
+          arrivalTime: seg.arrivalTime ? seg.arrivalTime.substring(0, 5) : '',
+          departureDayOffset: depDayOffset,
+          arrivalDayOffset: arrDayOffset,
+          fare: seg.fare
+        };
+      }) : []
     };
+
+    const matchedRoute = this.routes.find(r => r.source === trip.source && r.destination === trip.destination);
+    if (matchedRoute) {
+      this.selectedRouteId = matchedRoute.routeId;
+    } else {
+      this.selectedRouteId = '';
+    }
 
     this.fetchRouteStops(trip.source, trip.destination);
     this.showTripModal = true;
@@ -427,9 +629,18 @@ export class OperatorDashboardComponent implements OnInit {
   }
 
   onRouteChange(route: RouteDTO): void {
+    if (!route) return;
+    this.selectedRouteId = route.routeId;
     this.tripForm.source = route.source;
     this.tripForm.destination = route.destination;
     this.fetchRouteStops(route.source, route.destination);
+  }
+
+  onRouteIdChange(): void {
+    const route = this.routes.find(r => r.routeId === this.selectedRouteId);
+    if (route) {
+      this.onRouteChange(route);
+    }
   }
 
   fetchRouteStops(source: string, destination: string): void {
@@ -467,6 +678,41 @@ export class OperatorDashboardComponent implements OnInit {
   }
 
   onSegmentStopChange(segment: import('../../../core/models/trip').TripSegmentCreateRequest): void {
+    let copiedDep = false;
+    let copiedArr = false;
+
+    // 1. Auto-fill timings based on other segments with the same stops
+    if (this.tripForm.segments && this.tripForm.segments.length > 1) {
+      if (segment.boardingStopId) {
+        const otherBoarding = this.tripForm.segments.find(s => s !== segment && s.boardingStopId === segment.boardingStopId && s.departureTime);
+        if (otherBoarding) {
+          segment.departureTime = otherBoarding.departureTime;
+          segment.departureDayOffset = otherBoarding.departureDayOffset;
+        } else {
+          const otherDropping = this.tripForm.segments.find(s => s !== segment && s.droppingStopId === segment.boardingStopId && s.arrivalTime);
+          if (otherDropping) {
+            segment.departureTime = otherDropping.arrivalTime;
+            segment.departureDayOffset = otherDropping.arrivalDayOffset;
+          }
+        }
+      }
+      
+      if (segment.droppingStopId) {
+        const otherDropping = this.tripForm.segments.find(s => s !== segment && s.droppingStopId === segment.droppingStopId && s.arrivalTime);
+        if (otherDropping) {
+          segment.arrivalTime = otherDropping.arrivalTime;
+          segment.arrivalDayOffset = otherDropping.arrivalDayOffset;
+        } else {
+          const otherBoarding = this.tripForm.segments.find(s => s !== segment && s.boardingStopId === segment.droppingStopId && s.departureTime);
+          if (otherBoarding) {
+            segment.arrivalTime = otherBoarding.departureTime;
+            segment.arrivalDayOffset = otherBoarding.departureDayOffset;
+          }
+        }
+      }
+    }
+
+    // 2. Auto-fill fare based on RouteFares
     if (segment.boardingStopId && segment.droppingStopId) {
       const boardingStop = this.routeStops.find(s => s.routeStopId === segment.boardingStopId);
       const droppingStop = this.routeStops.find(s => s.routeStopId === segment.droppingStopId);
@@ -492,8 +738,165 @@ export class OperatorDashboardComponent implements OnInit {
       droppingStopId: '',
       departureTime: '',
       arrivalTime: '',
+      departureDayOffset: 0,
+      arrivalDayOffset: 0,
       fare: 0
     });
+  }
+
+  fareSortDesc: boolean = false;
+  sortSegmentsByFare(): void {
+    if (!this.tripForm.segments || this.tripForm.segments.length === 0) return;
+    this.fareSortDesc = !this.fareSortDesc;
+    this.tripForm.segments.sort((a, b) => {
+      const fareA = a.fare || 0;
+      const fareB = b.fare || 0;
+      return this.fareSortDesc ? fareB - fareA : fareA - fareB;
+    });
+  }
+
+  onTimeChange(segment: import('../../../core/models/trip').TripSegmentCreateRequest): void {
+    if (segment.departureTime && segment.arrivalTime) {
+      if (segment.arrivalTime < segment.departureTime) {
+        if ((segment.arrivalDayOffset || 0) <= (segment.departureDayOffset || 0)) {
+          segment.arrivalDayOffset = (segment.departureDayOffset || 0) + 1;
+        }
+      }
+    }
+
+    // Push times to other segments sharing the same stops
+    if (this.tripForm.segments && this.tripForm.segments.length > 1) {
+      for (const other of this.tripForm.segments) {
+        if (other === segment) continue;
+
+        if (segment.boardingStopId && segment.departureTime) {
+          if (other.boardingStopId === segment.boardingStopId) {
+            other.departureTime = segment.departureTime;
+            other.departureDayOffset = segment.departureDayOffset;
+          }
+          if (other.droppingStopId === segment.boardingStopId) {
+            other.arrivalTime = segment.departureTime;
+            other.arrivalDayOffset = segment.departureDayOffset;
+          }
+        }
+
+        if (segment.droppingStopId && segment.arrivalTime) {
+          if (other.droppingStopId === segment.droppingStopId) {
+            other.arrivalTime = segment.arrivalTime;
+            other.arrivalDayOffset = segment.arrivalDayOffset;
+          }
+          if (other.boardingStopId === segment.droppingStopId) {
+            other.departureTime = segment.arrivalTime;
+            other.departureDayOffset = segment.arrivalDayOffset;
+          }
+        }
+      }
+    }
+
+    // Zone day sync
+    if (this.tripForm.segments && this.tripForm.segments.length > 1) {
+      if (segment.boardingStopId && segment.departureDayOffset !== undefined && segment.departureDayOffset !== null) {
+        const bStop = this.routeStops.find(s => s.routeStopId === segment.boardingStopId);
+        if (bStop && bStop.fareLocationId) {
+          for (const other of this.tripForm.segments) {
+            if (other === segment) continue;
+            if (other.boardingStopId) {
+              const obStop = this.routeStops.find(s => s.routeStopId === other.boardingStopId);
+              if (obStop && obStop.fareLocationId === bStop.fareLocationId) {
+                other.departureDayOffset = segment.departureDayOffset;
+              }
+            }
+            if (other.droppingStopId) {
+              const odStop = this.routeStops.find(s => s.routeStopId === other.droppingStopId);
+              if (odStop && odStop.fareLocationId === bStop.fareLocationId) {
+                other.arrivalDayOffset = segment.departureDayOffset;
+              }
+            }
+          }
+        }
+      }
+
+      if (segment.droppingStopId && segment.arrivalDayOffset !== undefined && segment.arrivalDayOffset !== null) {
+        const dStop = this.routeStops.find(s => s.routeStopId === segment.droppingStopId);
+        if (dStop && dStop.fareLocationId) {
+          for (const other of this.tripForm.segments) {
+            if (other === segment) continue;
+            if (other.boardingStopId) {
+              const obStop = this.routeStops.find(s => s.routeStopId === other.boardingStopId);
+              if (obStop && obStop.fareLocationId === dStop.fareLocationId) {
+                other.departureDayOffset = segment.arrivalDayOffset;
+              }
+            }
+            if (other.droppingStopId) {
+              const odStop = this.routeStops.find(s => s.routeStopId === other.droppingStopId);
+              if (odStop && odStop.fareLocationId === dStop.fareLocationId) {
+                other.arrivalDayOffset = segment.arrivalDayOffset;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  getFirstSegment(): import('../../../core/models/trip').TripSegmentCreateRequest | null {
+    if (!this.tripForm.segments || this.tripForm.segments.length === 0) return null;
+    let minDistance = Number.MAX_VALUE;
+    let firstSeg = this.tripForm.segments[0];
+    for (const seg of this.tripForm.segments) {
+      if (seg.boardingStopId) {
+        const stop = this.routeStops.find(s => s.routeStopId === seg.boardingStopId);
+        if (stop && stop.distanceFromSourceKm < minDistance) {
+          minDistance = stop.distanceFromSourceKm;
+          firstSeg = seg;
+        }
+      }
+    }
+    return firstSeg;
+  }
+
+  getLastSegment(): import('../../../core/models/trip').TripSegmentCreateRequest | null {
+    if (!this.tripForm.segments || this.tripForm.segments.length === 0) return null;
+    let maxDistance = -1;
+    let lastSeg = this.tripForm.segments[this.tripForm.segments.length - 1];
+    for (const seg of this.tripForm.segments) {
+      if (seg.droppingStopId) {
+        const stop = this.routeStops.find(s => s.routeStopId === seg.droppingStopId);
+        if (stop && stop.distanceFromSourceKm > maxDistance) {
+          maxDistance = stop.distanceFromSourceKm;
+          lastSeg = seg;
+        }
+      }
+    }
+    return lastSeg;
+  }
+
+  get derivedTripStartTime(): string {
+    const firstSeg = this.getFirstSegment();
+    if (firstSeg && firstSeg.departureTime) {
+      return `${this.formatTimeAMPM(firstSeg.departureTime)} — Day ${(firstSeg.departureDayOffset || 0) + 1}`;
+    }
+    return '--:-- — Day 1';
+  }
+
+  get derivedTripEndTime(): string {
+    const lastSeg = this.getLastSegment();
+    if (lastSeg && lastSeg.arrivalTime) {
+      return `${this.formatTimeAMPM(lastSeg.arrivalTime)} — Day ${(lastSeg.arrivalDayOffset || 0) + 1}`;
+    }
+    return '--:-- — Day 1';
+  }
+
+  formatTimeAMPM(timeStr: string): string {
+    if (!timeStr) return '';
+    const parts = timeStr.split(':');
+    if (parts.length < 2) return timeStr;
+    let h = parseInt(parts[0], 10);
+    const m = parts[1];
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12;
+    h = h ? h : 12;
+    return `${String(h).padStart(2, '0')}:${m} ${ampm}`;
   }
 
   removeSegment(index: number): void {
@@ -515,28 +918,119 @@ export class OperatorDashboardComponent implements OnInit {
     return this.routeStops.filter(s => s.canDrop || s.stopType === 'DROPPING' || s.stopType === 'INTERMEDIATE');
   }
 
-  get isSegmentsValid(): boolean {
-    if (!this.tripForm.segments || this.tripForm.segments.length === 0) return false;
+  get segmentValidationError(): string {
+    if (!this.tripForm.segments || this.tripForm.segments.length === 0) return 'At least one segment is required.';
     
     const pairs = new Set<string>();
+    const boardingPointToTime = new Map<string, string>(); // stopId -> depTimeKey
+    const timeToBoardingPoint = new Map<string, string>(); // depTimeKey -> stopId
     
+    const droppingPointToTime = new Map<string, string>(); // stopId -> arrTimeKey
+    const timeToDroppingPoint = new Map<string, string>(); // arrTimeKey -> stopId
+    
+    let hasMissingFields = false;
+    let hasSameStops = false;
+
     for (const seg of this.tripForm.segments) {
-      // Must have all fields
       if (!seg.boardingStopId || !seg.droppingStopId || !seg.departureTime || !seg.arrivalTime || seg.fare === null || seg.fare === undefined) {
-        return false;
+        hasMissingFields = true;
       }
-      // Boarding and dropping cannot be the same
-      if (seg.boardingStopId === seg.droppingStopId) {
-        return false;
+      if (seg.boardingStopId && seg.droppingStopId && seg.boardingStopId === seg.droppingStopId) {
+        hasSameStops = true;
       }
       
       const pairKey = `${seg.boardingStopId}-${seg.droppingStopId}`;
-      if (pairs.has(pairKey)) {
-        return false; // Duplicate pair
+      if (seg.boardingStopId && seg.droppingStopId) {
+        if (pairs.has(pairKey)) {
+          return 'This boarding point and dropping point combination already exists.';
+        }
+        pairs.add(pairKey);
       }
-      pairs.add(pairKey);
+
+      if (seg.boardingStopId && seg.departureTime) {
+        const depTimeKey = `${seg.departureDayOffset}-${seg.departureTime}`;
+        // Rule 1: Same boarding point -> same time
+        if (boardingPointToTime.has(seg.boardingStopId)) {
+          if (boardingPointToTime.get(seg.boardingStopId) !== depTimeKey) {
+            return 'The same boarding point cannot have different departure times or days.';
+          }
+        } else {
+          boardingPointToTime.set(seg.boardingStopId, depTimeKey);
+        }
+
+        // Rule 3: Different boarding points -> different time
+        if (timeToBoardingPoint.has(depTimeKey)) {
+          if (timeToBoardingPoint.get(depTimeKey) !== seg.boardingStopId) {
+            return 'Different boarding points cannot have the same departure time and day.';
+          }
+        } else {
+          timeToBoardingPoint.set(depTimeKey, seg.boardingStopId);
+        }
+      }
+
+      if (seg.droppingStopId && seg.arrivalTime) {
+        const arrTimeKey = `${seg.arrivalDayOffset}-${seg.arrivalTime}`;
+        // Rule 2: Same dropping point -> same time
+        if (droppingPointToTime.has(seg.droppingStopId)) {
+          if (droppingPointToTime.get(seg.droppingStopId) !== arrTimeKey) {
+            return 'The same dropping point cannot have different arrival times or days.';
+          }
+        } else {
+          droppingPointToTime.set(seg.droppingStopId, arrTimeKey);
+        }
+
+        // Rule 4: Different dropping points -> different time
+        if (timeToDroppingPoint.has(arrTimeKey)) {
+          if (timeToDroppingPoint.get(arrTimeKey) !== seg.droppingStopId) {
+            return 'Different dropping points cannot have the same arrival time and day.';
+          }
+        } else {
+          timeToDroppingPoint.set(arrTimeKey, seg.droppingStopId);
+        }
+      }
     }
-    return true;
+
+    if (hasSameStops) {
+      return 'Boarding and dropping stops must be different.';
+    }
+
+    if (hasMissingFields) {
+      return 'Please fill all segment fields correctly.';
+    }
+
+    // Check monotonicity of days
+    const stopDays = new Map<string, number>();
+    for (const seg of this.tripForm.segments) {
+      if (seg.boardingStopId && seg.departureDayOffset !== undefined && seg.departureDayOffset !== null) {
+        if (!stopDays.has(seg.boardingStopId) || stopDays.get(seg.boardingStopId)! < seg.departureDayOffset) {
+           stopDays.set(seg.boardingStopId, seg.departureDayOffset);
+        }
+      }
+      if (seg.droppingStopId && seg.arrivalDayOffset !== undefined && seg.arrivalDayOffset !== null) {
+        if (!stopDays.has(seg.droppingStopId) || stopDays.get(seg.droppingStopId)! < seg.arrivalDayOffset) {
+           stopDays.set(seg.droppingStopId, seg.arrivalDayOffset);
+        }
+      }
+    }
+
+    let lastDay = -1;
+    const orderedStops = [...this.routeStops].sort((a, b) => a.distanceFromSourceKm - b.distanceFromSourceKm);
+    
+    for (const stop of orderedStops) {
+      if (stopDays.has(stop.routeStopId)) {
+        const day = stopDays.get(stop.routeStopId)!;
+        if (day < lastDay) {
+          return `Day cannot decrease along the route. Stops further along the route must have a day >= Day ${lastDay + 1}.`;
+        }
+        lastDay = day;
+      }
+    }
+
+    return '';
+  }
+
+  get isSegmentsValid(): boolean {
+    return this.segmentValidationError === '';
   }
 
   saveTrip(): void {
@@ -547,48 +1041,52 @@ export class OperatorDashboardComponent implements OnInit {
     
     // Auto-calculate rollover dates for segments based on departure vs travel date
     if (payload.travelDate && payload.segments && payload.segments.length > 0) {
-      let currentDate = new Date(payload.travelDate);
-      let previousTimeStr = '';
-
       for (const seg of payload.segments) {
         // Departure Date Logic
-        if (seg.departureTime && previousTimeStr) {
-          if (seg.departureTime < previousTimeStr) {
-            currentDate.setDate(currentDate.getDate() + 1);
-          }
-        }
-        previousTimeStr = seg.departureTime || previousTimeStr;
+        let depDate = new Date(payload.travelDate);
+        depDate.setDate(depDate.getDate() + (seg.departureDayOffset || 0));
+        let arrDate = new Date(payload.travelDate);
+        arrDate.setDate(arrDate.getDate() + (seg.arrivalDayOffset || 0));
         
-        let yyyy = currentDate.getFullYear();
-        let mm = String(currentDate.getMonth() + 1).padStart(2, '0');
-        let dd = String(currentDate.getDate()).padStart(2, '0');
+        let yyyy = depDate.getFullYear();
+        let mm = String(depDate.getMonth() + 1).padStart(2, '0');
+        let dd = String(depDate.getDate()).padStart(2, '0');
         seg.departureDate = `${yyyy}-${mm}-${dd}`;
         
-        // Arrival Date Logic
-        if (seg.arrivalTime && seg.departureTime) {
-          if (seg.arrivalTime < seg.departureTime) {
-            currentDate.setDate(currentDate.getDate() + 1);
-          }
-        }
-        previousTimeStr = seg.arrivalTime || previousTimeStr;
-        
-        yyyy = currentDate.getFullYear();
-        mm = String(currentDate.getMonth() + 1).padStart(2, '0');
-        dd = String(currentDate.getDate()).padStart(2, '0');
+        yyyy = arrDate.getFullYear();
+        mm = String(arrDate.getMonth() + 1).padStart(2, '0');
+        dd = String(arrDate.getDate()).padStart(2, '0');
         seg.arrivalDate = `${yyyy}-${mm}-${dd}`;
 
         // Ensure seconds
         if (seg.departureTime.length === 5) seg.departureTime += ':00';
         if (seg.arrivalTime.length === 5) seg.arrivalTime += ':00';
+
+        const exactDepDate = new Date(`${seg.departureDate}T${seg.departureTime}`);
+        if (exactDepDate < new Date()) {
+          this.tripSubmitError = 'Departure time cannot be in the past.';
+          return;
+        }
+        
+        const exactArrDate = new Date(`${seg.arrivalDate}T${seg.arrivalTime}`);
+        if (exactArrDate <= exactDepDate) {
+          this.tripSubmitError = 'Arrival time must be strictly after departure time.';
+          return;
+        }
       }
       
-      // Set overall trip times from segments
-      payload.departureTime = payload.segments[0].departureTime;
-      payload.arrivalTime = payload.segments[payload.segments.length - 1].arrivalTime;
-      payload.arrivalDate = payload.segments[payload.segments.length - 1].arrivalDate || '';
+      // Set overall trip times from segments using route distance
+      const firstSeg = this.getFirstSegment();
+      const lastSeg = this.getLastSegment();
+      if (firstSeg && lastSeg) {
+        payload.departureTime = firstSeg.departureTime;
+        payload.arrivalTime = lastSeg.arrivalTime;
+        payload.arrivalDate = lastSeg.arrivalDate || '';
+      }
     }
 
     if (this.isEditingTrip) {
+      this.tripSubmitLoading = true;
       this.tripService.updateTrip(
         this.originalTripKeys.busRegistrationNumber,
         this.originalTripKeys.source,
@@ -598,20 +1096,27 @@ export class OperatorDashboardComponent implements OnInit {
       ).subscribe({
         next: () => {
           this.tripSubmitSuccess = 'Trip updated successfully!';
+          this.tripSubmitLoading = false;
+          this.fetchBuses(); // Refresh fleet list
           this.searchTrips(); // Refresh search if in Trips tab
           setTimeout(() => this.closeTripModal(), 2000);
         },
         error: (err) => {
+          this.tripSubmitLoading = false;
           this.tripSubmitError = err.error?.message || 'Failed to update trip. Please check your inputs.';
         }
       });
     } else {
+      this.tripSubmitLoading = true;
       this.tripService.createTrip(payload).subscribe({
         next: () => {
           this.tripSubmitSuccess = 'Trip scheduled successfully!';
+          this.tripSubmitLoading = false;
+          this.fetchBuses(); // Refresh fleet list so "Edit Active Trip" appears
           setTimeout(() => this.closeTripModal(), 2000);
         },
         error: (err) => {
+          this.tripSubmitLoading = false;
           this.tripSubmitError = err.error?.message || 'Failed to schedule trip. Please check your inputs.';
         }
       });
@@ -798,7 +1303,7 @@ export class OperatorDashboardComponent implements OnInit {
           this.cdr.detectChanges();
         },
         error: (err) => {
-          alert(err.error?.message || 'Error');
+          this.toastService.error(err.error?.message || 'Error');
           this.cdr.detectChanges();
         }
       });
@@ -907,6 +1412,7 @@ export class OperatorDashboardComponent implements OnInit {
           password: ''
         };
         this.supportAgentLoading = false;
+        this.fetchSupportAgents();
         this.cdr.detectChanges();
       },
       error: (err) => {

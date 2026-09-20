@@ -69,6 +69,8 @@ export interface TripSegmentCreateRequest {
   arrivalTime: string; // HH:mm:ss
   departureDate?: string;
   arrivalDate?: string;
+  departureDayOffset?: number;
+  arrivalDayOffset?: number;
   fare: number;
 }
 
@@ -106,6 +108,7 @@ export interface TripCreateRequest {
   arrivalDate: string; // YYYY-MM-DD
   departureTime: string; // HH:MM:SS or HH:MM
   arrivalTime: string; // HH:MM:SS or HH:MM
+  arrivalDayOffset?: number; // Added for UI helper
   baseFare: number;
   segments?: TripSegmentCreateRequest[];
 }

@@ -1,5 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { BusService } from '../../../core/services/bus.service';
+import { ConfirmService } from '../../../core/services/confirm.service';
 import { BusDTO, BusCreateRequest } from '../../../core/models/bus';
 
 @Component({
@@ -34,7 +35,8 @@ export class AdminBusesComponent implements OnInit {
 
   constructor(
     private busService: BusService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private confirmService: ConfirmService
   ) {}
 
   ngOnInit(): void {
@@ -178,12 +180,100 @@ export class AdminBusesComponent implements OnInit {
     }
   }
 
-  deactivateBus(registrationNumber: string): void {
-    if (confirm('Are you sure you want to deactivate this bus?')) {
-      this.busService.deactivateBus(registrationNumber).subscribe({
-        next: () => this.fetchAllBuses(),
-        error: (err: any) => console.error('Error deactivating bus', err)
-      });
+  // ── Activation Request Management ────────────────────────────────────────
+  pendingActivations: BusDTO[] = [];
+  pendingActivationsLoading: boolean = false;
+  activeTab: 'all' | 'pending' = 'all';
+
+  // Approval modal state
+  showApprovalModal: boolean = false;
+  approvalBus: BusDTO | null = null;
+  approvalCompensationAmount: number = 0;
+  approvalAdminNote: string = '';
+  approvalLoading: boolean = false;
+  approvalError: string = '';
+  approvalSuccess: string = '';
+
+  loadPendingActivations(): void {
+    this.pendingActivationsLoading = true;
+    this.busService.getPendingActivationRequests().subscribe({
+      next: (data: any) => {
+        this.pendingActivations = data;
+        this.pendingActivationsLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: (err: any) => {
+        console.error('Failed to load pending activations', err);
+        this.pendingActivationsLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  switchTab(tab: 'all' | 'pending'): void {
+    this.activeTab = tab;
+    if (tab === 'pending') {
+      this.loadPendingActivations();
     }
+    this.cdr.markForCheck();
+  }
+
+  openApprovalModal(bus: BusDTO): void {
+    this.approvalBus = bus;
+    this.approvalCompensationAmount = 0;
+    this.approvalAdminNote = '';
+    this.approvalError = '';
+    this.approvalSuccess = '';
+    this.showApprovalModal = true;
+    this.cdr.markForCheck();
+  }
+
+  closeApprovalModal(): void {
+    this.showApprovalModal = false;
+    this.approvalBus = null;
+    this.cdr.markForCheck();
+  }
+
+  approveActivation(): void {
+    if (!this.approvalBus) return;
+    this.approvalLoading = true;
+    this.approvalError = '';
+    this.busService.approveActivationRequest(
+      this.approvalBus.registrationNumber,
+      this.approvalCompensationAmount,
+      this.approvalAdminNote
+    ).subscribe({
+      next: () => {
+        this.approvalLoading = false;
+        this.approvalSuccess = `Approved! Operator will be notified to pay ₹${this.approvalCompensationAmount}.`;
+        setTimeout(() => {
+          this.closeApprovalModal();
+          this.loadPendingActivations();
+          this.fetchAllBuses();
+          this.cdr.markForCheck();
+        }, 1500);
+        this.cdr.markForCheck();
+      },
+      error: (err: any) => {
+        this.approvalLoading = false;
+        this.approvalError = err.error?.message || 'Failed to approve.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  rejectActivation(bus: BusDTO): void {
+    this.confirmService.confirm(`Reject activation request for bus ${bus.registrationNumber}?`).subscribe(confirmed => {
+      if (!confirmed) return;
+      const note = prompt('Optional: Provide a rejection reason for the operator:') ?? '';
+      this.busService.rejectActivationRequest(bus.registrationNumber, note).subscribe({
+        next: () => {
+          this.loadPendingActivations();
+          this.fetchAllBuses();
+          this.cdr.markForCheck();
+        },
+        error: (err: any) => console.error('Failed to reject', err)
+      });
+    });
   }
 }
